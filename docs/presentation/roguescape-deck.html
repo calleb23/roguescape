@@ -1,0 +1,406 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>RogueScape Plugin Presentation</title>
+  <style>
+    :root {
+      --bg: #111315;
+      --panel: #1a1d20;
+      --panel2: #202429;
+      --text: #ece7da;
+      --muted: #aaa396;
+      --gold: #d6ad55;
+      --green: #37d47f;
+      --red: #df5b5b;
+      --blue: #5aa8d8;
+      --purple: #a66cff;
+      --border: #524a3a;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font-family: Georgia, "Times New Roman", serif;
+      line-height: 1.45;
+      scroll-snap-type: y mandatory;
+      overflow-y: scroll;
+    }
+    section {
+      min-height: 100vh;
+      padding: 56px 70px;
+      display: grid;
+      align-content: center;
+      scroll-snap-align: start;
+      border-bottom: 1px solid #24272b;
+      background:
+        linear-gradient(90deg, rgba(255,255,255,.025) 1px, transparent 1px),
+        linear-gradient(0deg, rgba(255,255,255,.018) 1px, transparent 1px),
+        radial-gradient(circle at 75% 15%, rgba(55,212,127,.09), transparent 26%),
+        var(--bg);
+      background-size: 28px 28px, 28px 28px, auto, auto;
+    }
+    .slide {
+      max-width: 1120px;
+      margin: 0 auto;
+      width: 100%;
+    }
+    h1, h2 {
+      margin: 0 0 18px;
+      color: var(--gold);
+      font-weight: 700;
+      letter-spacing: 0;
+    }
+    h1 { font-size: 64px; line-height: 1.02; }
+    h2 { font-size: 42px; }
+    h3 {
+      margin: 18px 0 8px;
+      color: var(--text);
+      font-size: 24px;
+    }
+    p, li {
+      font-size: 24px;
+      color: var(--text);
+    }
+    .muted { color: var(--muted); }
+    .subtitle {
+      font-size: 30px;
+      color: var(--muted);
+      max-width: 860px;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 24px;
+      align-items: stretch;
+    }
+    .cards {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 18px;
+    }
+    .card, .mock, .flow {
+      background: linear-gradient(180deg, var(--panel2), var(--panel));
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 22px;
+      box-shadow: 0 18px 50px rgba(0,0,0,.24);
+    }
+    .card h3 { color: var(--gold); margin-top: 0; }
+    .card p, .card li { font-size: 19px; color: var(--muted); }
+    pre {
+      margin: 0;
+      white-space: pre-wrap;
+      font: 20px/1.4 Consolas, "Courier New", monospace;
+      color: #efe8d6;
+    }
+    .flowline {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: center;
+      font-size: 23px;
+    }
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      min-height: 42px;
+      padding: 8px 14px;
+      border-radius: 6px;
+      background: #24282d;
+      border: 1px solid var(--border);
+      color: var(--text);
+    }
+    .arrow { color: var(--gold); }
+    .good { color: var(--green); }
+    .bad { color: var(--red); }
+    .accent { color: var(--purple); }
+    .map {
+      height: 320px;
+      position: relative;
+      overflow: hidden;
+      background:
+        linear-gradient(45deg, #20251f 25%, transparent 25%),
+        linear-gradient(-45deg, #20251f 25%, transparent 25%),
+        linear-gradient(45deg, transparent 75%, #20251f 75%),
+        linear-gradient(-45deg, transparent 75%, #20251f 75%),
+        #151816;
+      background-position: 0 0, 0 16px, 16px -16px, -16px 0;
+      background-size: 32px 32px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+    }
+    .region {
+      position: absolute;
+      left: 42%;
+      top: 28%;
+      width: 180px;
+      height: 150px;
+      background: rgba(55,212,127,.38);
+      border: 2px solid rgba(96,255,156,.95);
+      box-shadow: 0 0 28px rgba(55,212,127,.36);
+    }
+    .marker {
+      position: absolute;
+      left: calc(42% + 90px);
+      top: calc(28% + 75px);
+      width: 30px;
+      height: 30px;
+      margin: -15px 0 0 -15px;
+      border-radius: 50%;
+      background: var(--green);
+      border: 3px solid #f1fff4;
+      box-shadow: 0 0 0 6px rgba(55,212,127,.22), 0 0 22px rgba(55,212,127,.7);
+    }
+    .tilefield {
+      height: 320px;
+      display: grid;
+      grid-template-columns: repeat(12, 1fr);
+      gap: 3px;
+      background: #101214;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 10px;
+    }
+    .tile {
+      background: rgba(120,120,120,.28);
+      border: 1px solid rgba(255,255,255,.04);
+    }
+    .tile.goodtile {
+      background: rgba(55,212,127,.44);
+      border-color: rgba(90,255,150,.65);
+    }
+    .footer {
+      margin-top: 24px;
+      font-size: 16px;
+      color: var(--muted);
+    }
+    @media (max-width: 800px) {
+      section { padding: 32px 22px; }
+      h1 { font-size: 42px; }
+      h2 { font-size: 32px; }
+      p, li { font-size: 19px; }
+      .grid, .cards { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<section>
+  <div class="slide">
+    <h1>RogueScape</h1>
+    <p class="subtitle">A RuneLite roguelike layer for OSRS: guided rooms, restrictions, random rewards, unlocks, bosses, and magical UI.</p>
+    <div class="footer">Scroll to move through slides.</div>
+  </div>
+</section>
+
+<section>
+  <div class="slide">
+    <h2>The Core Idea</h2>
+    <div class="flow">
+      <pre>OSRS world
+  +
+Roguelike run rules
+  +
+RuneLite visual guidance
+  =
+RogueScape</pre>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="slide">
+    <h2>Main Game Flow</h2>
+    <div class="flowline">
+      <span class="pill">Choose Run</span><span class="arrow">→</span>
+      <span class="pill">Start Run</span><span class="arrow">→</span>
+      <span class="pill">Travel</span><span class="arrow">→</span>
+      <span class="pill">Room Active</span><span class="arrow">→</span>
+      <span class="pill">Reward</span><span class="arrow">→</span>
+      <span class="pill">Next Stage</span>
+    </div>
+    <p class="muted">Timer starts only when the player enters the allowed room region.</p>
+  </div>
+</section>
+
+<section>
+  <div class="slide">
+    <h2>Travel Phase</h2>
+    <div class="grid">
+      <div class="mock">
+        <pre>RogueScape
+Floor 2 / 7
+
+Phase: Travel
+Destination: Draynor Village
+Region: 12338
+Timer: 05:00 once you enter
+
+Objective waits there:
+Collect 2 legal supplies</pre>
+      </div>
+      <div class="map">
+        <div class="region"></div>
+        <div class="marker"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="slide">
+    <h2>Room Active</h2>
+    <div class="grid">
+      <div class="mock">
+        <pre>Phase: Room
+Room: Draynor Village
+Timer: 04:12
+
+Objective:
+Supplies 1 / 2
+
+Allowed:
+✓ Pick up drops in room
+✓ Use resources found here
+
+Blocked:
+✗ Bank
+✗ Trade / GE
+✗ Outside-room pickups</pre>
+      </div>
+      <div class="tilefield">
+        <div class="tile"></div><div class="tile"></div><div class="tile"></div><div class="tile"></div><div class="tile"></div><div class="tile"></div><div class="tile"></div><div class="tile"></div><div class="tile"></div><div class="tile"></div><div class="tile"></div><div class="tile"></div>
+        <div class="tile"></div><div class="tile"></div><div class="tile goodtile"></div><div class="tile goodtile"></div><div class="tile goodtile"></div><div class="tile goodtile"></div><div class="tile goodtile"></div><div class="tile"></div><div class="tile"></div><div class="tile"></div><div class="tile"></div><div class="tile"></div>
+        <div class="tile"></div><div class="tile"></div><div class="tile goodtile"></div><div class="tile goodtile"></div><div class="tile goodtile"></div><div class="tile goodtile"></div><div class="tile goodtile"></div><div class="tile"></div><div class="tile"></div><div class="tile"></div><div class="tile"></div><div class="tile"></div>
+        <div class="tile"></div><div class="tile"></div><div class="tile goodtile"></div><div class="tile goodtile"></div><div class="tile goodtile"></div><div class="tile goodtile"></div><div class="tile goodtile"></div><div class="tile"></div><div class="tile"></div><div class="tile"></div><div class="tile"></div><div class="tile"></div>
+        <div class="tile"></div><div class="tile"></div><div class="tile"></div><div class="tile"></div><div class="tile"></div><div class="tile"></div><div class="tile"></div><div class="tile"></div><div class="tile"></div><div class="tile"></div><div class="tile"></div><div class="tile"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="slide">
+    <h2>Reward Draft</h2>
+    <div class="cards">
+      <div class="card">
+        <h3>Unlock</h3>
+        <p class="good">Prayer Access</p>
+        <p>New permission for the rest of the run.</p>
+      </div>
+      <div class="card">
+        <h3>Supply</h3>
+        <p class="good">Sharks x5</p>
+        <p>Immediate survival resource.</p>
+      </div>
+      <div class="card">
+        <h3>Relic</h3>
+        <p class="accent">Blood Relic</p>
+        <p>Build-defining modifier or passive power.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="slide">
+    <h2>Custom Builder</h2>
+    <div class="mock">
+      <pre>Rooms:
+  Draynor Village [Supply]
+  Varrock East [Weapons]
+
+Bosses:
+  Obor
+  Bryophyta
+
+Route:
+  1. Draynor Village [Supply]
+  2. Obor [Boss]
+  3. Varrock East [Weapons]
+  4. Bryophyta [Boss]</pre>
+    </div>
+    <p class="muted">Bosses are mixed route options, not only final stages.</p>
+  </div>
+</section>
+
+<section>
+  <div class="slide">
+    <h2>Systems Connection</h2>
+    <div class="flow">
+      <pre>Run Builder
+  -> Route Builder
+  -> Run Loop
+  -> HUD / Panel / Pop-out Window
+  -> Map Visuals
+  -> Reward Drafts
+  -> Unlock System
+  -> Enforcement Rules</pre>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="slide">
+    <h2>Map Guidance</h2>
+    <div class="cards">
+      <div class="card">
+        <h3>Scene</h3>
+        <p>Green allowed tiles and grey outside-room dimming.</p>
+      </div>
+      <div class="card">
+        <h3>World Map</h3>
+        <p>Green active room region plus a clickable RogueScape marker.</p>
+      </div>
+      <div class="card">
+        <h3>Shortest Path</h3>
+        <p>Soft bridge attempts to set the external plugin target.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="slide">
+    <h2>Testing Checklist</h2>
+    <div class="grid">
+      <div class="card">
+        <h3>Start</h3>
+        <p>Side panel, pop-out window, custom builder.</p>
+      </div>
+      <div class="card">
+        <h3>Travel</h3>
+        <p>HUD target, map marker, green world-map region, no timer drain.</p>
+      </div>
+      <div class="card">
+        <h3>Room</h3>
+        <p>Timer starts, green tiles render, enforcement arms.</p>
+      </div>
+      <div class="card">
+        <h3>Reward</h3>
+        <p>Completion or timeout opens draft, choice applies correctly.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="slide">
+    <h2>Still To Tune</h2>
+    <ul>
+      <li>Shortest Path live bridge behavior</li>
+      <li>Walk-blocking edge cases</li>
+      <li>More accurate room region data</li>
+      <li>Exact destination tiles instead of region centers</li>
+      <li>Reward tables and balancing</li>
+      <li>More magical reward/window animations</li>
+    </ul>
+  </div>
+</section>
+
+</body>
+</html>
+
