@@ -2,7 +2,7 @@ package com.pluginideahub.roguescape;
 
 import com.google.inject.Provides;
 import com.pluginideahub.roguescape.bridge.ShortestPathBridge;
-import com.pluginideahub.roguescape.core.BossKillChatMatcher;
+import com.pluginideahub.roguescape.core.ChatEventInterpreter;
 import com.pluginideahub.roguescape.core.ModePresetParser;
 import com.pluginideahub.roguescape.core.RogueScapeCustomRunFactory;
 import com.pluginideahub.roguescape.core.RogueScapeRun;
@@ -475,25 +475,15 @@ public class RogueScapePlugin extends Plugin
 		{
 			return;
 		}
-		String message = event.getMessage();
-		if (ProvenanceSignalTracker.isLikelyDeathMessage(message))
+		ChatEventInterpreter.Result result = ChatEventInterpreter.interpret(
+			event.getMessage(), rogueRun, runSession, provenanceSignals);
+		if (result.signal() != null)
 		{
-			if (runSession != null)
-			{
-				runSession.recordViolation("Observed death", RogueScapeRunSession.RunEnding.DEATH);
-			}
-			latestProvenanceSignal = "death observed";
-			refreshOverlaySummary();
-			return;
+			latestProvenanceSignal = result.signal();
 		}
-		if (observeBossKillChat(message))
+		if (result.refresh())
 		{
 			refreshOverlaySummary();
-		}
-		provenanceSignals.observeChat(message);
-		if (!provenanceSignals.latestSignal().isEmpty())
-		{
-			latestProvenanceSignal = provenanceSignals.latestSignal();
 		}
 	}
 
@@ -1263,30 +1253,6 @@ public class RogueScapePlugin extends Plugin
 	private static String provenanceLine(ProvenanceHint hint)
 	{
 		return hint == null || hint == ProvenanceHint.UNKNOWN ? "unknown source" : hint.name();
-	}
-
-	private boolean observeBossKillChat(String message)
-	{
-		if (rogueRun == null || message == null)
-		{
-			return false;
-		}
-		RunStage stage = rogueRun.currentEnteredStage();
-		if (stage == null || stage.type() != RunStageType.BOSS)
-		{
-			return false;
-		}
-		String clean = BossKillChatMatcher.clean(message);
-		if (!BossKillChatMatcher.matches(stage.name(), clean))
-		{
-			return false;
-		}
-		boolean recorded = rogueRun.recordBossDefeatSignal("chat: " + clean);
-		if (recorded)
-		{
-			latestProvenanceSignal = "boss defeated: " + stage.name();
-		}
-		return recorded;
 	}
 
 	private String formatRules()
