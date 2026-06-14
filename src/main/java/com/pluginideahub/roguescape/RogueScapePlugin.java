@@ -50,7 +50,9 @@ import com.pluginideahub.roguescape.ui.RogueScapeRewardOverlay;
 import com.pluginideahub.roguescape.ui.RogueScapeTheme;
 import com.pluginideahub.roguescape.ui.RogueScapeWidgetWindow;
 import com.pluginideahub.roguescape.ui.RogueScapeWindowOverlay;
+import com.pluginideahub.roguescape.ui.RewardPresenter;
 import com.pluginideahub.roguescape.ui.RogueScapeSummaryOverlay;
+import com.pluginideahub.roguescape.ui.RoomTargetMapMarker;
 import java.awt.Dimension;
 import java.awt.Graphics2D;
 import java.awt.Color;
@@ -117,14 +119,6 @@ public class RogueScapePlugin extends Plugin
 	private static final String TOGGLE_ROOM_MENU_OPTION = "Toggle RogueScape room region";
 	private static final String TOGGLE_ROOM_MENU_TARGET_PREFIX = "RogueScape room: ";
 
-	// Relic emblem item ids (real OSRS items) used as placeholder relic/artifact icons.
-	private static final int ITEM_DRAGONSTONE = 1631; // Uncut dragonstone
-	private static final int ITEM_COINS = 995;        // Coins
-	private static final int ITEM_SHARK = 385;        // Shark
-	private static final int ITEM_GLORY = 1712;       // Amulet of glory(6)
-	private static final int ITEM_PRAYER_POTION = 2434;
-	private static final int ITEM_BRONZE_ARROW = 882;
-
 	@Inject
 	private RogueScapeConfig config;
 
@@ -183,8 +177,7 @@ public class RogueScapePlugin extends Plugin
 	private String latestProvenanceSignal = "";
 	private String currentRegionId = "";
 	private ShortestPathBridge shortestPathBridge;
-	private WorldMapPoint roomTargetMapPoint;
-	private String lastRoomTargetMapPointKey = "";
+	private RoomTargetMapMarker roomTargetMapMarker;
 
 	@Override
 	protected void startUp()
@@ -193,6 +186,7 @@ public class RogueScapePlugin extends Plugin
 			RogueScapeCustomRoomSelection.fromCsv(config.customRoomName(), config.customRoomRegionIdsCsv())
 		);
 		shortestPathBridge = new ShortestPathBridge(client, pluginManager);
+		roomTargetMapMarker = new RoomTargetMapMarker(worldMapPointManager);
 		// Boot into the lobby (no active run) so the player can select and START a run.
 		refreshOverlaySummary();
 		overlay = new RogueScapeSummaryOverlay(() -> "RogueScape", this::overlayLines);
@@ -1199,56 +1193,18 @@ public class RogueScapePlugin extends Plugin
 
 	private void syncRoomTargetMapPoint()
 	{
-		if (!activeRoomWorldMapEnabled() || worldMapPointManager == null)
+		if (roomTargetMapMarker != null)
 		{
-			removeRoomTargetMapPoint();
-			return;
+			roomTargetMapMarker.sync(activeRoomWorldMapEnabled(), shortestPathTargetPoint(), currentRoomName());
 		}
-		WorldPoint target = shortestPathTargetPoint();
-		String key = target == null ? "" : target.getX() + "," + target.getY() + "," + target.getPlane();
-		if (key.isEmpty())
-		{
-			removeRoomTargetMapPoint();
-			return;
-		}
-		if (key.equals(lastRoomTargetMapPointKey) && roomTargetMapPoint != null)
-		{
-			return;
-		}
-
-		removeRoomTargetMapPoint();
-		roomTargetMapPoint = new WorldMapPoint(target, roomTargetMarkerImage());
-		roomTargetMapPoint.setName("RogueScape: " + currentRoomName());
-		roomTargetMapPoint.setTarget(target);
-		roomTargetMapPoint.setJumpOnClick(true);
-		worldMapPointManager.add(roomTargetMapPoint);
-		lastRoomTargetMapPointKey = key;
 	}
 
 	private void removeRoomTargetMapPoint()
 	{
-		if (worldMapPointManager != null && roomTargetMapPoint != null)
+		if (roomTargetMapMarker != null)
 		{
-			worldMapPointManager.remove(roomTargetMapPoint);
+			roomTargetMapMarker.remove();
 		}
-		roomTargetMapPoint = null;
-		lastRoomTargetMapPointKey = "";
-	}
-
-	private static BufferedImage roomTargetMarkerImage()
-	{
-		BufferedImage image = new BufferedImage(25, 25, BufferedImage.TYPE_INT_ARGB);
-		Graphics2D g = image.createGraphics();
-		g.setColor(new Color(0, 0, 0, 165));
-		g.fillOval(1, 1, 23, 23);
-		g.setColor(new Color(0, 235, 110, 235));
-		g.fillOval(4, 4, 17, 17);
-		g.setColor(new Color(235, 255, 235, 255));
-		g.drawOval(4, 4, 17, 17);
-		g.drawLine(12, 6, 12, 18);
-		g.drawLine(6, 12, 18, 12);
-		g.dispose();
-		return image;
 	}
 
 	private void syncShortestPathTarget()
@@ -2118,7 +2074,7 @@ public class RogueScapePlugin extends Plugin
 		int[] ids = new int[slots];
 		for (int i = 0; i < held.size(); i++)
 		{
-			ids[i] = relicIcon(held.get(i));
+			ids[i] = RewardPresenter.relicIcon(held.get(i));
 		}
 		out.add(RogueScapeWindowOverlay.Block.itemGrid(ids, Integer.MAX_VALUE));
 		out.add(RogueScapeWindowOverlay.Block.gap());
@@ -2147,7 +2103,7 @@ public class RogueScapePlugin extends Plugin
 			out.add(RogueScapeWindowOverlay.Block.text("Forbidden categories:", RogueScapeTheme.TEXT_PRIMARY));
 			for (BankItemCategory c : restricted)
 			{
-				out.add(RogueScapeWindowOverlay.Block.text("  - " + humanCategory(c), RogueScapeTheme.NEGATIVE));
+				out.add(RogueScapeWindowOverlay.Block.text("  - " + RewardPresenter.humanCategory(c), RogueScapeTheme.NEGATIVE));
 			}
 		}
 
@@ -2162,7 +2118,7 @@ public class RogueScapePlugin extends Plugin
 				int have = rogueRun.relicEngine().categoryCount(e.getKey());
 				boolean isOver = over.contains(e.getKey());
 				out.add(RogueScapeWindowOverlay.Block.text(
-					"  Max " + e.getValue() + " " + humanCategory(e.getKey()) + "  (have " + have + ")",
+					"  Max " + e.getValue() + " " + RewardPresenter.humanCategory(e.getKey()) + "  (have " + have + ")",
 					isOver ? RogueScapeTheme.NEGATIVE : RogueScapeTheme.TEXT_MUTED));
 			}
 		}
@@ -2174,11 +2130,6 @@ public class RogueScapePlugin extends Plugin
 				"No relics chosen yet - your build is wide open.", RogueScapeTheme.TEXT_MUTED));
 		}
 		return out;
-	}
-
-	private static String humanCategory(BankItemCategory c)
-	{
-		return c == null ? "" : c.name().toLowerCase().replace('_', ' ');
 	}
 
 	/** Maps a reward-card index to its choose action (reuses the panel-action dispatch). */
@@ -2215,43 +2166,11 @@ public class RogueScapePlugin extends Plugin
 		}
 		return new RogueScapeRewardOverlay.RewardView(
 			draft.draftId(),
-			rewardTitle(draft),
-			rewardSubtitle(draft),
+			RewardPresenter.rewardTitle(draft),
+			RewardPresenter.rewardSubtitle(draft),
 			cards,
 			rewardRailRows(),
 			artifactItemIds());
-	}
-
-	private static String rewardTitle(RewardDraft draft)
-	{
-		if (draft == null || draft.chestType() == null)
-		{
-			return "ROLL REWARD";
-		}
-		switch (draft.chestType())
-		{
-			case RELIC: return "CLAIM YOUR RELIC";
-			case SUPPLY: return "ROLL SUPPLIES";
-			case UNLOCK: return "CHOOSE AN UNLOCK";
-			case BANK_UNLOCK: return "UNLOCK BANK ITEM";
-			default: return "ROLL REWARD";
-		}
-	}
-
-	private static String rewardSubtitle(RewardDraft draft)
-	{
-		if (draft == null || draft.chestType() == null)
-		{
-			return "Choose one reward for the next stage";
-		}
-		switch (draft.chestType())
-		{
-			case RELIC: return "Choose one power for the next stage";
-			case SUPPLY: return "Choose one random supply bundle";
-			case UNLOCK: return "Choose one system to unlock for the run";
-			case BANK_UNLOCK: return "Choose one bank item to make legal";
-			default: return "Choose one reward for the next stage";
-		}
 	}
 
 	private List<String> rewardRailRows()
@@ -2358,7 +2277,7 @@ public class RogueScapePlugin extends Plugin
 		}
 		for (Relic relic : rogueRun.heldRelics())
 		{
-			ids.add(relicIcon(relic));
+			ids.add(RewardPresenter.relicIcon(relic));
 		}
 		return ids;
 	}
@@ -2396,9 +2315,9 @@ public class RogueScapePlugin extends Plugin
 			}
 			for (RelicEffect effect : relic.effects())
 			{
-				lines.add(relicEffectSummary(effect));
+				lines.add(RewardPresenter.relicEffectSummary(effect));
 			}
-			return new RogueScapeRewardOverlay.Card(relic.name(), "RELIC", relicRarity(relic), relicIcon(relic), lines);
+			return new RogueScapeRewardOverlay.Card(relic.name(), "RELIC", RewardPresenter.relicRarity(relic), RewardPresenter.relicIcon(relic), lines);
 		}
 		List<String> lines = new ArrayList<>();
 		if (option.isUnlock())
@@ -2407,116 +2326,20 @@ public class RogueScapePlugin extends Plugin
 			lines.add("Source: " + option.unlock().sourceStageName());
 			lines.add("Takes effect immediately.");
 			return new RogueScapeRewardOverlay.Card(option.label(), "UNLOCK",
-				RogueScapeRewardOverlay.Rarity.RARE, rewardIconFor(option), lines);
+				RogueScapeRewardOverlay.Rarity.RARE, RewardPresenter.rewardIconFor(option), lines);
 		}
 		if (option.isBankUnlock() && option.bankItem() != null)
 		{
 			lines.add("Makes this bank item legal.");
 			lines.add("Bank withdrawal must match the chosen item.");
 			return new RogueScapeRewardOverlay.Card(option.label(), "BANK",
-				RogueScapeRewardOverlay.Rarity.RARE, rewardIconFor(option), lines);
+				RogueScapeRewardOverlay.Rarity.RARE, RewardPresenter.rewardIconFor(option), lines);
 		}
-		lines.add(supplyRewardDescription(option));
+		lines.add(RewardPresenter.supplyRewardDescription(option));
 		lines.add("Random bundle type, chosen from this draft.");
 		String category = option.chestType() == null ? "" : option.chestType().name();
 		return new RogueScapeRewardOverlay.Card(option.label(), category,
-			RogueScapeRewardOverlay.Rarity.COMMON, rewardIconFor(option), lines);
-	}
-
-	private static String supplyRewardDescription(RewardOption option)
-	{
-		if (option == null || option.chestType() == null)
-		{
-			return "Adds supplies to this run.";
-		}
-		switch (option.chestType())
-		{
-			case FOOD: return "Adds emergency food.";
-			case POTION: return "Adds basic potion supplies.";
-			case AMMO: return "Adds ammo and rune supplies.";
-			case UTILITY: return "Adds a utility escape option.";
-			default: return "Adds supplies to this run.";
-		}
-	}
-
-	private static int rewardIconFor(RewardOption option)
-	{
-		if (option == null || option.chestType() == null)
-		{
-			return ITEM_DRAGONSTONE;
-		}
-		switch (option.chestType())
-		{
-			case FOOD: return ITEM_SHARK;
-			case POTION: return ITEM_PRAYER_POTION;
-			case AMMO: return ITEM_BRONZE_ARROW;
-			case UTILITY: return ITEM_GLORY;
-			case UNLOCK: return ITEM_DRAGONSTONE;
-			case BANK_UNLOCK: return ITEM_COINS;
-			default: return ITEM_DRAGONSTONE;
-		}
-	}
-
-	/** Display rarity heuristic (placeholder until rewards carry a real value tier): more effects = rarer. */
-	private static RogueScapeRewardOverlay.Rarity relicRarity(Relic relic)
-	{
-		switch (relic.effects().size())
-		{
-			case 0: return RogueScapeRewardOverlay.Rarity.COMMON;
-			case 1: return RogueScapeRewardOverlay.Rarity.RARE;
-			case 2: return RogueScapeRewardOverlay.Rarity.EPIC;
-			default: return RogueScapeRewardOverlay.Rarity.LEGENDARY;
-		}
-	}
-
-	/** Picks a representative item sprite for a relic from its primary effect kind (placeholder art). */
-	private static int relicIcon(Relic relic)
-	{
-		RelicEffectKind kind = relic.effects().isEmpty() ? null : relic.effects().get(0).kind();
-		if (kind == null)
-		{
-			return ITEM_DRAGONSTONE;
-		}
-		switch (kind)
-		{
-			case SCORING_BIAS: return ITEM_COINS;
-			case CATEGORY_LIMIT: return ITEM_SHARK;
-			case ONE_SHOT_MERCY: return ITEM_GLORY;
-			default: return ITEM_DRAGONSTONE;
-		}
-	}
-
-	/** One short, human-readable summary line for a relic effect. */
-	private static String relicEffectSummary(RelicEffect effect)
-	{
-		switch (effect.kind())
-		{
-			case ONE_SHOT_MERCY: return "One-shot mercy";
-			case CATEGORY_LIMIT: return "Max " + effect.magnitude() + " " + effectCategories(effect);
-			case SCORING_BIAS: return (effect.magnitude() >= 0 ? "+" : "") + effect.magnitude()
-				+ " score: " + effectCategories(effect);
-			case RESTRICTION: return "Forbids " + (effect.itemIds().isEmpty() ? effectCategories(effect) : "set items");
-			case PERMISSION: return "Allows " + effectCategories(effect);
-			default: return effect.kind().name();
-		}
-	}
-
-	private static String effectCategories(RelicEffect effect)
-	{
-		if (effect.categories().isEmpty())
-		{
-			return "any";
-		}
-		StringBuilder sb = new StringBuilder();
-		for (BankItemCategory c : effect.categories())
-		{
-			if (sb.length() > 0)
-			{
-				sb.append(", ");
-			}
-			sb.append(c.name().toLowerCase().replace('_', ' '));
-		}
-		return sb.toString();
+			RogueScapeRewardOverlay.Rarity.COMMON, RewardPresenter.rewardIconFor(option), lines);
 	}
 
 	/** Logs the live side journal widget tree (for tuning the journal injection). */

@@ -60,6 +60,11 @@ These govern the workstreams below where they differ from the original menu of o
   Retargeted the test: removed the 3 prototype-scaffolding tests and renamed the file to
   `RogueScapeRunSessionTest` (it always mostly tested the real engine). The plugin is now
   self-contained under `com.pluginideahub.roguescape`. Suite green (285 tests).
+- **W5 — DONE.** Extracted three self-contained collaborators out of `RogueScapePlugin`:
+  `bridge.ShortestPathBridge` (the reflective Shortest Path integration), `ui.RoomTargetMapMarker`
+  (the world-map marker + icon), and `ui.RewardPresenter` (stateless reward/relic display mapping +
+  the `ITEM_*` icon constants). Plugin keeps thin delegations. `RogueScapePlugin` is down from
+  **2739 → ~2230 lines**. Added `RewardPresenterTest`. Suite green (288 tests).
 
 ## Plugin Hub size limit (the research question)
 
