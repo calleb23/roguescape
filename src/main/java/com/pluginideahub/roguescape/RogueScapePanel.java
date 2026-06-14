@@ -13,6 +13,7 @@ import com.pluginideahub.roguescape.core.relic.RelicLibrary;
 import com.pluginideahub.roguescape.core.ui.PanelAction;
 import com.pluginideahub.roguescape.core.ui.SidePanelViewModel;
 import com.pluginideahub.roguescape.ui.CollapsibleSection;
+import com.pluginideahub.roguescape.ui.PanelActionPresenter;
 import com.pluginideahub.roguescape.ui.RogueScapeCustomRoomEditorState;
 import com.pluginideahub.roguescape.ui.RogueScapeTheme;
 import com.pluginideahub.roguescape.ui.StatBar;
@@ -2318,33 +2319,10 @@ public class RogueScapePanel extends PluginPanel
 
 	private JButton actionButton(PanelAction action, boolean primary)
 	{
-		JButton btn = new JButton(actionLabel(action));
-		styleButton(btn, roleFor(action, primary));
+		JButton btn = new JButton(PanelActionPresenter.label(action));
+		styleButton(btn, PanelActionPresenter.roleFor(action, primary));
 		btn.addActionListener(e -> dispatch(action));
 		return btn;
-	}
-
-	/** Maps an action to its semantic button role (matches the asset sheet's button states). */
-	private static RogueScapeTheme.ButtonRole roleFor(PanelAction action, boolean primary)
-	{
-		switch (action)
-		{
-			case START_RUN:
-				return RogueScapeTheme.ButtonRole.GO;
-			case FAIL_RUN:
-				return RogueScapeTheme.ButtonRole.DANGER;
-			case DEV_COMPLETE_STAGE:
-				return RogueScapeTheme.ButtonRole.NEUTRAL;
-			case COMPLETE_STAGE:
-			case NEXT_STAGE:
-			case CHOOSE_REWARD:
-			case CHOOSE_REWARD_1:
-			case CHOOSE_REWARD_2:
-			case CHOOSE_REWARD_3:
-				return RogueScapeTheme.ButtonRole.PRIMARY;
-			default:
-				return primary ? RogueScapeTheme.ButtonRole.PRIMARY : RogueScapeTheme.ButtonRole.NEUTRAL;
-		}
 	}
 
 	/** Backwards-compatible boolean styling: primary -> gold, else neutral. */
@@ -2531,21 +2509,4 @@ public class RogueScapePanel extends PluginPanel
 		return s.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;");
 	}
 
-	private static String actionLabel(PanelAction action)
-	{
-		switch (action)
-		{
-			case START_RUN:      return "▶ START RUN";
-			case RESET_RUN:      return "↻ Reset Run";
-			case COMPLETE_STAGE: return "✓ Complete Stage";
-			case CHOOSE_REWARD:
-			case CHOOSE_REWARD_1: return "✦ Reward 1";
-			case CHOOSE_REWARD_2: return "✦ Reward 2";
-			case CHOOSE_REWARD_3: return "✦ Reward 3";
-			case SKIP_REWARD:    return "⟲ Skip Reward";
-			case NEXT_STAGE:     return "▶ Continue";
-			case FAIL_RUN:       return "✗ End Run";
-			default:             return action.name();
-		}
-	}
 }
