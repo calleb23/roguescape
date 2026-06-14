@@ -57,7 +57,11 @@ public final class RewardDrafter
 		return new RewardDraft(draftId, stageId, chestType, picks);
 	}
 
-	static <T> void shuffle(List<T> list, DeterministicRng rng)
+	/**
+	 * Deterministic Fisher-Yates shuffle driven by {@link DeterministicRng}. Shared by the relic
+	 * and seeded-route generators so every seeded draw uses one bit-stable RNG.
+	 */
+	public static <T> void shuffle(List<T> list, DeterministicRng rng)
 	{
 		for (int i = list.size() - 1; i > 0; i--)
 		{

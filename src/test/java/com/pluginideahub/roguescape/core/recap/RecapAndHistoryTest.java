@@ -36,6 +36,8 @@ public class RecapAndHistoryTest
 		RunRecap recap = RunRecap.snapshot(run, engine, 12_345L);
 		assertEquals(RunState.COMPLETE, recap.state());
 		assertEquals(1, recap.legalCount());
+		// The structured recap score must match the live effectiveScore (W2 consolidation).
+		assertEquals(run.effectiveScore(), recap.score());
 
 		String md = RecapExport.toMarkdown(recap);
 		assertTrue(md.contains("# RogueScape Recap"));

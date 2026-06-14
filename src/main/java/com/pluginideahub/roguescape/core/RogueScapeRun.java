@@ -92,8 +92,42 @@ public final class RogueScapeRun
 	public Map<BankItemCategory, Integer> relicCategoryLimits() { return relicEngine.categoryLimits(); }
 	public Set<BankItemCategory> relicOverLimit() { return relicEngine.overLimit(); }
 
-	/** Run score including any relic scoring bonuses. */
-	public int effectiveScore() { return session.runScore() + relicEngine.scoreBonus(); }
+	/**
+	 * Run score including relic scoring bonuses, computed via the mode's {@link ScoringRules}.
+	 * Run time is treated as unknown here (no SPEEDRUN time bonus); the timed overload is used
+	 * once an elapsed clock is available (see the W6 RunContext seam).
+	 */
+	public int effectiveScore() { return effectiveScore(Long.MAX_VALUE); }
+
+	/** Run score for a known elapsed time in seconds, enabling the SPEEDRUN time bonus. */
+	public int effectiveScore(long runSeconds)
+	{
+		ScoringRules rules = ScoringRules.forPreset(ScoringPreset.forMode(session.mode()));
+		// session.runScore() is the legacy legal-gain points basis (1 per legal gain); using it
+		// keeps the BALANCED base term identical to the pre-unification score.
+		return rules.calculateScore(session.runScore(), illegalCount(), clearedRooms(), clearedBosses(),
+			runSeconds, relicEngine.scoreBonus());
+	}
+
+	public int clearedRooms()
+	{
+		int n = 0;
+		for (RunStage s : session.route().stages())
+		{
+			if (s.type() == RunStageType.ROOM && s.isCleared()) n++;
+		}
+		return n;
+	}
+
+	public int clearedBosses()
+	{
+		int n = 0;
+		for (RunStage s : session.route().stages())
+		{
+			if (s.type() == RunStageType.BOSS && s.isCleared()) n++;
+		}
+		return n;
+	}
 
 	public boolean hasUnlock(RunUnlockType type)
 	{

@@ -167,6 +167,15 @@ public class RogueScapePanelLayoutTest
 	}
 
 	@Test
+	public void seededRaceModeIsSelectable()
+	{
+		RogueScapePanel panel = newPanel();
+
+		panel.selectRunBuilderMode("seeded");
+		assertEquals(RunMode.SEEDED_RACE, panel.selectedMode());
+	}
+
+	@Test
 	public void customBuilderBridgeMutatesRouteSelections()
 	{
 		RogueScapePanel panel = newPanel();

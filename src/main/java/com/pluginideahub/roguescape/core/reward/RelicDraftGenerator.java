@@ -4,9 +4,7 @@ import com.pluginideahub.roguescape.core.relic.ModifierLibrary;
 import com.pluginideahub.roguescape.core.relic.Relic;
 import com.pluginideahub.roguescape.core.relic.RelicLibrary;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
-import java.util.Random;
 
 /**
  * Builds a {@link RewardDraft} whose options are relics/modifiers drawn from the catalog.
@@ -27,7 +25,7 @@ public final class RelicDraftGenerator
 		List<Relic> pool = new ArrayList<>();
 		pool.addAll(RelicLibrary.all());
 		pool.addAll(ModifierLibrary.all());
-		Collections.shuffle(pool, new Random(seed));
+		RewardDrafter.shuffle(pool, new DeterministicRng(seed));
 
 		int n = Math.max(1, Math.min(optionCount, pool.size()));
 		List<RewardOption> options = new ArrayList<>(n);

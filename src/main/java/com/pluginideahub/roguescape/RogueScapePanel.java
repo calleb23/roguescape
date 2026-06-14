@@ -196,6 +196,7 @@ public class RogueScapePanel extends PluginPanel
 			case 0: return RunMode.FRESH_SOURCE;
 			case 1: return RunMode.BANK_DRAFT;
 			case 2: return RunMode.CUSTOM_CREATOR;
+			case 3: return RunMode.SEEDED_RACE;
 			default: return RunMode.UNSPECIFIED;
 		}
 	}
@@ -240,6 +241,10 @@ public class RogueScapePanel extends PluginPanel
 		else if ("custom".equals(actionId))
 		{
 			selectRunBuilderState(2, 0, "");
+		}
+		else if ("seeded".equals(actionId))
+		{
+			selectRunBuilderState(3, 0, "");
 		}
 	}
 
@@ -1196,6 +1201,7 @@ public class RogueScapePanel extends PluginPanel
 		modeCombo.addItem("Scavenger");
 		modeCombo.addItem("Rewarded");
 		modeCombo.addItem("Custom Creator");
+		modeCombo.addItem("Seeded Race");
 		modeCombo.setBackground(RogueScapeTheme.SECTION_HEADER_BG);
 		modeCombo.setForeground(RogueScapeTheme.TEXT_PRIMARY);
 		modeCombo.setMaximumSize(new Dimension(Integer.MAX_VALUE, 24));

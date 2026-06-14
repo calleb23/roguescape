@@ -36,6 +36,23 @@ These govern the workstreams below where they differ from the original menu of o
   wired the custom-builder window to it; removed dead `goal`/`weekly` mode branches + stale hint;
   added `LICENSE` (BSD 2-Clause), `README.md`, and a placeholder 48×72 `icon.png`; set
   `support=` to the repo issues URL. Suite green (283 tests).
+- **W2 — DONE (down-payments).** A 5-agent seam map found that the full live wiring touches the
+  untested plugin orchestration, so W2 landed only the core-contained, tested pieces:
+  - **RNG determinism:** `RewardDrafter.shuffle` promoted to the shared deterministic Fisher-Yates;
+    `RelicDraftGenerator` + `SeededRunGenerator` now use `DeterministicRng` (no more `java.util.Random`).
+  - **Scoring unified:** `ScoringPreset.forMode` (UNSPECIFIED→BALANCED, SEEDED_RACE→SPEEDRUN,
+    CUSTOM_CREATOR→CREATOR_CHAOS); `RogueScapeRun.effectiveScore()` delegates to `ScoringRules`
+    (cleared rooms/bosses now score) with a timed overload for the SPEEDRUN bonus (W6 supplies time).
+    New `RogueScapeRunScoringTest`. **Note:** displayed scores now include room/boss bonuses.
+  - **Recap correctness:** `RunRecap.snapshot` score now matches the live `effectiveScore`.
+  - **Seeded races:** `SEEDED_RACE` is now selectable from the Mode dropdown (was UI-unreachable);
+    it already produced deterministic routes (`java.util.Random` is spec-stable), so no risky
+    re-route through `SeededRunGenerator` was needed.
+  - **Re-scope vs original W2:** routing the live path through `SeededRunGenerator`/`ChallengeCodec`
+    was dropped — it would risk the balanced-room-kind and region-rule contracts for no determinism
+    gain. **Moved to W6/W7** (need the test seam): leaderboard run-end recording + history UI,
+    re-pointing the live recap renderers at `RunRecap`, the SPEEDRUN time bonus, and the adapter
+    event pipeline. Suite green (288 tests).
 
 ## Plugin Hub size limit (the research question)
 

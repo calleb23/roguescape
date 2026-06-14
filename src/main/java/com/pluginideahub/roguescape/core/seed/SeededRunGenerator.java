@@ -1,8 +1,8 @@
 package com.pluginideahub.roguescape.core.seed;
 
 import com.pluginideahub.roguescape.core.reward.DeterministicRng;
+import com.pluginideahub.roguescape.core.reward.RewardDrafter;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
@@ -38,7 +38,7 @@ public final class SeededRunGenerator
 			route.add(new GeneratedRunPlan.Stage("B" + (i + 1), boss, true));
 		}
 		List<String> relicPool = new ArrayList<>(challenge.relicIdPool());
-		Collections.shuffle(relicPool, new java.util.Random(rng.nextLong()));
+		RewardDrafter.shuffle(relicPool, rng);
 		List<String> chosenRelics = new ArrayList<>(relicPool.subList(0, Math.min(2, relicPool.size())));
 		return new GeneratedRunPlan(challenge, route, chosenRelics, new ArrayList<>(challenge.starterKit()));
 	}

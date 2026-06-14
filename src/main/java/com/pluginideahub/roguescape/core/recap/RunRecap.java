@@ -74,7 +74,10 @@ public final class RunRecap
 			.seed(s.seed())
 			.state(s.runState())
 			.completionNote(extractCompletionNote(s))
-			.score(s.runScore())
+			// Use the run's effectiveScore so the structured recap matches the live panel/overlay
+			// score (which includes relic bonuses and cleared room/boss points), not the raw
+			// legal-item tally.
+			.score(run.effectiveScore())
 			.legalCount(run.legalCount())
 			.suspiciousCount(run.suspiciousCount())
 			.illegalCount(run.illegalCount())
