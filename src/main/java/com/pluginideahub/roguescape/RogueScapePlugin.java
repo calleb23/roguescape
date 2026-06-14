@@ -1,6 +1,7 @@
 package com.pluginideahub.roguescape;
 
 import com.google.inject.Provides;
+import com.pluginideahub.roguescape.bridge.ShortestPathBridge;
 import com.pluginideahub.roguescape.core.BossKillChatMatcher;
 import com.pluginideahub.roguescape.core.ModePresetParser;
 import com.pluginideahub.roguescape.core.RogueScapeCustomRunFactory;
@@ -181,8 +182,7 @@ public class RogueScapePlugin extends Plugin
 	private String latestObservedItem = "";
 	private String latestProvenanceSignal = "";
 	private String currentRegionId = "";
-	private String lastShortestPathTargetKey = "";
-	private String shortestPathStatus = "";
+	private ShortestPathBridge shortestPathBridge;
 	private WorldMapPoint roomTargetMapPoint;
 	private String lastRoomTargetMapPointKey = "";
 
@@ -192,6 +192,7 @@ public class RogueScapePlugin extends Plugin
 		customRoomEditorState = new RogueScapeCustomRoomEditorState(
 			RogueScapeCustomRoomSelection.fromCsv(config.customRoomName(), config.customRoomRegionIdsCsv())
 		);
+		shortestPathBridge = new ShortestPathBridge(client, pluginManager);
 		// Boot into the lobby (no active run) so the player can select and START a run.
 		refreshOverlaySummary();
 		overlay = new RogueScapeSummaryOverlay(() -> "RogueScape", this::overlayLines);
@@ -938,8 +939,10 @@ public class RogueScapePlugin extends Plugin
 		latestObservedItem = "";
 		latestProvenanceSignal = "";
 		currentRegionId = "";
-		lastShortestPathTargetKey = "";
-		shortestPathStatus = "";
+		if (shortestPathBridge != null)
+		{
+			shortestPathBridge.reset();
+		}
 		removeRoomTargetMapPoint();
 	}
 
@@ -1048,9 +1051,9 @@ public class RogueScapePlugin extends Plugin
 		{
 			lines.add("Target: " + target);
 		}
-		if (!shortestPathStatus.isEmpty())
+		if (shortestPathBridge != null && !shortestPathBridge.status().isEmpty())
 		{
-			lines.add("Path: " + shortestPathStatus);
+			lines.add("Path: " + shortestPathBridge.status());
 		}
 		lines.add("Strictness: " + rogueRun.strictness() + " | Bank unlocks: " + (rogueRun.bankAccessAllowed() ? "on" : "off"));
 		if (!view.currentRoom().isEmpty())
@@ -1250,230 +1253,28 @@ public class RogueScapePlugin extends Plugin
 
 	private void syncShortestPathTarget()
 	{
-		if (runLoop == null || rogueRun == null || client == null)
+		if (runLoop == null || rogueRun == null || client == null || shortestPathBridge == null)
 		{
 			return;
 		}
-		WorldPoint target = runLoop.phase() == RunPhase.TRAVEL_TO_STAGE ? shortestPathTargetPoint() : null;
-		String key = target == null ? "" : target.getX() + "," + target.getY() + "," + target.getPlane();
-		if (key.equals(lastShortestPathTargetKey))
-		{
-			return;
-		}
-		if (setShortestPathTarget(target))
-		{
-			lastShortestPathTargetKey = key;
-			shortestPathStatus = target == null ? "cleared" : "Shortest Path target set";
-		}
-		else if (target != null)
-		{
-			if (shortestPathStatus == null || shortestPathStatus.isEmpty())
-			{
-				shortestPathStatus = "Shortest Path not found";
-			}
-		}
+		shortestPathBridge.syncTarget(runLoop.phase() == RunPhase.TRAVEL_TO_STAGE, rogueRun.currentStageRule());
 	}
 
 	private void clearShortestPathTarget()
 	{
-		if (lastShortestPathTargetKey.isEmpty() && shortestPathStatus.isEmpty())
+		if (shortestPathBridge != null)
 		{
-			return;
+			shortestPathBridge.clear();
 		}
-		if (setShortestPathTarget(null))
-		{
-			shortestPathStatus = "cleared";
-		}
-		lastShortestPathTargetKey = "";
 	}
 
 	private WorldPoint shortestPathTargetPoint()
 	{
-		if (rogueRun == null || rogueRun.currentStageRule() == null)
+		if (shortestPathBridge == null || rogueRun == null)
 		{
 			return null;
 		}
-		StageRegionRule rule = rogueRun.currentStageRule();
-		if (!rule.restrictsRegion() || rule.allowedRegionIds().isEmpty())
-		{
-			return null;
-		}
-		String first = rule.allowedRegionIds().iterator().next();
-		try
-		{
-			int regionId = Integer.parseInt(first);
-			int regionX = regionId >> 8;
-			int regionY = regionId & 0xFF;
-			int plane = 0;
-			Player player = client.getLocalPlayer();
-			if (player != null && player.getWorldLocation() != null)
-			{
-				plane = player.getWorldLocation().getPlane();
-			}
-			return new WorldPoint(regionX * 64 + 32, regionY * 64 + 32, plane);
-		}
-		catch (NumberFormatException ex)
-		{
-			return null;
-		}
-	}
-
-	private boolean setShortestPathTarget(WorldPoint target)
-	{
-		Object shortestPath = shortestPathPluginInstance();
-		if (shortestPath == null)
-		{
-			log.debug("RogueScape Shortest Path bridge: plugin not found");
-			return false;
-		}
-		try
-		{
-			if (!shortestPathPluginActive(shortestPath))
-			{
-				shortestPathStatus = "Shortest Path is off";
-				log.debug("RogueScape Shortest Path bridge: plugin found but inactive ({})",
-					shortestPath.getClass().getName());
-				return false;
-			}
-			java.lang.reflect.Method setTarget = findMethod(shortestPath.getClass(), "setTarget", WorldPoint.class);
-			if (setTarget == null)
-			{
-				return setShortestPathTargetFields(shortestPath, target);
-			}
-			setTarget.setAccessible(true);
-			setTarget.invoke(shortestPath, target);
-			log.debug("RogueScape Shortest Path bridge: set target {}", target);
-			return true;
-		}
-		catch (ReflectiveOperationException | RuntimeException ex)
-		{
-			log.debug("Could not call Shortest Path setTarget; trying field fallback", ex);
-			return setShortestPathTargetFields(shortestPath, target);
-		}
-	}
-
-	private Object shortestPathPluginInstance()
-	{
-		if (pluginManager == null)
-		{
-			return null;
-		}
-		try
-		{
-			java.lang.reflect.Method getPlugins = pluginManager.getClass().getMethod("getPlugins");
-			Object plugins = getPlugins.invoke(pluginManager);
-			if (!(plugins instanceof Iterable))
-			{
-				return null;
-			}
-			for (Object plugin : (Iterable<?>) plugins)
-			{
-				if (plugin == null)
-				{
-					continue;
-				}
-				Class<?> type = plugin.getClass();
-				String name = type.getName();
-				PluginDescriptor descriptor = type.getAnnotation(PluginDescriptor.class);
-				String descriptorName = descriptor == null ? "" : descriptor.name();
-				if ("Shortest Path".equalsIgnoreCase(descriptorName)
-					|| "shortestpath.ShortestPathPlugin".equals(name)
-					|| name.endsWith(".ShortestPathPlugin")
-					|| "ShortestPathPlugin".equals(type.getSimpleName()))
-				{
-					log.debug("RogueScape Shortest Path bridge: found {} ({})", descriptorName, name);
-					return plugin;
-				}
-			}
-		}
-		catch (ReflectiveOperationException | RuntimeException ex)
-		{
-			log.debug("Could not inspect loaded plugins for Shortest Path", ex);
-		}
-		return null;
-	}
-
-	private boolean shortestPathPluginActive(Object plugin)
-	{
-		if (pluginManager == null || plugin == null)
-		{
-			return false;
-		}
-		try
-		{
-			java.lang.reflect.Method isPluginActive = pluginManager.getClass().getMethod("isPluginActive", Plugin.class);
-			Object active = isPluginActive.invoke(pluginManager, plugin);
-			return Boolean.TRUE.equals(active);
-		}
-		catch (ReflectiveOperationException | RuntimeException ex)
-		{
-			log.debug("Could not check Shortest Path active state; assuming active", ex);
-			return true;
-		}
-	}
-
-	private boolean setShortestPathTargetFields(Object shortestPath, WorldPoint target)
-	{
-		try
-		{
-			java.lang.reflect.Field targetField = findField(shortestPath.getClass(), "target");
-			if (targetField == null)
-			{
-				shortestPathStatus = "Shortest Path API changed";
-				return false;
-			}
-			targetField.setAccessible(true);
-			targetField.set(shortestPath, target);
-
-			java.lang.reflect.Field updateField = findField(shortestPath.getClass(), "pathUpdateScheduled");
-			if (updateField != null)
-			{
-				updateField.setAccessible(true);
-				updateField.setBoolean(shortestPath, true);
-			}
-			log.debug("RogueScape Shortest Path bridge: field target {}", target);
-			return true;
-		}
-		catch (ReflectiveOperationException | RuntimeException ex)
-		{
-			shortestPathStatus = "Shortest Path bridge failed";
-			log.debug("Could not set Shortest Path target fields", ex);
-			return false;
-		}
-	}
-
-	private static java.lang.reflect.Method findMethod(Class<?> type, String name, Class<?>... parameterTypes)
-	{
-		Class<?> current = type;
-		while (current != null)
-		{
-			try
-			{
-				return current.getDeclaredMethod(name, parameterTypes);
-			}
-			catch (NoSuchMethodException ignored)
-			{
-				current = current.getSuperclass();
-			}
-		}
-		return null;
-	}
-
-	private static java.lang.reflect.Field findField(Class<?> type, String name)
-	{
-		Class<?> current = type;
-		while (current != null)
-		{
-			try
-			{
-				return current.getDeclaredField(name);
-			}
-			catch (NoSuchFieldException ignored)
-			{
-				current = current.getSuperclass();
-			}
-		}
-		return null;
+		return shortestPathBridge.targetPoint(rogueRun.currentStageRule());
 	}
 
 	private static String provenanceLine(ProvenanceHint hint)
