@@ -1,8 +1,7 @@
 package com.pluginideahub.roguescape;
 
 import com.pluginideahub.roguescape.core.RogueScapeRun;
-import com.pluginideahub.roguescape.core.RogueScapeRunLoop;
-import com.pluginideahub.roguescape.core.RogueScapeRunSession;
+import com.pluginideahub.roguescape.core.RunContext;
 import com.pluginideahub.roguescape.core.RunPhase;
 import com.pluginideahub.roguescape.core.RunState;
 import com.pluginideahub.roguescape.core.enforcement.MenuEnforcementDecision;
@@ -22,23 +21,24 @@ final class MenuEnforcementController
 	private MenuEnforcementController() {}
 
 	/** Enforcement runs only during an ACTIVE run in a travel/room/boss phase. */
-	static boolean isActive(RogueScapeRun run, RogueScapeRunLoop loop, RogueScapeRunSession session)
+	static boolean isActive(RunContext ctx)
 	{
-		if (run == null || loop == null || session == null)
+		if (ctx == null || !ctx.hasRun())
 		{
 			return false;
 		}
-		if (session.runState() != RunState.ACTIVE)
+		if (ctx.session().runState() != RunState.ACTIVE)
 		{
 			return false;
 		}
-		RunPhase phase = loop.phase();
+		RunPhase phase = ctx.loop().phase();
 		return phase == RunPhase.TRAVEL_TO_STAGE || phase == RunPhase.ROOM_ACTIVE || phase == RunPhase.BOSS_ACTIVE;
 	}
 
 	/** Removes BLOCK-decision entries from the current right-click menu. */
-	static void filterMenuEntries(Client client, RogueScapeRun run)
+	static void filterMenuEntries(Client client, RunContext ctx)
 	{
+		RogueScapeRun run = ctx.run();
 		RogueScapeEnforcementRules rules = RogueScapeEnforcementRules.forRun(run);
 		boolean inside = run.currentRegionLegal();
 		MenuEntry[] entries = client.getMenuEntries();
@@ -69,8 +69,9 @@ final class MenuEnforcementController
 	}
 
 	/** Whether a clicked menu option should be blocked (and consumed). */
-	static boolean shouldBlockClick(String option, String target, RogueScapeRun run)
+	static boolean shouldBlockClick(String option, String target, RunContext ctx)
 	{
+		RogueScapeRun run = ctx.run();
 		RogueScapeEnforcementRules rules = RogueScapeEnforcementRules.forRun(run);
 		return MenuEnforcementEvaluator.evaluate(option, target, rules, run.currentRegionLegal())
 			== MenuEnforcementDecision.BLOCK;

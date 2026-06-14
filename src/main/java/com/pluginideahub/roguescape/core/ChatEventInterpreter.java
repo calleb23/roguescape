@@ -37,9 +37,10 @@ public final class ChatEventInterpreter
 		}
 	}
 
-	public static Result interpret(String message, RogueScapeRun run, RogueScapeRunSession session,
-		ProvenanceSignalTracker signals)
+	public static Result interpret(String message, RunContext ctx, ProvenanceSignalTracker signals)
 	{
+		RogueScapeRun run = ctx == null ? null : ctx.run();
+		RogueScapeRunSession session = ctx == null ? null : ctx.session();
 		if (ProvenanceSignalTracker.isLikelyDeathMessage(message))
 		{
 			if (session != null)

@@ -16,6 +16,7 @@ import com.pluginideahub.roguescape.core.RunRouteBuilder;
 import com.pluginideahub.roguescape.core.RunStage;
 import com.pluginideahub.roguescape.core.RunStageType;
 import com.pluginideahub.roguescape.core.RunCompletionRecorder;
+import com.pluginideahub.roguescape.core.RunContext;
 import com.pluginideahub.roguescape.core.RunState;
 import com.pluginideahub.roguescape.core.race.RaceUploadSink;
 import com.pluginideahub.roguescape.core.recap.RunHistory;
@@ -474,7 +475,7 @@ public class RogueScapePlugin extends Plugin
 			return;
 		}
 		ChatEventInterpreter.Result result = ChatEventInterpreter.interpret(
-			event.getMessage(), rogueRun, runSession, provenanceSignals);
+			event.getMessage(), runContext(), provenanceSignals);
 		if (result.signal() != null)
 		{
 			latestProvenanceSignal = result.signal();
@@ -561,7 +562,7 @@ public class RogueScapePlugin extends Plugin
 		{
 			return;
 		}
-		MenuEnforcementController.filterMenuEntries(client, rogueRun);
+		MenuEnforcementController.filterMenuEntries(client, runContext());
 	}
 
 	@Subscribe
@@ -582,7 +583,7 @@ public class RogueScapePlugin extends Plugin
 		}
 
 		if (enforcementActive()
-			&& MenuEnforcementController.shouldBlockClick(event.getMenuOption(), event.getMenuTarget(), rogueRun))
+			&& MenuEnforcementController.shouldBlockClick(event.getMenuOption(), event.getMenuTarget(), runContext()))
 		{
 			event.consume();
 			if (runSession != null)
@@ -617,7 +618,18 @@ public class RogueScapePlugin extends Plugin
 
 	private boolean enforcementActive()
 	{
-		return MenuEnforcementController.isActive(rogueRun, runLoop, runSession);
+		return MenuEnforcementController.isActive(runContext());
+	}
+
+	/**
+	 * Builds a read-only snapshot of the current run-state triple + region for collaborators. Cheap
+	 * and built per-call (never cached), so it always reflects the live fields at call time.
+	 */
+	private RunContext runContext()
+	{
+		return (rogueRun == null && runSession == null && runLoop == null)
+			? RunContext.lobby()
+			: RunContext.active(runSession, rogueRun, runLoop, currentRegionId);
 	}
 
 	private InventorySnapshot currentInventorySnapshot()
