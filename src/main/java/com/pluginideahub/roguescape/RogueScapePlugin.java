@@ -20,12 +20,10 @@ import com.pluginideahub.roguescape.core.RunContext;
 import com.pluginideahub.roguescape.core.RunState;
 import com.pluginideahub.roguescape.core.race.RaceUploadSink;
 import com.pluginideahub.roguescape.core.recap.RunHistory;
-import com.pluginideahub.roguescape.core.adapter.InventoryDiff;
+import com.pluginideahub.roguescape.core.adapter.InventoryProvenanceTracker;
 import com.pluginideahub.roguescape.core.adapter.ProvenanceSignalTracker;
 import com.pluginideahub.roguescape.core.enforcement.RogueScapeEnforcementRules;
 import com.pluginideahub.roguescape.core.legality.InventorySnapshot;
-import com.pluginideahub.roguescape.core.legality.ItemDelta;
-import com.pluginideahub.roguescape.core.legality.ProvenanceHint;
 import com.pluginideahub.roguescape.core.region.RogueScapeCustomRoomSelection;
 import com.pluginideahub.roguescape.core.region.RoomKind;
 import com.pluginideahub.roguescape.core.region.StageRegionRule;
@@ -336,18 +334,12 @@ public class RogueScapePlugin extends Plugin
 		}
 
 		InventorySnapshot nextSnapshot = currentInventorySnapshot();
-		ProvenanceHint hint = provenanceSignals.currentHint();
-		List<ItemDelta> deltas = InventoryDiff.positiveDeltas(previousInventorySnapshot, nextSnapshot, hint);
-		if (!deltas.isEmpty())
+		InventoryProvenanceTracker.Result result = InventoryProvenanceTracker.apply(
+			runContext(), provenanceSignals, previousInventorySnapshot, nextSnapshot, this::itemName);
+		if (result.changed())
 		{
-			ProvenanceHint consumedHint = provenanceSignals.consumePendingHint();
-			latestProvenanceSignal = provenanceLine(consumedHint);
-			for (ItemDelta delta : deltas)
-			{
-				ItemDelta namedDelta = withItemNameAndRegion(delta, consumedHint);
-				rogueRun.applyItemDelta(namedDelta);
-				latestObservedItem = namedDelta.itemName() + " x" + namedDelta.quantity();
-			}
+			latestProvenanceSignal = result.latestProvenanceSignal();
+			latestObservedItem = result.latestObservedItem();
 			refreshOverlaySummary();
 		}
 		previousInventorySnapshot = nextSnapshot;
@@ -664,22 +656,6 @@ public class RogueScapePlugin extends Plugin
 		return new InventorySnapshot(quantities);
 	}
 
-	private ItemDelta withItemNameAndRegion(ItemDelta delta, ProvenanceHint consumedHint)
-	{
-		String itemId = delta.itemId();
-		String itemName = delta.itemName();
-		try
-		{
-			int numericId = Integer.parseInt(itemId);
-			itemName = itemName(numericId);
-		}
-		catch (NumberFormatException ignored)
-		{
-			// InventorySnapshot keys are numeric in live RuneLite wiring, but pure tests may use names.
-		}
-		return new ItemDelta(itemId, itemName, delta.quantity(), currentRegionNote(), consumedHint);
-	}
-
 	private String itemName(int itemId)
 	{
 		if (client == null)
@@ -696,11 +672,6 @@ public class RogueScapePlugin extends Plugin
 		{
 			return String.valueOf(itemId);
 		}
-	}
-
-	private String currentRegionNote()
-	{
-		return currentRegionId.isEmpty() ? "unknown region" : "region " + currentRegionId;
 	}
 
 	private Set<String> currentAllowedRoomRegions()
@@ -1218,11 +1189,6 @@ public class RogueScapePlugin extends Plugin
 			return null;
 		}
 		return shortestPathBridge.targetPoint(rogueRun.currentStageRule());
-	}
-
-	private static String provenanceLine(ProvenanceHint hint)
-	{
-		return hint == null || hint == ProvenanceHint.UNKNOWN ? "unknown source" : hint.name();
 	}
 
 	private String formatRules()
