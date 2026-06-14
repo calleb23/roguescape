@@ -66,6 +66,11 @@ These govern the workstreams below where they differ from the original menu of o
   the `ITEM_*` icon constants). Plugin keeps thin delegations. `RogueScapePlugin` is down from
   **2739 → ~2230 lines**. Added `RewardPresenterTest`. Suite green (288 tests).
 
+- **W8 — IN PROGRESS (panel track, interleaved).** Started decomposing `RogueScapePanel` (2554):
+  extracted `ui.PanelActionPresenter` (action -> label/role mapping) and `core.RunSeedCodec` (pure
+  seed field/time/boss-cap parsing, with `RunSeedCodecTest`). Remaining: `PanelWidgetFactory`,
+  `ZoneBuilderSection`, `RelicCatalogSection`. Guarded by `RogueScapePanelLayoutTest`. Suite green.
+
 ## Plugin Hub size limit (the research question)
 
 **You are well within limits — size is not a workstream, just a one-line readiness check.**
