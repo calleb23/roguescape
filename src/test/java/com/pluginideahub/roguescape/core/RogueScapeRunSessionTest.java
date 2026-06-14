@@ -1,45 +1,13 @@
 package com.pluginideahub.roguescape.core;
 
-import com.pluginideahub.prototype.core.PrototypeDeck;
-import com.pluginideahub.prototype.core.PrototypeRuleCard;
-import com.pluginideahub.prototype.core.PrototypeSession;
 import java.util.List;
 import java.util.stream.Collectors;
 import org.junit.Test;
 
 import static org.junit.Assert.*;
 
-public class RogueScapePrototypeTest
+public class RogueScapeRunSessionTest
 {
-	@Test
-	public void starterDeckContainsFirstPrototypeCard()
-	{
-		PrototypeRuleCard card = RogueScapePrototype.starterDeck().cardById("one-inventory-boss-run");
-
-		assertEquals("One Inventory Boss Run", card.getTitle());
-		assertTrue(card.getRules().size() >= 2);
-	}
-
-	@Test
-	public void starterDeckHasAtLeastEightUniqueCards()
-	{
-		PrototypeDeck deck = RogueScapePrototype.starterDeck();
-		assertTrue("expected at least 8 cards, got " + deck.size(), deck.size() >= 8);
-	}
-
-	@Test
-	public void prototypeSessionCreatesMarkdownRecap()
-	{
-		PrototypeSession session = PrototypeSession.start(RogueScapePrototype.displayName(), "Start nearly empty and let found items become the build");
-		session.activate(RogueScapePrototype.starterDeck().cardById("one-inventory-boss-run"));
-		session.recordNote("Manual prototype note captured");
-
-		assertEquals(1, session.activeCardCount());
-		assertEquals(1, session.noteCount());
-		assertTrue(session.recapMarkdown().contains("One Inventory Boss Run"));
-		assertTrue(session.recapMarkdown().contains("Manual prototype note captured"));
-	}
-
 	@Test
 	public void runSessionTracksRoomsRewardsRelicsAndCompletion()
 	{

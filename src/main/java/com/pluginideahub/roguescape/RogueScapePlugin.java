@@ -3,7 +3,6 @@ package com.pluginideahub.roguescape;
 import com.google.inject.Provides;
 import com.pluginideahub.roguescape.core.BossKillChatMatcher;
 import com.pluginideahub.roguescape.core.ModePresetParser;
-import com.pluginideahub.roguescape.core.RogueScapePrototype;
 import com.pluginideahub.roguescape.core.RogueScapeCustomRunFactory;
 import com.pluginideahub.roguescape.core.RogueScapeRun;
 import com.pluginideahub.roguescape.core.RogueScapeRunLoop;
@@ -50,8 +49,7 @@ import com.pluginideahub.roguescape.ui.RogueScapeRewardOverlay;
 import com.pluginideahub.roguescape.ui.RogueScapeTheme;
 import com.pluginideahub.roguescape.ui.RogueScapeWidgetWindow;
 import com.pluginideahub.roguescape.ui.RogueScapeWindowOverlay;
-import com.pluginideahub.ui.PluginIdeaHubOverlay;
-import com.pluginideahub.ui.PluginIdeaHubUiModel;
+import com.pluginideahub.roguescape.ui.RogueScapeSummaryOverlay;
 import java.awt.Dimension;
 import java.awt.Graphics2D;
 import java.awt.Color;
@@ -160,8 +158,7 @@ public class RogueScapePlugin extends Plugin
 	private WorldMapPointManager worldMapPointManager;
 
 	private RogueScapeIcons icons;
-	private PluginIdeaHubUiModel uiModel;
-	private PluginIdeaHubOverlay overlay;
+	private RogueScapeSummaryOverlay overlay;
 	private RogueScapeObjectiveOverlay objectiveOverlay;
 	private RogueScapeRoomMaskOverlay roomMaskOverlay;
 	private RogueScapeActiveRoomWorldMapOverlay activeRoomWorldMapOverlay;
@@ -196,9 +193,8 @@ public class RogueScapePlugin extends Plugin
 			RogueScapeCustomRoomSelection.fromCsv(config.customRoomName(), config.customRoomRegionIdsCsv())
 		);
 		// Boot into the lobby (no active run) so the player can select and START a run.
-		uiModel = PluginIdeaHubUiModel.start(RogueScapePrototype.displayName(), config.goalText(), RogueScapePrototype.starterDeck());
 		refreshOverlaySummary();
-		overlay = new PluginIdeaHubOverlay(uiModel::getTitle, this::overlayLines);
+		overlay = new RogueScapeSummaryOverlay(() -> "RogueScape", this::overlayLines);
 		overlayManager.add(overlay);
 		objectiveOverlay = new RogueScapeObjectiveOverlay(this::objectiveView);
 		overlayManager.add(objectiveOverlay);
@@ -322,7 +318,6 @@ public class RogueScapePlugin extends Plugin
 		customRoomEditorState = null;
 		journalProbe = null;
 		journalTabAdapter = null;
-		uiModel = null;
 		runSession = null;
 		rogueRun = null;
 		runLoop = null;
@@ -824,11 +819,10 @@ public class RogueScapePlugin extends Plugin
 
 	private void refreshOverlaySummary()
 	{
-		if (uiModel == null || rogueRun == null)
+		if (rogueRun == null)
 		{
 			return;
 		}
-		uiModel.recordManualAction("RogueScape live: " + legalitySummary());
 		refreshSidePanel();
 	}
 

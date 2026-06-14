@@ -1,4 +1,4 @@
-package com.pluginideahub.ui;
+package com.pluginideahub.roguescape.ui;
 
 import java.awt.Dimension;
 import java.awt.Graphics2D;
@@ -10,13 +10,18 @@ import net.runelite.client.ui.overlay.OverlayPosition;
 import net.runelite.client.ui.overlay.components.LineComponent;
 import net.runelite.client.ui.overlay.components.PanelComponent;
 
-public class PluginIdeaHubOverlay extends Overlay
+/**
+ * Small top-left HUD overlay that renders a title plus a list of summary lines supplied by the
+ * plugin. Replaces the vendored {@code PluginIdeaHubOverlay} scaffolding with a RogueScape-owned
+ * equivalent (same two-supplier contract).
+ */
+public class RogueScapeSummaryOverlay extends Overlay
 {
 	private final PanelComponent panelComponent = new PanelComponent();
 	private final Supplier<String> titleSupplier;
 	private final Supplier<List<String>> linesSupplier;
 
-	public PluginIdeaHubOverlay(Supplier<String> titleSupplier, Supplier<List<String>> linesSupplier)
+	public RogueScapeSummaryOverlay(Supplier<String> titleSupplier, Supplier<List<String>> linesSupplier)
 	{
 		this.titleSupplier = titleSupplier;
 		this.linesSupplier = linesSupplier;

@@ -53,6 +53,13 @@ These govern the workstreams below where they differ from the original menu of o
     gain. **Moved to W6/W7** (need the test seam): leaderboard run-end recording + history UI,
     re-pointing the live recap renderers at `RunRecap`, the SPEEDRUN time bonus, and the adapter
     event pipeline. Suite green (288 tests).
+- **W3 — DONE.** Removed the vendored PluginIdeaHub framework: re-homed the HUD overlay as
+  `RogueScapeSummaryOverlay` (literal "RogueScape" title + the plugin's own `overlayLines`); dropped
+  the `uiModel` field and the vestigial `recordManualAction` call; deleted `RogueScapePrototype`,
+  `com.pluginideahub.prototype.*` (4 classes), and `com.pluginideahub.ui.PluginIdeaHub*` (2 classes).
+  Retargeted the test: removed the 3 prototype-scaffolding tests and renamed the file to
+  `RogueScapeRunSessionTest` (it always mostly tested the real engine). The plugin is now
+  self-contained under `com.pluginideahub.roguescape`. Suite green (285 tests).
 
 ## Plugin Hub size limit (the research question)
 
