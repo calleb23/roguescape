@@ -68,6 +68,17 @@ public class ChatEventInterpreterTest
 	}
 
 	@Test
+	public void killTextOnANonBossStageIsIgnored()
+	{
+		RogueScapeRun run = activeRun();
+		ChatEventInterpreter.Result r = ChatEventInterpreter.interpret(
+			"Obor defeated! Your kill count is: 5", ctx(run), null);
+		assertNull(r.signal());
+		assertFalse(r.refresh());
+		assertEquals(RunState.ACTIVE, run.session().runState());
+	}
+
+	@Test
 	public void nullContextIsSafe()
 	{
 		ChatEventInterpreter.Result r = ChatEventInterpreter.interpret("hi", null, null);

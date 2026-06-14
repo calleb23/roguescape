@@ -66,6 +66,8 @@ public final class InventoryProvenanceTracker
 	public static Result apply(RunContext ctx, ProvenanceSignalTracker signals,
 		InventorySnapshot previous, InventorySnapshot next, IntFunction<String> itemNameById)
 	{
+		// Deliberately gates on run() only, not RunContext.hasRun(): the diff pipeline needs the run to
+		// apply gains but not the loop/session, mirroring the original onItemContainerChanged guard.
 		if (ctx == null || ctx.run() == null)
 		{
 			return Result.unchanged();

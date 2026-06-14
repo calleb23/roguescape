@@ -7,6 +7,7 @@ import com.pluginideahub.roguescape.core.RunMode;
 import com.pluginideahub.roguescape.core.RunPreset;
 import com.pluginideahub.roguescape.core.RunStageType;
 import com.pluginideahub.roguescape.core.legality.InventorySnapshot;
+import com.pluginideahub.roguescape.core.legality.ItemDelta;
 import com.pluginideahub.roguescape.core.legality.ProvenanceHint;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -21,13 +22,18 @@ public class InventoryProvenanceTrackerTest
 {
 	private static final IntFunction<String> NAMER = id -> id == 995 ? "Coins" : String.valueOf(id);
 
-	private static RunContext enteredRoomCtx()
+	private static RunContext enteredRoomCtx(String region)
 	{
 		RogueScapeRunSession s = RogueScapeRunSession.start("g", "", RunMode.FRESH_SOURCE, RunPreset.UNSPECIFIED);
 		s.addStage("R1", RunStageType.ROOM, "Lumbridge", "");
 		RogueScapeRun run = RogueScapeRun.wrap(s);
 		s.enterStage("R1");
-		return RunContext.active(s, run, null, "12850");
+		return RunContext.active(s, run, null, region);
+	}
+
+	private static RunContext enteredRoomCtx()
+	{
+		return enteredRoomCtx("12850");
 	}
 
 	private static InventorySnapshot snap(String id, int qty)
@@ -38,7 +44,7 @@ public class InventoryProvenanceTrackerTest
 	}
 
 	@Test
-	public void positiveGainResolvesNameConsumesHintOnceAndAppliesToRun()
+	public void positiveGainResolvesNameStampsRegionAndHintConsumesHintOnce()
 	{
 		RunContext ctx = enteredRoomCtx();
 		ProvenanceSignalTracker signals = new ProvenanceSignalTracker();
@@ -50,8 +56,24 @@ public class InventoryProvenanceTrackerTest
 		assertTrue(r.changed());
 		assertEquals("Coins x100", r.latestObservedItem());
 		assertEquals("OBSERVED_BANK_WITHDRAWAL", r.latestProvenanceSignal());
-		assertEquals(1, ctx.run().itemEvents().size());
 		assertFalse("hint must be consumed exactly once", signals.hasPendingHint());
+
+		// The name/region/hint annotation migrated out of the deleted plugin helpers must land on the
+		// applied delta, not just the Result status strings.
+		assertEquals(1, ctx.run().itemEvents().size());
+		ItemDelta applied = ctx.run().itemEvents().get(0).delta();
+		assertEquals("Coins", applied.itemName());
+		assertEquals("region 12850", applied.locationNote());
+		assertEquals(ProvenanceHint.OBSERVED_BANK_WITHDRAWAL, applied.provenanceHint());
+	}
+
+	@Test
+	public void blankRegionStampsTheUnknownRegionFallbackNote()
+	{
+		RunContext ctx = enteredRoomCtx("");
+		InventoryProvenanceTracker.apply(ctx, new ProvenanceSignalTracker(), new InventorySnapshot(), snap("995", 100), NAMER);
+
+		assertEquals("unknown region", ctx.run().itemEvents().get(0).delta().locationNote());
 	}
 
 	@Test
@@ -80,6 +102,7 @@ public class InventoryProvenanceTrackerTest
 
 		assertFalse(r.changed());
 		assertTrue("hint only consumed on an actual gain", signals.hasPendingHint());
+		assertEquals(ProvenanceHint.OBSERVED_BANK_WITHDRAWAL, signals.currentHint());
 	}
 
 	@Test
