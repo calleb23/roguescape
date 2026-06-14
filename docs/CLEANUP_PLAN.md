@@ -75,8 +75,32 @@ These govern the workstreams below where they differ from the original menu of o
   one-shot tick edge in the plugin). Extracted two pure-logic services with tests:
   `core.ChatEventInterpreter` (death/boss-kill chat) and `MenuEnforcementController` (menu filter +
   click block + active-phase gate). `RogueScapePlugin` down to ~2169 lines. Suite green (298 tests).
-  - **Remaining (need a seam first):** `OverlayTextModel`, `InventoryProvenanceTracker` (+ adapter
-    pipeline), and `CustomRoomZoneService` want the read-only **`RunContext`** seam (W6); the panel
+- **W6 — DONE (RunContext seam + first orchestration characterization tests).** Introduced the
+  read-only `core.RunContext` — an immutable value object over the run-state triple
+  (`session`/`run`/`loop`) + the ambient `currentRegionId`, with `lobby()`/`active()` factories and a
+  canonical `hasRun()` guard; no RuneLite types and no root-package import, so `core` stays
+  dependency-clean. Migrated the two already-extracted services onto it (`ChatEventInterpreter` and
+  `MenuEnforcementController` now take a `RunContext`; the plugin hands them a per-call `runContext()`
+  snapshot of its live fields — behavior byte-for-byte unchanged). `isActive()` stays in the root
+  package and *takes* the context, so the controller's RuneLite `Client` dependency never pulls a
+  `core → root` cycle. **Pulled `InventoryProvenanceTracker` forward from W7** because W6's mandated
+  inventory-diff characterization had no honest pure home: the diff → consume-hint-once → name+region
+  tag → `applyItemDelta` glue now lives in `core.adapter.InventoryProvenanceTracker` (the RuneLite
+  snapshot + `id→name` resolver are injected), and `onItemContainerChanged` is a thin delegation.
+  Added the first-ever orchestration characterization tests, all driven **without instantiating the
+  `@Inject` plugin**: the inventory-diff pipeline (`InventoryProvenanceTrackerTest` — name/region/hint
+  annotation on the applied delta, consume-only-on-gain, baseline idempotence, lobby no-op), the
+  enforcement phase-gate matrix + out-of-region click block (`MenuEnforcementControllerTest`), and the
+  chat death / boss-kill / non-boss-guard branches (`ChatEventInterpreterTest`), plus `RunContextTest`.
+  A 3-lens adversarial review (behavior-preservation, seam/package-hygiene, test-honesty) confirmed the
+  change is behavior-preserving 1:1; its one material finding (the migrated region-note was unpinned)
+  was fixed in W6e. `RogueScapePlugin` 2308 → 2286. Suite green (313 tests).
+  - **startRun/reset/dispatch transitions:** the loop/session effects `dispatchAction` delegates to are
+    already pinned by `RogueScapeRunLoopTest`/`RogueScapeRunSessionTest`, and `RunContextTest` pins the
+    lobby↔active discrimination `startRun`/`resetToLobby` produce. The private dispatch *switch* and the
+    reset field-nulling get their honest home when **W10** extracts the triple into `RunController`.
+  - **Remaining (W7, now on the seam):** `OverlayTextModel` (from `overlayLines`/`objectiveView`) and
+    `CustomRoomZoneService` (from `applyCustomRoomZoneToRun`) consume `RunContext` next; the panel
     sections (`RelicCatalogSection`, `ZoneBuilderSection`) want `PanelWidgetFactory` first. Then the
     keystones: W9 `CustomRunSpec`/`RunBuilderSection`, W10 `RunController`, and W4 UI dedup.
 
