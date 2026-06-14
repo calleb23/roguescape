@@ -3,6 +3,7 @@ package com.pluginideahub.roguescape;
 import com.pluginideahub.roguescape.core.RunMode;
 import com.pluginideahub.roguescape.core.RunPreset;
 import com.pluginideahub.roguescape.core.RunRouteBuilder;
+import com.pluginideahub.roguescape.core.RunSeedCodec;
 import com.pluginideahub.roguescape.core.region.BossLibrary;
 import com.pluginideahub.roguescape.core.region.RoomDefinition;
 import com.pluginideahub.roguescape.core.region.RoomKind;
@@ -822,7 +823,7 @@ public class RogueScapePanel extends PluginPanel
 
 	public void applyCustomSeed(String seed)
 	{
-		Map<String, String> fields = parseSeedFields(seed);
+		Map<String, String> fields = RunSeedCodec.parseFields(seed);
 		if (fields.isEmpty())
 		{
 			return;
@@ -881,12 +882,12 @@ public class RogueScapePanel extends PluginPanel
 		String time = fields.get("time");
 		if (time != null)
 		{
-			customTimeLimitMinutes = parseTimeMinutes(time);
+			customTimeLimitMinutes = RunSeedCodec.parseTimeMinutes(time);
 		}
 		String bossCap = fields.get("bosscap");
 		if (bossCap != null)
 		{
-			customBossLimit = parseBossLimit(bossCap);
+			customBossLimit = RunSeedCodec.parseBossLimit(bossCap);
 		}
 		refreshSelectedRoomsArea();
 		refreshSelectedModifiersArea();
@@ -974,76 +975,6 @@ public class RogueScapePanel extends PluginPanel
 			}
 		}
 		return false;
-	}
-
-	private static Map<String, String> parseSeedFields(String seed)
-	{
-		Map<String, String> fields = new LinkedHashMap<>();
-		if (seed == null || seed.trim().isEmpty())
-		{
-			return fields;
-		}
-		for (String part : seed.split(";"))
-		{
-			int eq = part.indexOf('=');
-			if (eq <= 0)
-			{
-				continue;
-			}
-			String key = part.substring(0, eq).trim().toLowerCase();
-			String value = part.substring(eq + 1).trim();
-			if (!key.isEmpty())
-			{
-				fields.put(key, value);
-			}
-		}
-		return fields;
-	}
-
-	private static int parseTimeMinutes(String value)
-	{
-		if (value == null)
-		{
-			return 0;
-		}
-		String normalized = value.trim().toLowerCase();
-		if (normalized.isEmpty() || "none".equals(normalized) || "off".equals(normalized))
-		{
-			return 0;
-		}
-		if (normalized.endsWith("m"))
-		{
-			normalized = normalized.substring(0, normalized.length() - 1).trim();
-		}
-		try
-		{
-			return Math.max(0, Integer.parseInt(normalized));
-		}
-		catch (NumberFormatException ex)
-		{
-			return 0;
-		}
-	}
-
-	private static int parseBossLimit(String value)
-	{
-		if (value == null)
-		{
-			return 0;
-		}
-		String normalized = value.trim().toLowerCase();
-		if (normalized.isEmpty() || "none".equals(normalized) || "off".equals(normalized))
-		{
-			return 0;
-		}
-		try
-		{
-			return Math.max(0, Math.min(3, Integer.parseInt(normalized)));
-		}
-		catch (NumberFormatException ex)
-		{
-			return 0;
-		}
 	}
 
 	private int bossCountInCustomRoute()
