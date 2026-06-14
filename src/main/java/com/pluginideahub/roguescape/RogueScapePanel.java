@@ -237,14 +237,6 @@ public class RogueScapePanel extends PluginPanel
 		{
 			selectRunBuilderState(1, 0, "");
 		}
-		else if ("goal".equals(actionId))
-		{
-			selectRunBuilderState(0, 0, "");
-		}
-		else if ("weekly".equals(actionId))
-		{
-			selectRunBuilderState(0, 0, "");
-		}
 		else if ("custom".equals(actionId))
 		{
 			selectRunBuilderState(2, 0, "");
@@ -1267,8 +1259,7 @@ public class RogueScapePanel extends PluginPanel
 			"Tiles choose the run fantasy:",
 			"Scavenger: start constrained, earn power",
 			"Rewarded: short prep, boss reward pressure",
-			"Custom: build route, rooms, bosses, constraints",
-			"Goal and Weekly are parked for tester builds"
+			"Custom: build route, rooms, bosses, constraints"
 		}));
 		return c;
 	}

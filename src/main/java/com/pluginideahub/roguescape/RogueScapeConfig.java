@@ -146,10 +146,21 @@ public interface RogueScapeConfig extends Config
 	}
 
 	@ConfigItem(
+		keyName = "inGameWindowsEnabled",
+		name = "In-game Windows",
+		description = "Show the draggable in-game RogueScape windows (custom run builder). Disable to use only the side panel and overlays.",
+		position = 12
+	)
+	default boolean inGameWindowsEnabled()
+	{
+		return true;
+	}
+
+	@ConfigItem(
 		keyName = "experimentalJournalTab",
 		name = "Experimental Quest-tab UI",
 		description = "Probe the in-game side journal widgets for a future RogueScape quest-tab page. Does not modify widgets yet.",
-		position = 12
+		position = 13
 	)
 	default boolean experimentalJournalTab()
 	{
@@ -160,10 +171,10 @@ public interface RogueScapeConfig extends Config
 		keyName = "developerMode",
 		name = "Developer Mode",
 		description = "Show DEV TOOLS in the side panel to simulate stepping a run (complete stage, pick reward, finish/fail) without playing. For building and testing the UI.",
-		position = 13
+		position = 14
 	)
 	default boolean developerMode()
 	{
-		return true;
+		return false;
 	}
 }

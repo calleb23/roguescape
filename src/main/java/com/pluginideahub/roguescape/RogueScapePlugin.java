@@ -210,7 +210,7 @@ public class RogueScapePlugin extends Plugin
 		window.setCanvasSize(() -> new Dimension(client.getCanvasWidth(), client.getCanvasHeight()));
 		overlayManager.add(window);
 		mouseManager.registerMouseListener(window);
-		customBuilderWidgetWindow = new RogueScapeCustomBuilderWidgetWindow(client, clientThread, () -> true,
+		customBuilderWidgetWindow = new RogueScapeCustomBuilderWidgetWindow(client, clientThread, config::inGameWindowsEnabled,
 			this::customBuilderWidgetView, this::handleCustomBuilderAction);
 		mouseManager.registerMouseListener(customBuilderWidgetWindow);
 		// SPIKE: real widget-based window (proves the Collection-Log-style approach).

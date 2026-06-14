@@ -157,12 +157,9 @@ public class RogueScapePanelLayoutTest
 		assertEquals(RunMode.BANK_DRAFT, panel.selectedMode());
 		assertEquals(RunPreset.UNSPECIFIED, panel.selectedPreset());
 
-		panel.selectRunBuilderMode("goal");
+		panel.selectRunBuilderMode("scavenger");
 		assertEquals(RunMode.FRESH_SOURCE, panel.selectedMode());
 		assertEquals(RunPreset.UNSPECIFIED, panel.selectedPreset());
-
-		panel.selectRunBuilderMode("weekly");
-		assertEquals(RunMode.FRESH_SOURCE, panel.selectedMode());
 		assertEquals("", panel.selectedSeed());
 
 		panel.selectRunBuilderMode("custom");
