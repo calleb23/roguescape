@@ -563,33 +563,7 @@ public class RogueScapePlugin extends Plugin
 		{
 			return;
 		}
-		RogueScapeEnforcementRules rules = RogueScapeEnforcementRules.forRun(rogueRun);
-		boolean inside = rogueRun.currentRegionLegal();
-		MenuEntry[] entries = client.getMenuEntries();
-		if (entries == null || entries.length == 0)
-		{
-			return;
-		}
-		MenuEntry[] filtered = new MenuEntry[entries.length];
-		int kept = 0;
-		boolean removedAny = false;
-		for (MenuEntry entry : entries)
-		{
-			MenuEnforcementDecision decision = MenuEnforcementEvaluator.evaluate(
-				entry.getOption(), entry.getTarget(), rules, inside);
-			if (decision == MenuEnforcementDecision.BLOCK)
-			{
-				removedAny = true;
-				continue;
-			}
-			filtered[kept++] = entry;
-		}
-		if (removedAny)
-		{
-			MenuEntry[] trimmed = new MenuEntry[kept];
-			System.arraycopy(filtered, 0, trimmed, 0, kept);
-			client.setMenuEntries(trimmed);
-		}
+		MenuEnforcementController.filterMenuEntries(client, rogueRun);
 	}
 
 	@Subscribe
@@ -609,20 +583,15 @@ public class RogueScapePlugin extends Plugin
 			return;
 		}
 
-		if (enforcementActive())
+		if (enforcementActive()
+			&& MenuEnforcementController.shouldBlockClick(event.getMenuOption(), event.getMenuTarget(), rogueRun))
 		{
-			RogueScapeEnforcementRules rules = RogueScapeEnforcementRules.forRun(rogueRun);
-			MenuEnforcementDecision decision = MenuEnforcementEvaluator.evaluate(
-				event.getMenuOption(), event.getMenuTarget(), rules, rogueRun.currentRegionLegal());
-			if (decision == MenuEnforcementDecision.BLOCK)
+			event.consume();
+			if (runSession != null)
 			{
-				event.consume();
-				if (runSession != null)
-				{
-					runSession.recordRunLoopNote("Blocked: " + event.getMenuOption());
-				}
-				return;
+				runSession.recordRunLoopNote("Blocked: " + event.getMenuOption());
 			}
+			return;
 		}
 
 		provenanceSignals.observeMenu(event.getMenuOption(), event.getMenuTarget());
@@ -650,16 +619,7 @@ public class RogueScapePlugin extends Plugin
 
 	private boolean enforcementActive()
 	{
-		if (rogueRun == null || runLoop == null || runSession == null)
-		{
-			return false;
-		}
-		if (runSession.runState() != RunState.ACTIVE)
-		{
-			return false;
-		}
-		RunPhase phase = runLoop.phase();
-		return phase == RunPhase.TRAVEL_TO_STAGE || phase == RunPhase.ROOM_ACTIVE || phase == RunPhase.BOSS_ACTIVE;
+		return MenuEnforcementController.isActive(rogueRun, runLoop, runSession);
 	}
 
 	private InventorySnapshot currentInventorySnapshot()
