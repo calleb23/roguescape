@@ -15,7 +15,10 @@ import com.pluginideahub.roguescape.core.RunPreset;
 import com.pluginideahub.roguescape.core.RunRouteBuilder;
 import com.pluginideahub.roguescape.core.RunStage;
 import com.pluginideahub.roguescape.core.RunStageType;
+import com.pluginideahub.roguescape.core.RunCompletionRecorder;
 import com.pluginideahub.roguescape.core.RunState;
+import com.pluginideahub.roguescape.core.race.RaceUploadSink;
+import com.pluginideahub.roguescape.core.recap.RunHistory;
 import com.pluginideahub.roguescape.core.adapter.InventoryDiff;
 import com.pluginideahub.roguescape.core.adapter.ProvenanceSignalTracker;
 import com.pluginideahub.roguescape.core.enforcement.MenuEnforcementDecision;
@@ -178,6 +181,8 @@ public class RogueScapePlugin extends Plugin
 	private String currentRegionId = "";
 	private ShortestPathBridge shortestPathBridge;
 	private RoomTargetMapMarker roomTargetMapMarker;
+	private final RunHistory runHistory = new RunHistory();
+	private boolean runRecorded;
 
 	@Override
 	protected void startUp()
@@ -377,6 +382,7 @@ public class RogueScapePlugin extends Plugin
 			runLoop.markNow(System.currentTimeMillis());
 			syncShortestPathTarget();
 			syncRoomTargetMapPoint();
+			maybeRecordRunCompletion();
 		}
 		if (rogueRun == null || client == null)
 		{
@@ -845,6 +851,7 @@ public class RogueScapePlugin extends Plugin
 	 */
 	private void startRun()
 	{
+		runRecorded = false;
 		RunMode mode = panel != null ? panel.selectedMode() : ModePresetParser.parseMode(config.modePreset());
 		String panelGoal = panel != null ? panel.selectedGoal() : "";
 		String goal = (panelGoal == null || panelGoal.trim().isEmpty()) ? config.goalText() : panelGoal.trim();
@@ -928,6 +935,7 @@ public class RogueScapePlugin extends Plugin
 		runSession = null;
 		rogueRun = null;
 		runLoop = null;
+		runRecorded = false;
 		previousInventorySnapshot = new InventorySnapshot();
 		provenanceSignals.reset();
 		latestObservedItem = "";
@@ -938,6 +946,25 @@ public class RogueScapePlugin extends Plugin
 			shortestPathBridge.reset();
 		}
 		removeRoomTargetMapPoint();
+	}
+
+	/** Records the run into local history + leaderboard exactly once when it reaches a terminal state. */
+	private void maybeRecordRunCompletion()
+	{
+		if (runRecorded || runSession == null || rogueRun == null || runLoop == null)
+		{
+			return;
+		}
+		RunState state = runSession.runState();
+		if (state != RunState.COMPLETE && state != RunState.FAILED)
+		{
+			return;
+		}
+		String playerName = client != null && client.getLocalPlayer() != null
+			? client.getLocalPlayer().getName() : null;
+		RunCompletionRecorder.record(rogueRun, runLoop.runElapsedMillis(), playerName,
+			System.currentTimeMillis(), runHistory, RaceUploadSink.NOOP);
+		runRecorded = true;
 	}
 
 	void dispatchAction(PanelAction action)
