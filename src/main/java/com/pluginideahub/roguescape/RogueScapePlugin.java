@@ -21,8 +21,6 @@ import com.pluginideahub.roguescape.core.race.RaceUploadSink;
 import com.pluginideahub.roguescape.core.recap.RunHistory;
 import com.pluginideahub.roguescape.core.adapter.InventoryDiff;
 import com.pluginideahub.roguescape.core.adapter.ProvenanceSignalTracker;
-import com.pluginideahub.roguescape.core.enforcement.MenuEnforcementDecision;
-import com.pluginideahub.roguescape.core.enforcement.MenuEnforcementEvaluator;
 import com.pluginideahub.roguescape.core.enforcement.RogueScapeEnforcementRules;
 import com.pluginideahub.roguescape.core.legality.InventorySnapshot;
 import com.pluginideahub.roguescape.core.legality.ItemDelta;

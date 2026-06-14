@@ -70,6 +70,15 @@ These govern the workstreams below where they differ from the original menu of o
   extracted `ui.PanelActionPresenter` (action -> label/role mapping) and `core.RunSeedCodec` (pure
   seed field/time/boss-cap parsing, with `RunSeedCodecTest`). Remaining: `PanelWidgetFactory`,
   `ZoneBuilderSection`, `RelicCatalogSection`. Guarded by `RogueScapePanelLayoutTest`. Suite green.
+- **W6a / W7 — IN PROGRESS.** Wired the kept recap/race packages onto the live path via the
+  unit-tested `core.RunCompletionRecorder` (run-end snapshot -> `RunHistory` + `Leaderboard`, guarded
+  one-shot tick edge in the plugin). Extracted two pure-logic services with tests:
+  `core.ChatEventInterpreter` (death/boss-kill chat) and `MenuEnforcementController` (menu filter +
+  click block + active-phase gate). `RogueScapePlugin` down to ~2169 lines. Suite green (298 tests).
+  - **Remaining (need a seam first):** `OverlayTextModel`, `InventoryProvenanceTracker` (+ adapter
+    pipeline), and `CustomRoomZoneService` want the read-only **`RunContext`** seam (W6); the panel
+    sections (`RelicCatalogSection`, `ZoneBuilderSection`) want `PanelWidgetFactory` first. Then the
+    keystones: W9 `CustomRunSpec`/`RunBuilderSection`, W10 `RunController`, and W4 UI dedup.
 
 ## Plugin Hub size limit (the research question)
 
