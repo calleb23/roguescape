@@ -1,5 +1,10 @@
 package com.pluginideahub.roguescape.core;
 
+import com.pluginideahub.roguescape.core.relic.ModifierLibrary;
+import com.pluginideahub.roguescape.core.relic.Relic;
+import java.util.ArrayList;
+import java.util.List;
+
 /**
  * RuneLite/Swing-free model of the custom run-builder's state — the canonical store the side panel
  * (and, via the panel's getters, the in-game builder window) read and mutate while assembling a
@@ -137,5 +142,145 @@ public final class CustomRunSpec
 		{
 			customBossLimit = 0;
 		}
+	}
+
+	// --- starting curses / modifiers ---
+
+	private final List<String> selectedModifierIds = new ArrayList<>();
+	private int customModifierCursor;
+
+	public List<String> selectedModifierIds()
+	{
+		return new ArrayList<>(selectedModifierIds);
+	}
+
+	public List<String> customModifierOptionLabels()
+	{
+		List<String> labels = new ArrayList<>();
+		for (Relic r : ModifierLibrary.all())
+		{
+			labels.add(r.name());
+		}
+		return labels;
+	}
+
+	public int customModifierPageStart()
+	{
+		return clamp(customModifierCursor, ModifierLibrary.all().size());
+	}
+
+	public void pageCustomModifierIndex(int delta)
+	{
+		customModifierCursor = clamp(customModifierCursor + delta, ModifierLibrary.all().size());
+	}
+
+	public List<String> selectedModifierLabels()
+	{
+		List<String> labels = new ArrayList<>();
+		for (String id : selectedModifierIds)
+		{
+			labels.add(modifierName(id));
+		}
+		return labels;
+	}
+
+	public List<Integer> selectedModifierIndexes()
+	{
+		List<Integer> indexes = new ArrayList<>();
+		List<Relic> modifiers = ModifierLibrary.all();
+		for (int i = 0; i < modifiers.size(); i++)
+		{
+			if (selectedModifierIds.contains(modifiers.get(i).relicId()))
+			{
+				indexes.add(i);
+			}
+		}
+		return indexes;
+	}
+
+	public void toggleModifierIndex(int index)
+	{
+		List<Relic> modifiers = ModifierLibrary.all();
+		if (modifiers.isEmpty())
+		{
+			return;
+		}
+		int idx = clamp(index, modifiers.size());
+		String id = modifiers.get(idx).relicId();
+		if (selectedModifierIds.contains(id))
+		{
+			selectedModifierIds.remove(id);
+		}
+		else
+		{
+			selectedModifierIds.add(id);
+		}
+	}
+
+	/** Adds the modifier id if not already present; returns true iff it was added. */
+	public boolean addModifierIdIfAbsent(String id)
+	{
+		if (selectedModifierIds.contains(id))
+		{
+			return false;
+		}
+		selectedModifierIds.add(id);
+		return true;
+	}
+
+	public void clearModifiers()
+	{
+		selectedModifierIds.clear();
+	}
+
+	/** Replaces the modifier selection from a comma-separated id list, keeping only known, unique ids. */
+	public void applyModifierIdsFromCsv(String mods)
+	{
+		selectedModifierIds.clear();
+		if (mods != null && !mods.trim().isEmpty())
+		{
+			for (String id : mods.split(","))
+			{
+				String modId = id.trim();
+				if (modifierExists(modId) && !selectedModifierIds.contains(modId))
+				{
+					selectedModifierIds.add(modId);
+				}
+			}
+		}
+	}
+
+	private boolean modifierExists(String id)
+	{
+		if (id == null || id.isEmpty())
+		{
+			return false;
+		}
+		for (Relic relic : ModifierLibrary.all())
+		{
+			if (relic.relicId().equals(id))
+			{
+				return true;
+			}
+		}
+		return false;
+	}
+
+	private String modifierName(String id)
+	{
+		for (Relic r : ModifierLibrary.all())
+		{
+			if (r.relicId().equals(id))
+			{
+				return r.name();
+			}
+		}
+		return id;
+	}
+
+	private static int clamp(int current, int size)
+	{
+		if (size <= 0) return 0;
+		return Math.max(0, Math.min(size - 1, current));
 	}
 }

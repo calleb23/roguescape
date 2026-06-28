@@ -98,9 +98,18 @@ These govern the workstreams below where they differ from the original menu of o
   strictness, bank unlocks, time + boss caps) — fields + getters/setters + cycle/toggle mutators — now live
   in `CustomRunSpec`; the panel delegates and reroutes its three in-place readers (`customSeedPreview`,
   `applyCustomSeed`, `addSelectedCustomBoss`). New Swing-free `CustomRunSpecTest`; a 2-lens review confirmed
-  the move is 1:1. `RogueScapePanel` 2064 → 2018. Suite green (349 tests). Remaining increments: 2) cursors +
-  option lists, 3) route list + ordering (the state+Swing mutators), 4) modifiers + seed preview,
-  5) `applyCustomSeed`. Then **W10** `RunController` and **W4** UI dedup.
+  the move is 1:1. `RogueScapePanel` 2064 → 2018. Suite green (349 tests).
+  **Commit 2 DONE:** the modifier / "starting curses" subsystem — its list + cursor + the 8
+  getter/page/toggle/clear methods, plus `modifierExists`/`modifierName` (now library-resolved) — moved to
+  `CustomRunSpec`; the modifier-CSV parse was also lifted out of `applyCustomSeed` into
+  `spec.applyModifierIdsFromCsv`. The panel delegates and reroutes its 5 in-place consumers (seed preview,
+  applyCustomSeed, the curses-tab clear listener, `addSelectedModifier`, `refreshSelectedModifiersArea`).
+  2-lens review confirmed 1:1. `RogueScapePanel` 2018 → 1954. Suite green (353 tests). _(Re-ordered from the
+  original plan: the room/boss cursors are tightly coupled to the route lists via the add/remove methods, so
+  they move together as one cohesive slice rather than splitting cursors from lists.)_ Remaining increments:
+  3) the route subsystem (room/allowance/boss cursors + the selected-route lists + ordering, incl. the
+  state+Swing mutators), 4) `customSeedPreview` (fully pure) + `applyCustomSeed`. Then **W10** `RunController`
+  and **W4** UI dedup.
 - **W6a / W7 — IN PROGRESS.** Wired the kept recap/race packages onto the live path via the
   unit-tested `core.RunCompletionRecorder` (run-end snapshot -> `RunHistory` + `Leaderboard`, guarded
   one-shot tick edge in the plugin). Extracted two pure-logic services with tests:

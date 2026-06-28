@@ -1,5 +1,6 @@
 package com.pluginideahub.roguescape.core;
 
+import com.pluginideahub.roguescape.core.relic.ModifierLibrary;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
@@ -106,5 +107,52 @@ public class CustomRunSpecTest
 		assertEquals(45, spec.customTimeLimitMinutes());
 		spec.setCustomBossLimit(2);
 		assertEquals(2, spec.customBossLimit());
+	}
+
+	@Test
+	public void togglesModifiersByIndexAndTracksSelectedIndexes()
+	{
+		CustomRunSpec spec = new CustomRunSpec();
+		spec.toggleModifierIndex(0);
+		assertEquals(1, spec.selectedModifierIds().size());
+		assertTrue(spec.selectedModifierIndexes().contains(0));
+		assertEquals(ModifierLibrary.all().get(0).relicId(), spec.selectedModifierIds().get(0));
+
+		spec.toggleModifierIndex(0); // toggling again removes it
+		assertTrue(spec.selectedModifierIds().isEmpty());
+	}
+
+	@Test
+	public void applyModifierIdsFromCsvKeepsKnownUniqueIdsOnly()
+	{
+		CustomRunSpec spec = new CustomRunSpec();
+		String id0 = ModifierLibrary.all().get(0).relicId();
+		spec.applyModifierIdsFromCsv(id0 + "," + id0 + ",totally-bogus-id");
+		assertEquals(1, spec.selectedModifierIds().size()); // dedup + unknown dropped
+		assertEquals(id0, spec.selectedModifierIds().get(0));
+
+		spec.applyModifierIdsFromCsv("   "); // blank clears
+		assertTrue(spec.selectedModifierIds().isEmpty());
+	}
+
+	@Test
+	public void addModifierIdIfAbsentReportsWhetherItAdded()
+	{
+		CustomRunSpec spec = new CustomRunSpec();
+		assertTrue(spec.addModifierIdIfAbsent("x"));
+		assertFalse(spec.addModifierIdIfAbsent("x")); // already present
+		spec.clearModifiers();
+		assertTrue(spec.selectedModifierIds().isEmpty());
+	}
+
+	@Test
+	public void modifierPagingClampsToBounds()
+	{
+		CustomRunSpec spec = new CustomRunSpec();
+		int last = Math.max(0, ModifierLibrary.all().size() - 1);
+		spec.pageCustomModifierIndex(1000);
+		assertEquals(last, spec.customModifierPageStart());
+		spec.pageCustomModifierIndex(-1000);
+		assertEquals(0, spec.customModifierPageStart());
 	}
 }

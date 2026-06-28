@@ -88,14 +88,12 @@ public class RogueScapePanel extends PluginPanel
 	private int customRoomCursor = 0;
 	private int customBossCursor = 0;
 	private int customAllowanceCursor = 0;
-	private int customModifierCursor = 0;
 	// Swing-free run-builder state (extracted; the panel delegates its builder API to this).
 	private final CustomRunSpec customRunSpec = new CustomRunSpec();
 	private static final String[] CUSTOM_ALLOWANCES = {"Supply", "Armour", "Weapons", "Skilling", "All", "Shopping"};
 
 	// STARTING CURSES widgets
 	private final List<Relic> modifierDefs = new ArrayList<>();
-	private final List<String> selectedModifierIds = new ArrayList<>();
 	private final JComboBox<String> modifierCombo = new JComboBox<>();
 	private final JTextArea selectedModifiersArea = new JTextArea(3, 14);
 
@@ -753,7 +751,7 @@ public class RogueScapePanel extends PluginPanel
 			sb.append(selectedRoomIds.get(i)).append(":");
 			sb.append(i < selectedRoomAllowances.size() ? selectedRoomAllowances.get(i) : "All");
 		}
-		sb.append(";mods=").append(String.join(",", selectedModifierIds));
+		sb.append(";mods=").append(String.join(",", customRunSpec.selectedModifierIds()));
 		sb.append(";strictness=").append(customRunSpec.customStrictness());
 		sb.append(";bank=").append(customRunSpec.customBankUnlocks() ? "on" : "off");
 		sb.append(";time=").append(customRunSpec.customTimeLimitMinutes() == 0 ? "none" : customRunSpec.customTimeLimitMinutes() + "m");
@@ -797,19 +795,7 @@ public class RogueScapePanel extends PluginPanel
 		}
 		selectedRouteIndex = selectedRoomIds.isEmpty() ? -1 : selectedRoomIds.size() - 1;
 
-		selectedModifierIds.clear();
-		String mods = fields.get("mods");
-		if (mods != null && !mods.trim().isEmpty())
-		{
-			for (String id : mods.split(","))
-			{
-				String modId = id.trim();
-				if (modifierExists(modId) && !selectedModifierIds.contains(modId))
-				{
-					selectedModifierIds.add(modId);
-				}
-			}
-		}
+		customRunSpec.applyModifierIdsFromCsv(fields.get("mods"));
 		String strictness = fields.get("strictness");
 		if ("Trust".equalsIgnoreCase(strictness)) customRunSpec.setCustomStrictness("Trust");
 		else if ("Strict".equalsIgnoreCase(strictness)) customRunSpec.setCustomStrictness("Strict");
@@ -901,22 +887,6 @@ public class RogueScapePanel extends PluginPanel
 		}
 	}
 
-	private boolean modifierExists(String id)
-	{
-		if (id == null || id.isEmpty())
-		{
-			return false;
-		}
-		for (Relic relic : ModifierLibrary.all())
-		{
-			if (relic.relicId().equals(id))
-			{
-				return true;
-			}
-		}
-		return false;
-	}
-
 	private int bossCountInCustomRoute()
 	{
 		int count = 0;
@@ -970,76 +940,43 @@ public class RogueScapePanel extends PluginPanel
 	/** Relic IDs of the curses/modifiers to apply when the run STARTs (empty = none). */
 	public List<String> selectedModifierIds()
 	{
-		return new ArrayList<>(selectedModifierIds);
+		return customRunSpec.selectedModifierIds();
 	}
 
 	public List<String> customModifierOptionLabels()
 	{
-		List<String> labels = new ArrayList<>();
-		for (Relic r : ModifierLibrary.all())
-		{
-			labels.add(r.name());
-		}
-		return labels;
+		return customRunSpec.customModifierOptionLabels();
 	}
 
 	public int customModifierPageStart()
 	{
-		return clamp(customModifierCursor, ModifierLibrary.all().size());
+		return customRunSpec.customModifierPageStart();
 	}
 
 	public void pageCustomModifierIndex(int delta)
 	{
-		customModifierCursor = clamp(customModifierCursor + delta, ModifierLibrary.all().size());
+		customRunSpec.pageCustomModifierIndex(delta);
 	}
 
 	public List<String> selectedModifierLabels()
 	{
-		List<String> labels = new ArrayList<>();
-		for (String id : selectedModifierIds)
-		{
-			labels.add(modifierName(id));
-		}
-		return labels;
+		return customRunSpec.selectedModifierLabels();
 	}
 
 	public List<Integer> selectedModifierIndexes()
 	{
-		List<Integer> indexes = new ArrayList<>();
-		List<Relic> modifiers = ModifierLibrary.all();
-		for (int i = 0; i < modifiers.size(); i++)
-		{
-			if (selectedModifierIds.contains(modifiers.get(i).relicId()))
-			{
-				indexes.add(i);
-			}
-		}
-		return indexes;
+		return customRunSpec.selectedModifierIndexes();
 	}
 
 	public void toggleCustomModifierIndex(int index)
 	{
-		List<Relic> modifiers = ModifierLibrary.all();
-		if (modifiers.isEmpty())
-		{
-			return;
-		}
-		int idx = clamp(index, modifiers.size());
-		String id = modifiers.get(idx).relicId();
-		if (selectedModifierIds.contains(id))
-		{
-			selectedModifierIds.remove(id);
-		}
-		else
-		{
-			selectedModifierIds.add(id);
-		}
+		customRunSpec.toggleModifierIndex(index);
 		refreshSelectedModifiersArea();
 	}
 
 	public void clearCustomModifiers()
 	{
-		selectedModifierIds.clear();
+		customRunSpec.clearModifiers();
 		refreshSelectedModifiersArea();
 	}
 
@@ -1591,7 +1528,7 @@ public class RogueScapePanel extends PluginPanel
 
 		JButton clear = new JButton("Clear curses");
 		styleButton(clear, false);
-		clear.addActionListener(e -> { selectedModifierIds.clear(); refreshSelectedModifiersArea(); });
+		clear.addActionListener(e -> { customRunSpec.clearModifiers(); refreshSelectedModifiersArea(); });
 		c.add(clear);
 		return c;
 	}
@@ -1601,9 +1538,8 @@ public class RogueScapePanel extends PluginPanel
 		int idx = modifierCombo.getSelectedIndex();
 		if (idx < 0 || idx >= modifierDefs.size()) return;
 		String id = modifierDefs.get(idx).relicId();
-		if (!selectedModifierIds.contains(id))
+		if (customRunSpec.addModifierIdIfAbsent(id))
 		{
-			selectedModifierIds.add(id);
 			refreshSelectedModifiersArea();
 		}
 	}
@@ -1611,7 +1547,7 @@ public class RogueScapePanel extends PluginPanel
 	private void refreshSelectedModifiersArea()
 	{
 		StringBuilder sb = new StringBuilder();
-		for (String id : selectedModifierIds)
+		for (String id : customRunSpec.selectedModifierIds())
 		{
 			sb.append("- ").append(modifierName(id)).append("\n");
 		}
