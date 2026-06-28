@@ -298,12 +298,7 @@ public class RogueScapePanel extends PluginPanel
 
 	private JPanel builderTab()
 	{
-		JPanel p = new JPanel();
-		p.setLayout(new BoxLayout(p, BoxLayout.Y_AXIS));
-		p.setBackground(RogueScapeTheme.SECTION_BG);
-		p.setBorder(BorderFactory.createEmptyBorder(6, 4, 4, 4));
-		p.setAlignmentX(Component.LEFT_ALIGNMENT);
-		return p;
+		return PanelWidgetFactory.builderTab();
 	}
 
 	private JPanel buildPluginHeader()
@@ -2154,36 +2149,12 @@ public class RogueScapePanel extends PluginPanel
 	/** Backwards-compatible boolean styling: primary -> gold, else neutral. */
 	private void styleButton(JButton btn, boolean primary)
 	{
-		styleButton(btn, primary ? RogueScapeTheme.ButtonRole.PRIMARY : RogueScapeTheme.ButtonRole.NEUTRAL);
+		PanelWidgetFactory.styleButton(btn, primary);
 	}
 
 	private void styleButton(JButton btn, RogueScapeTheme.ButtonRole role)
 	{
-		Color base = RogueScapeTheme.buttonBg(role);
-		Color hover = RogueScapeTheme.buttonHoverBg(role);
-		btn.setFocusPainted(false);
-		btn.setFont(RogueScapeTheme.button(btn.getFont()));
-		btn.setAlignmentX(Component.LEFT_ALIGNMENT);
-		btn.setMaximumSize(new Dimension(Integer.MAX_VALUE, 26));
-		btn.setBackground(base);
-		btn.setForeground(RogueScapeTheme.buttonText(role));
-		btn.setBorder(BorderFactory.createCompoundBorder(
-			BorderFactory.createLineBorder(RogueScapeTheme.BORDER),
-			BorderFactory.createEmptyBorder(3, 8, 3, 8)));
-		btn.addMouseListener(new java.awt.event.MouseAdapter()
-		{
-			@Override
-			public void mouseEntered(java.awt.event.MouseEvent e)
-			{
-				if (btn.isEnabled()) btn.setBackground(hover);
-			}
-
-			@Override
-			public void mouseExited(java.awt.event.MouseEvent e)
-			{
-				btn.setBackground(base);
-			}
-		});
+		PanelWidgetFactory.styleButton(btn, role);
 	}
 
 	/** A label-left / value-right stat row for the LIVE RUN section. */
