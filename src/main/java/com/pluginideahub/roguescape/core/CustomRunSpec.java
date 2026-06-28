@@ -1,5 +1,9 @@
 package com.pluginideahub.roguescape.core;
 
+import com.pluginideahub.roguescape.core.region.BossLibrary;
+import com.pluginideahub.roguescape.core.region.RoomDefinition;
+import com.pluginideahub.roguescape.core.region.RoomKind;
+import com.pluginideahub.roguescape.core.region.RoomLibrary;
 import com.pluginideahub.roguescape.core.relic.ModifierLibrary;
 import com.pluginideahub.roguescape.core.relic.Relic;
 import java.util.ArrayList;
@@ -142,6 +146,591 @@ public final class CustomRunSpec
 		{
 			customBossLimit = 0;
 		}
+	}
+
+	/** The shareable seed string encoding the whole builder selection. */
+	public String customSeedPreview()
+	{
+		StringBuilder sb = new StringBuilder();
+		sb.append("mode=").append(customBuilderGameMode);
+		sb.append(";loadout=").append(customBuilderLoadout);
+		sb.append(";rooms=");
+		for (int i = 0; i < selectedRoomIds.size(); i++)
+		{
+			if (i > 0) sb.append(",");
+			sb.append(selectedRoomIds.get(i)).append(":");
+			sb.append(i < selectedRoomAllowances.size() ? selectedRoomAllowances.get(i) : "All");
+		}
+		sb.append(";mods=").append(String.join(",", selectedModifierIds));
+		sb.append(";strictness=").append(customStrictness);
+		sb.append(";bank=").append(customBankUnlocks ? "on" : "off");
+		sb.append(";time=").append(customTimeLimitMinutes == 0 ? "none" : customTimeLimitMinutes + "m");
+		sb.append(";bosscap=").append(customBossLimit == 0 ? "none" : customBossLimit);
+		return sb.toString();
+	}
+
+	// --- route: handpicked rooms/bosses + allowance, plus the room/allowance/boss option cursors ---
+
+	private final List<String> selectedRoomIds = new ArrayList<>();
+	private final List<String> selectedRoomAllowances = new ArrayList<>();
+	private int selectedRouteIndex = -1;
+	private int customRoomCursor;
+	private int customBossCursor;
+	private int customAllowanceCursor;
+	private static final String[] CUSTOM_ALLOWANCES = {"Supply", "Armour", "Weapons", "Skilling", "All", "Shopping"};
+
+	/** Ordered route IDs the player handpicked. Entries may be rooms or bosses. */
+	public List<String> selectedRoomIds()
+	{
+		return new ArrayList<>(selectedRoomIds);
+	}
+
+	public List<String> selectedRoomLabels()
+	{
+		List<String> labels = new ArrayList<>();
+		for (int i = 0; i < selectedRoomIds.size(); i++)
+		{
+			String allowance = i < selectedRoomAllowances.size() ? selectedRoomAllowances.get(i) : "All";
+			labels.add(roomName(selectedRoomIds.get(i)) + " [" + allowance + "] -> " + rewardPreviewForAllowance(allowance));
+		}
+		return labels;
+	}
+
+	public List<String> customRouteLabels()
+	{
+		return selectedRoomLabels();
+	}
+
+	public List<String> selectedRoomAllowances()
+	{
+		List<String> allowances = new ArrayList<>();
+		for (int i = 0; i < selectedRoomIds.size(); i++)
+		{
+			allowances.add(i < selectedRoomAllowances.size() ? selectedRoomAllowances.get(i) : "All");
+		}
+		return allowances;
+	}
+
+	public int selectedRouteIndex()
+	{
+		return selectedRouteIndex;
+	}
+
+	public String selectedBossId()
+	{
+		for (String id : selectedRoomIds)
+		{
+			if (bossExists(id))
+			{
+				return id;
+			}
+		}
+		return "";
+	}
+
+	// room option cursor
+
+	public String customSelectedRoomLabel()
+	{
+		List<RoomDefinition> rooms = customRoomOptions();
+		if (rooms.isEmpty())
+		{
+			return "(no rooms)";
+		}
+		customRoomCursor = clamp(customRoomCursor, rooms.size());
+		return rooms.get(customRoomCursor).name();
+	}
+
+	public List<String> customRoomOptionLabels()
+	{
+		List<String> labels = new ArrayList<>();
+		for (RoomDefinition def : customRoomOptions())
+		{
+			labels.add(def.name());
+		}
+		return labels;
+	}
+
+	public int customSelectedRoomIndex()
+	{
+		return clamp(customRoomCursor, customRoomOptions().size());
+	}
+
+	public void selectCustomRoomIndex(int index)
+	{
+		customRoomCursor = clamp(index, customRoomOptions().size());
+	}
+
+	public void pageCustomRoomIndex(int delta)
+	{
+		customRoomCursor = clamp(customRoomCursor + delta, customRoomOptions().size());
+	}
+
+	public void customPreviousRoom()
+	{
+		customRoomCursor = previousIndex(customRoomCursor, customRoomOptions().size());
+	}
+
+	public void customNextRoom()
+	{
+		customRoomCursor = nextIndex(customRoomCursor, customRoomOptions().size());
+	}
+
+	// allowance option cursor
+
+	public String customSelectedAllowanceLabel()
+	{
+		customAllowanceCursor = clamp(customAllowanceCursor, CUSTOM_ALLOWANCES.length);
+		return CUSTOM_ALLOWANCES[customAllowanceCursor];
+	}
+
+	public List<String> customAllowanceOptionLabels()
+	{
+		List<String> labels = new ArrayList<>();
+		for (String allowance : CUSTOM_ALLOWANCES)
+		{
+			labels.add(allowance);
+		}
+		return labels;
+	}
+
+	public int customSelectedAllowanceIndex()
+	{
+		return clamp(customAllowanceCursor, CUSTOM_ALLOWANCES.length);
+	}
+
+	public void selectCustomAllowanceIndex(int index)
+	{
+		customAllowanceCursor = clamp(index, CUSTOM_ALLOWANCES.length);
+	}
+
+	public void customPreviousAllowance()
+	{
+		customAllowanceCursor = previousIndex(customAllowanceCursor, CUSTOM_ALLOWANCES.length);
+	}
+
+	public void customNextAllowance()
+	{
+		customAllowanceCursor = nextIndex(customAllowanceCursor, CUSTOM_ALLOWANCES.length);
+	}
+
+	// boss option cursor
+
+	public String customSelectedBossLabel()
+	{
+		List<RoomDefinition> bosses = BossLibrary.all();
+		if (bosses.isEmpty())
+		{
+			return "(no bosses)";
+		}
+		customBossCursor = clamp(customBossCursor, bosses.size());
+		return bosses.get(customBossCursor).name();
+	}
+
+	public List<String> customBossOptionLabels()
+	{
+		List<String> labels = new ArrayList<>();
+		for (RoomDefinition def : BossLibrary.all())
+		{
+			labels.add(def.name());
+		}
+		return labels;
+	}
+
+	public int customSelectedBossIndex()
+	{
+		return clamp(customBossCursor, BossLibrary.all().size());
+	}
+
+	public void selectCustomBossIndex(int index)
+	{
+		customBossCursor = clamp(index, BossLibrary.all().size());
+	}
+
+	public void pageCustomBossIndex(int delta)
+	{
+		customBossCursor = clamp(customBossCursor + delta, BossLibrary.all().size());
+	}
+
+	public void customPreviousBoss()
+	{
+		customBossCursor = previousIndex(customBossCursor, BossLibrary.all().size());
+	}
+
+	public void customNextBoss()
+	{
+		customBossCursor = nextIndex(customBossCursor, BossLibrary.all().size());
+	}
+
+	// route mutation (callers add the Swing refresh when these report a change)
+
+	/** Appends an entry if not already present, marking it the selected row; true iff it was added. */
+	private boolean addRouteEntry(String id, String allowance)
+	{
+		if (selectedRoomIds.contains(id))
+		{
+			return false;
+		}
+		selectedRoomIds.add(id);
+		selectedRoomAllowances.add(allowance);
+		selectedRouteIndex = selectedRoomIds.size() - 1;
+		return true;
+	}
+
+	public boolean addFirstRoomOfKind(RoomKind kind)
+	{
+		return addFirstRoomOfKind(kind, allowanceLabel(kind));
+	}
+
+	public boolean addFirstRoomOfKind(RoomKind kind, String allowance)
+	{
+		if (kind == null)
+		{
+			return false;
+		}
+		for (RoomDefinition def : RoomLibrary.all())
+		{
+			if (def.kind() == kind && def.kind() != RoomKind.BOSS && !selectedRoomIds.contains(def.id()))
+			{
+				return addRouteEntry(def.id(),
+					allowance == null || allowance.trim().isEmpty() ? allowanceLabel(kind) : allowance.trim());
+			}
+		}
+		return false;
+	}
+
+	public boolean addRoomForAllowance(String allowance)
+	{
+		String normalized = allowance == null ? "" : allowance.trim().toLowerCase();
+		if ("supply".equals(normalized))
+		{
+			return addFirstRoomOfKind(RoomKind.SUPPLY, "Supply");
+		}
+		else if ("armour".equals(normalized) || "armor".equals(normalized))
+		{
+			return addFirstRoomOfKind(RoomKind.ARMOUR, "Armour");
+		}
+		else if ("weapons".equals(normalized) || "weapon".equals(normalized))
+		{
+			return addFirstRoomOfKind(RoomKind.WEAPON, "Weapons");
+		}
+		else if ("skilling".equals(normalized))
+		{
+			return addFirstRoomOfKind(RoomKind.SKILLING, "Skilling");
+		}
+		else if ("shopping".equals(normalized) || "shop".equals(normalized))
+		{
+			return addFirstRoomOfKind(RoomKind.SHOP, "Shopping");
+		}
+		return addFirstRoomOfKind(RoomKind.REGION, "All");
+	}
+
+	/** Adds a route entry by explicit id+allowance (used by the Swing room combo); true iff added. */
+	public boolean addRoute(String id, String allowance)
+	{
+		return addRouteEntry(id, allowance);
+	}
+
+	public boolean addSelectedCustomRoom()
+	{
+		List<RoomDefinition> rooms = customRoomOptions();
+		if (rooms.isEmpty())
+		{
+			return false;
+		}
+		customRoomCursor = clamp(customRoomCursor, rooms.size());
+		return addRouteEntry(rooms.get(customRoomCursor).id(), customSelectedAllowanceLabel());
+	}
+
+	public boolean addSelectedCustomBoss()
+	{
+		List<RoomDefinition> bosses = BossLibrary.all();
+		if (bosses.isEmpty())
+		{
+			return false;
+		}
+		customBossCursor = clamp(customBossCursor, bosses.size());
+		RoomDefinition boss = bosses.get(customBossCursor);
+		if (customBossLimit() > 0 && bossCountInCustomRoute() >= customBossLimit())
+		{
+			return false;
+		}
+		return addRouteEntry(boss.id(), "Boss");
+	}
+
+	public boolean selectFirstBoss()
+	{
+		selectCustomBossIndex(0);
+		return addSelectedCustomBoss();
+	}
+
+	public boolean selectBossById(String id)
+	{
+		if (id == null || id.isEmpty())
+		{
+			return false;
+		}
+		List<RoomDefinition> bosses = BossLibrary.all();
+		for (int i = 0; i < bosses.size(); i++)
+		{
+			if (bosses.get(i).id().equals(id))
+			{
+				customBossCursor = i;
+				return addSelectedCustomBoss();
+			}
+		}
+		return false;
+	}
+
+	public boolean removeLastCustomRoom()
+	{
+		if (selectedRoomIds.isEmpty())
+		{
+			return false;
+		}
+		int idx = selectedRouteIndex >= 0 && selectedRouteIndex < selectedRoomIds.size()
+			? selectedRouteIndex : selectedRoomIds.size() - 1;
+		selectedRoomIds.remove(idx);
+		if (idx < selectedRoomAllowances.size())
+		{
+			selectedRoomAllowances.remove(idx);
+		}
+		selectedRouteIndex = selectedRoomIds.isEmpty() ? -1 : Math.min(idx, selectedRoomIds.size() - 1);
+		return true;
+	}
+
+	/** Removes the trailing entry (used by the Swing "remove" button); true iff something was removed. */
+	public boolean removeLastRoom()
+	{
+		if (selectedRoomIds.isEmpty())
+		{
+			return false;
+		}
+		selectedRoomIds.remove(selectedRoomIds.size() - 1);
+		if (!selectedRoomAllowances.isEmpty())
+		{
+			selectedRoomAllowances.remove(selectedRoomAllowances.size() - 1);
+		}
+		selectedRouteIndex = selectedRoomIds.isEmpty() ? -1 : Math.min(selectedRouteIndex, selectedRoomIds.size() - 1);
+		return true;
+	}
+
+	public void clearRoute()
+	{
+		selectedRoomIds.clear();
+		selectedRoomAllowances.clear();
+		selectedRouteIndex = -1;
+	}
+
+	public void selectPreviousRouteRow()
+	{
+		if (selectedRoomIds.isEmpty())
+		{
+			selectedRouteIndex = -1;
+		}
+		else
+		{
+			selectedRouteIndex = selectedRouteIndex <= 0 ? 0 : selectedRouteIndex - 1;
+		}
+	}
+
+	public void selectNextRouteRow()
+	{
+		if (selectedRoomIds.isEmpty())
+		{
+			selectedRouteIndex = -1;
+		}
+		else
+		{
+			selectedRouteIndex = selectedRouteIndex < 0 ? 0 : Math.min(selectedRoomIds.size() - 1, selectedRouteIndex + 1);
+		}
+	}
+
+	public void selectRouteRow(int index)
+	{
+		if (selectedRoomIds.isEmpty())
+		{
+			selectedRouteIndex = -1;
+		}
+		else
+		{
+			selectedRouteIndex = clamp(index, selectedRoomIds.size());
+		}
+	}
+
+	public boolean moveSelectedRouteUp()
+	{
+		if (selectedRouteIndex <= 0 || selectedRouteIndex >= selectedRoomIds.size())
+		{
+			return false;
+		}
+		swapRouteRows(selectedRouteIndex, selectedRouteIndex - 1);
+		selectedRouteIndex--;
+		return true;
+	}
+
+	public boolean moveSelectedRouteDown()
+	{
+		if (selectedRouteIndex < 0 || selectedRouteIndex >= selectedRoomIds.size() - 1)
+		{
+			return false;
+		}
+		swapRouteRows(selectedRouteIndex, selectedRouteIndex + 1);
+		selectedRouteIndex++;
+		return true;
+	}
+
+	/** Rebuilds the route lists from a seed's {@code rooms} and {@code boss} fields. */
+	public void applyRouteFromSeed(String rooms, String boss)
+	{
+		selectedRoomIds.clear();
+		selectedRoomAllowances.clear();
+		if (rooms != null && !rooms.trim().isEmpty())
+		{
+			for (String part : rooms.split(","))
+			{
+				String[] pair = part.split(":", 2);
+				String id = pair.length > 0 ? pair[0].trim() : "";
+				if (routeEntryExists(id))
+				{
+					selectedRoomIds.add(id);
+					selectedRoomAllowances.add(pair.length > 1 && !pair[1].trim().isEmpty() ? pair[1].trim() : "All");
+				}
+			}
+		}
+		if (boss != null && !"auto".equalsIgnoreCase(boss) && !"none".equalsIgnoreCase(boss) && routeEntryExists(boss.trim())
+			&& !selectedRoomIds.contains(boss.trim()))
+		{
+			selectedRoomIds.add(boss.trim());
+			selectedRoomAllowances.add("Boss");
+		}
+		selectedRouteIndex = selectedRoomIds.isEmpty() ? -1 : selectedRoomIds.size() - 1;
+	}
+
+	// route helpers
+
+	private List<RoomDefinition> customRoomOptions()
+	{
+		List<RoomDefinition> rooms = new ArrayList<>();
+		for (RoomDefinition def : RoomLibrary.all())
+		{
+			if (def.kind() != RoomKind.BOSS)
+			{
+				rooms.add(def);
+			}
+		}
+		return rooms;
+	}
+
+	private boolean roomExists(String id)
+	{
+		if (id == null || id.isEmpty())
+		{
+			return false;
+		}
+		for (RoomDefinition def : customRoomOptions())
+		{
+			if (def.id().equals(id))
+			{
+				return true;
+			}
+		}
+		return false;
+	}
+
+	private boolean routeEntryExists(String id)
+	{
+		return roomExists(id) || bossExists(id);
+	}
+
+	private boolean bossExists(String id)
+	{
+		if (id == null || id.isEmpty())
+		{
+			return false;
+		}
+		for (RoomDefinition def : BossLibrary.all())
+		{
+			if (def.id().equals(id))
+			{
+				return true;
+			}
+		}
+		return false;
+	}
+
+	private int bossCountInCustomRoute()
+	{
+		int count = 0;
+		for (String id : selectedRoomIds)
+		{
+			if (bossExists(id))
+			{
+				count++;
+			}
+		}
+		return count;
+	}
+
+	private void swapRouteRows(int a, int b)
+	{
+		String room = selectedRoomIds.get(a);
+		selectedRoomIds.set(a, selectedRoomIds.get(b));
+		selectedRoomIds.set(b, room);
+		if (a < selectedRoomAllowances.size() && b < selectedRoomAllowances.size())
+		{
+			String allowance = selectedRoomAllowances.get(a);
+			selectedRoomAllowances.set(a, selectedRoomAllowances.get(b));
+			selectedRoomAllowances.set(b, allowance);
+		}
+	}
+
+	private String roomName(String id)
+	{
+		for (RoomDefinition def : customRoomOptions())
+		{
+			if (def.id().equals(id)) return def.name();
+		}
+		for (RoomDefinition def : BossLibrary.all())
+		{
+			if (def.id().equals(id)) return def.name();
+		}
+		for (RoomDefinition def : RoomLibrary.all())
+		{
+			if (def.id().equals(id)) return def.name();
+		}
+		return id;
+	}
+
+	public static String allowanceLabel(RoomKind kind)
+	{
+		if (kind == RoomKind.SUPPLY) return "Supply";
+		if (kind == RoomKind.ARMOUR) return "Armour";
+		if (kind == RoomKind.WEAPON) return "Weapons";
+		if (kind == RoomKind.SKILLING) return "Skilling";
+		if (kind == RoomKind.SHOP) return "Shopping";
+		return "All";
+	}
+
+	private static String rewardPreviewForAllowance(String allowance)
+	{
+		String value = allowance == null ? "" : allowance.trim().toLowerCase();
+		if ("boss".equals(value)) return "random relic draft";
+		if ("supply".equals(value)) return "random supply draft";
+		if ("all".equals(value)) return "random relic draft";
+		return "random unlock draft";
+	}
+
+	private static int previousIndex(int current, int size)
+	{
+		if (size <= 0) return 0;
+		return current <= 0 ? size - 1 : current - 1;
+	}
+
+	private static int nextIndex(int current, int size)
+	{
+		if (size <= 0) return 0;
+		return current >= size - 1 ? 0 : current + 1;
 	}
 
 	// --- starting curses / modifiers ---

@@ -155,4 +155,69 @@ public class CustomRunSpecTest
 		spec.pageCustomModifierIndex(-1000);
 		assertEquals(0, spec.customModifierPageStart());
 	}
+
+	@Test
+	public void emptySeedPreviewHasTheCanonicalDefaults()
+	{
+		assertEquals("mode=Scavenger;loadout=Naked;rooms=;mods=;strictness=Balanced;bank=off;time=none;bosscap=none",
+			new CustomRunSpec().customSeedPreview());
+	}
+
+	@Test
+	public void addsCursorRoomOnceAndTracksSelectedRow()
+	{
+		CustomRunSpec spec = new CustomRunSpec();
+		spec.selectCustomRoomIndex(0);
+		assertTrue(spec.addSelectedCustomRoom());
+		assertEquals(1, spec.selectedRoomIds().size());
+		assertEquals(0, spec.selectedRouteIndex());
+		assertFalse(spec.addSelectedCustomRoom()); // same room id -> dedup, no add
+		assertEquals(1, spec.selectedRoomIds().size());
+	}
+
+	@Test
+	public void bossLimitStopsExtraBosses()
+	{
+		CustomRunSpec spec = new CustomRunSpec();
+		spec.setCustomBossLimit(1);
+		spec.selectCustomBossIndex(0);
+		assertTrue(spec.addSelectedCustomBoss());
+		spec.selectCustomBossIndex(1);
+		assertFalse(spec.addSelectedCustomBoss()); // cap reached
+		assertEquals(1, spec.selectedRoomIds().size());
+		assertFalse(spec.selectedBossId().isEmpty());
+	}
+
+	@Test
+	public void routeRowMovesAreNoOpsAtBoundaries()
+	{
+		CustomRunSpec spec = new CustomRunSpec();
+		spec.selectCustomRoomIndex(0);
+		spec.addSelectedCustomRoom();
+		spec.selectCustomRoomIndex(1);
+		spec.addSelectedCustomRoom();
+		assertEquals(2, spec.selectedRoomIds().size());
+
+		spec.selectRouteRow(0);
+		assertFalse(spec.moveSelectedRouteUp());   // already top
+		assertTrue(spec.moveSelectedRouteDown());  // 0 -> 1
+		assertEquals(1, spec.selectedRouteIndex());
+		assertFalse(spec.moveSelectedRouteDown()); // already bottom
+	}
+
+	@Test
+	public void applyRouteFromSeedKeepsKnownIdsAndDropsUnknown()
+	{
+		CustomRunSpec spec = new CustomRunSpec();
+		spec.selectCustomRoomIndex(0);
+		spec.addSelectedCustomRoom();
+		String realId = spec.selectedRoomIds().get(0);
+		spec.clearRoute();
+		assertTrue(spec.selectedRoomIds().isEmpty());
+
+		spec.applyRouteFromSeed(realId + ":Weapons,bogus-room-id:All", null);
+		assertEquals(1, spec.selectedRoomIds().size());
+		assertEquals(realId, spec.selectedRoomIds().get(0));
+		assertEquals("Weapons", spec.selectedRoomAllowances().get(0));
+	}
 }

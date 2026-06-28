@@ -106,10 +106,19 @@ These govern the workstreams below where they differ from the original menu of o
   applyCustomSeed, the curses-tab clear listener, `addSelectedModifier`, `refreshSelectedModifiersArea`).
   2-lens review confirmed 1:1. `RogueScapePanel` 2018 → 1954. Suite green (353 tests). _(Re-ordered from the
   original plan: the room/boss cursors are tightly coupled to the route lists via the add/remove methods, so
-  they move together as one cohesive slice rather than splitting cursors from lists.)_ Remaining increments:
-  3) the route subsystem (room/allowance/boss cursors + the selected-route lists + ordering, incl. the
-  state+Swing mutators), 4) `customSeedPreview` (fully pure) + `applyCustomSeed`. Then **W10** `RunController`
-  and **W4** UI dedup.
+  they move together as one cohesive slice rather than splitting cursors from lists.)_
+  **Commit 3 DONE (the big one):** the entire route subsystem — the room/allowance/boss option cursors + the
+  selected-route lists (`selectedRoomIds`/`selectedRoomAllowances`/`selectedRouteIndex`) + `CUSTOM_ALLOWANCES`,
+  ~30 add/remove/move/select/option methods, and the helpers (`customRoomOptions`, `routeEntryExists`,
+  `bossCountInCustomRoute`, `swapRouteRows`, `allowanceLabel`, `rewardPreviewForAllowance`, library-resolved
+  `roomName`, and the shared `clamp`/`previousIndex`/`nextIndex`) — moved to `CustomRunSpec`; `customSeedPreview`
+  moved too (now pure), and `applyCustomSeed`'s route parse lifted into `spec.applyRouteFromSeed`. The panel keeps
+  thin delegators that re-apply the Swing refresh, returning a boolean "did it change?" so the refresh fires on
+  exactly the same conditions as before. New route unit tests pin dedup, boss-cap, move-boundary no-ops, the seed
+  round-trip, and the empty-preview string. A 2-lens review built a full refresh-condition table and confirmed the
+  move is 1:1. `RogueScapePanel` 1954 → **1636** (the largest single drop; 2554 → 1636 over the whole cleanup).
+  Suite green (358 tests). Remaining increment: 4) move `applyCustomSeed` wholesale into the spec (now nearly
+  mechanical — all its dependencies already live there). Then **W10** `RunController` and **W4** UI dedup.
 - **W6a / W7 — IN PROGRESS.** Wired the kept recap/race packages onto the live path via the
   unit-tested `core.RunCompletionRecorder` (run-end snapshot -> `RunHistory` + `Leaderboard`, guarded
   one-shot tick edge in the plugin). Extracted two pure-logic services with tests:
