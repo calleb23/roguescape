@@ -1,5 +1,6 @@
 package com.pluginideahub.roguescape;
 
+import com.pluginideahub.roguescape.core.CustomRunSpec;
 import com.pluginideahub.roguescape.core.RunMode;
 import com.pluginideahub.roguescape.core.RunPreset;
 import com.pluginideahub.roguescape.core.RunRouteBuilder;
@@ -88,12 +89,8 @@ public class RogueScapePanel extends PluginPanel
 	private int customBossCursor = 0;
 	private int customAllowanceCursor = 0;
 	private int customModifierCursor = 0;
-	private String customBuilderGameMode = "Scavenger";
-	private String customBuilderLoadout = "Naked";
-	private String customStrictness = "Balanced";
-	private boolean customBankUnlocks;
-	private int customTimeLimitMinutes;
-	private int customBossLimit;
+	// Swing-free run-builder state (extracted; the panel delegates its builder API to this).
+	private final CustomRunSpec customRunSpec = new CustomRunSpec();
 	private static final String[] CUSTOM_ALLOWANCES = {"Supply", "Armour", "Weapons", "Skilling", "All", "Shopping"};
 
 	// STARTING CURSES widgets
@@ -382,105 +379,62 @@ public class RogueScapePanel extends PluginPanel
 
 	public String customBuilderGameMode()
 	{
-		return customBuilderGameMode;
+		return customRunSpec.customBuilderGameMode();
 	}
 
 	public void setCustomBuilderGameMode(String customBuilderGameMode)
 	{
-		if (customBuilderGameMode != null && !customBuilderGameMode.trim().isEmpty())
-		{
-			this.customBuilderGameMode = customBuilderGameMode.trim();
-		}
+		customRunSpec.setCustomBuilderGameMode(customBuilderGameMode);
 	}
 
 	public String customBuilderLoadout()
 	{
-		return customBuilderLoadout;
+		return customRunSpec.customBuilderLoadout();
 	}
 
 	public void setCustomBuilderLoadout(String customBuilderLoadout)
 	{
-		if (customBuilderLoadout != null && !customBuilderLoadout.trim().isEmpty())
-		{
-			this.customBuilderLoadout = customBuilderLoadout.trim();
-		}
+		customRunSpec.setCustomBuilderLoadout(customBuilderLoadout);
 	}
 
 	public String customStrictness()
 	{
-		return customStrictness;
+		return customRunSpec.customStrictness();
 	}
 
 	public boolean customBankUnlocks()
 	{
-		return customBankUnlocks;
+		return customRunSpec.customBankUnlocks();
 	}
 
 	public int customTimeLimitMinutes()
 	{
-		return customTimeLimitMinutes;
+		return customRunSpec.customTimeLimitMinutes();
 	}
 
 	public int customBossLimit()
 	{
-		return customBossLimit;
+		return customRunSpec.customBossLimit();
 	}
 
 	public void cycleCustomStrictness()
 	{
-		if ("Balanced".equals(customStrictness))
-		{
-			customStrictness = "Trust";
-		}
-		else if ("Trust".equals(customStrictness))
-		{
-			customStrictness = "Strict";
-		}
-		else
-		{
-			customStrictness = "Balanced";
-		}
+		customRunSpec.cycleCustomStrictness();
 	}
 
 	public void toggleCustomBankUnlocks()
 	{
-		customBankUnlocks = !customBankUnlocks;
+		customRunSpec.toggleCustomBankUnlocks();
 	}
 
 	public void cycleCustomTimeLimit()
 	{
-		if (customTimeLimitMinutes == 0)
-		{
-			customTimeLimitMinutes = 30;
-		}
-		else if (customTimeLimitMinutes == 30)
-		{
-			customTimeLimitMinutes = 60;
-		}
-		else if (customTimeLimitMinutes == 60)
-		{
-			customTimeLimitMinutes = 90;
-		}
-		else
-		{
-			customTimeLimitMinutes = 0;
-		}
+		customRunSpec.cycleCustomTimeLimit();
 	}
 
 	public void cycleCustomBossLimit()
 	{
-		if (customBossLimit == 0)
-		{
-			customBossLimit = 1;
-		}
-		else if (customBossLimit < 3)
-		{
-			customBossLimit++;
-		}
-		else
-		{
-			customBossLimit = 0;
-		}
+		customRunSpec.cycleCustomBossLimit();
 	}
 
 	public void addFirstRoomOfKind(RoomKind kind)
@@ -691,7 +645,7 @@ public class RogueScapePanel extends PluginPanel
 		}
 		customBossCursor = clamp(customBossCursor, bosses.size());
 		RoomDefinition boss = bosses.get(customBossCursor);
-		if (customBossLimit > 0 && bossCountInCustomRoute() >= customBossLimit)
+		if (customRunSpec.customBossLimit() > 0 && bossCountInCustomRoute() >= customRunSpec.customBossLimit())
 		{
 			return;
 		}
@@ -790,8 +744,8 @@ public class RogueScapePanel extends PluginPanel
 	public String customSeedPreview()
 	{
 		StringBuilder sb = new StringBuilder();
-		sb.append("mode=").append(customBuilderGameMode);
-		sb.append(";loadout=").append(customBuilderLoadout);
+		sb.append("mode=").append(customRunSpec.customBuilderGameMode());
+		sb.append(";loadout=").append(customRunSpec.customBuilderLoadout());
 		sb.append(";rooms=");
 		for (int i = 0; i < selectedRoomIds.size(); i++)
 		{
@@ -800,10 +754,10 @@ public class RogueScapePanel extends PluginPanel
 			sb.append(i < selectedRoomAllowances.size() ? selectedRoomAllowances.get(i) : "All");
 		}
 		sb.append(";mods=").append(String.join(",", selectedModifierIds));
-		sb.append(";strictness=").append(customStrictness);
-		sb.append(";bank=").append(customBankUnlocks ? "on" : "off");
-		sb.append(";time=").append(customTimeLimitMinutes == 0 ? "none" : customTimeLimitMinutes + "m");
-		sb.append(";bosscap=").append(customBossLimit == 0 ? "none" : customBossLimit);
+		sb.append(";strictness=").append(customRunSpec.customStrictness());
+		sb.append(";bank=").append(customRunSpec.customBankUnlocks() ? "on" : "off");
+		sb.append(";time=").append(customRunSpec.customTimeLimitMinutes() == 0 ? "none" : customRunSpec.customTimeLimitMinutes() + "m");
+		sb.append(";bosscap=").append(customRunSpec.customBossLimit() == 0 ? "none" : customRunSpec.customBossLimit());
 		return sb.toString();
 	}
 
@@ -857,23 +811,23 @@ public class RogueScapePanel extends PluginPanel
 			}
 		}
 		String strictness = fields.get("strictness");
-		if ("Trust".equalsIgnoreCase(strictness)) customStrictness = "Trust";
-		else if ("Strict".equalsIgnoreCase(strictness)) customStrictness = "Strict";
-		else if ("Balanced".equalsIgnoreCase(strictness)) customStrictness = "Balanced";
+		if ("Trust".equalsIgnoreCase(strictness)) customRunSpec.setCustomStrictness("Trust");
+		else if ("Strict".equalsIgnoreCase(strictness)) customRunSpec.setCustomStrictness("Strict");
+		else if ("Balanced".equalsIgnoreCase(strictness)) customRunSpec.setCustomStrictness("Balanced");
 		String bank = fields.get("bank");
 		if (bank != null)
 		{
-			customBankUnlocks = "on".equalsIgnoreCase(bank) || "true".equalsIgnoreCase(bank);
+			customRunSpec.setCustomBankUnlocks("on".equalsIgnoreCase(bank) || "true".equalsIgnoreCase(bank));
 		}
 		String time = fields.get("time");
 		if (time != null)
 		{
-			customTimeLimitMinutes = RunSeedCodec.parseTimeMinutes(time);
+			customRunSpec.setCustomTimeLimitMinutes(RunSeedCodec.parseTimeMinutes(time));
 		}
 		String bossCap = fields.get("bosscap");
 		if (bossCap != null)
 		{
-			customBossLimit = RunSeedCodec.parseBossLimit(bossCap);
+			customRunSpec.setCustomBossLimit(RunSeedCodec.parseBossLimit(bossCap));
 		}
 		refreshSelectedRoomsArea();
 		refreshSelectedModifiersArea();

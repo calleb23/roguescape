@@ -89,8 +89,18 @@ These govern the workstreams below where they differ from the original menu of o
   status note); a 2-lens review confirmed the move (incl. init ordering, single listener registration) is
   behavior-preserving. `RogueScapePanel` 2236 → 2064. **W8 panel ladder complete** (`PanelActionPresenter`,
   `RunSeedCodec`, `PanelWidgetFactory`, `RelicCatalogSection`, `ZoneBuilderSection` all extracted). Guarded
-  by `RogueScapePanelLayoutTest`. Suite green (342 tests). Next on the panel ladder: **W9** —
-  `CustomRunSpec` then `RunBuilderSection`.
+  by `RogueScapePanelLayoutTest`. Suite green (342 tests).
+- **W9 — IN PROGRESS (panel Wave B).** Lifting the Swing-free run-builder state out of `RogueScapePanel`
+  into `core.CustomRunSpec`, in 5 increments (a multi-agent plan mapped the ~70-method surface: per-method
+  pure-state vs state+Swing classification, the seed-parse hazards, and the in-game-window View/action
+  integration points — all of which read this state through panel getters, so keeping the panel methods as
+  delegators leaves them unchanged). **Commit 1/5 DONE:** the scalar constraints (game mode, loadout,
+  strictness, bank unlocks, time + boss caps) — fields + getters/setters + cycle/toggle mutators — now live
+  in `CustomRunSpec`; the panel delegates and reroutes its three in-place readers (`customSeedPreview`,
+  `applyCustomSeed`, `addSelectedCustomBoss`). New Swing-free `CustomRunSpecTest`; a 2-lens review confirmed
+  the move is 1:1. `RogueScapePanel` 2064 → 2018. Suite green (349 tests). Remaining increments: 2) cursors +
+  option lists, 3) route list + ordering (the state+Swing mutators), 4) modifiers + seed preview,
+  5) `applyCustomSeed`. Then **W10** `RunController` and **W4** UI dedup.
 - **W6a / W7 — IN PROGRESS.** Wired the kept recap/race packages onto the live path via the
   unit-tested `core.RunCompletionRecorder` (run-end snapshot -> `RunHistory` + `Leaderboard`, guarded
   one-shot tick edge in the plugin). Extracted two pure-logic services with tests:
