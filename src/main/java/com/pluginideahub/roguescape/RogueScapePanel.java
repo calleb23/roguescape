@@ -10,12 +10,12 @@ import com.pluginideahub.roguescape.core.region.RoomKind;
 import com.pluginideahub.roguescape.core.region.RoomLibrary;
 import com.pluginideahub.roguescape.core.relic.ModifierLibrary;
 import com.pluginideahub.roguescape.core.relic.Relic;
-import com.pluginideahub.roguescape.core.relic.RelicLibrary;
 import com.pluginideahub.roguescape.core.ui.PanelAction;
 import com.pluginideahub.roguescape.core.ui.SidePanelViewModel;
 import com.pluginideahub.roguescape.ui.CollapsibleSection;
 import com.pluginideahub.roguescape.ui.PanelActionPresenter;
 import com.pluginideahub.roguescape.ui.PanelWidgetFactory;
+import com.pluginideahub.roguescape.ui.RelicCatalogSection;
 import com.pluginideahub.roguescape.ui.RogueScapeCustomRoomEditorState;
 import com.pluginideahub.roguescape.ui.RogueScapeTheme;
 import com.pluginideahub.roguescape.ui.StatBar;
@@ -159,7 +159,7 @@ public class RogueScapePanel extends PluginPanel
 		column.add(buildArtifactsSection());
 		column.add(buildModifiersSection());
 		column.add(buildProgressionSection());
-		column.add(buildRelicsSection());
+		column.add(RelicCatalogSection.build());
 		column.add(devSection);
 		column.add(buildSettingsSection());
 		column.add(Box.createVerticalGlue());
@@ -2121,72 +2121,6 @@ public class RogueScapePanel extends PluginPanel
 	}
 
 	// ------------------------------------------------------------ RELICS
-
-	private CollapsibleSection buildRelicsSection()
-	{
-		CollapsibleSection section = new CollapsibleSection("Relics", true);
-		JPanel c = section.content();
-		c.add(mutedRow("The relic & modifier catalog. Relics grant scoring bonuses; modifiers are curses that only restrict."));
-		c.add(vGap(6));
-
-		JPanel list = new JPanel();
-		list.setLayout(new BoxLayout(list, BoxLayout.Y_AXIS));
-		list.setBackground(RogueScapeTheme.SECTION_BG);
-
-		list.add(catalogHeader("RELICS (" + RelicLibrary.all().size() + ")"));
-		for (Relic r : RelicLibrary.all())
-		{
-			list.add(catalogEntry(r));
-		}
-		list.add(vGap(8));
-		list.add(catalogHeader("MODIFIERS / CURSES (" + ModifierLibrary.all().size() + ")"));
-		for (Relic r : ModifierLibrary.all())
-		{
-			list.add(catalogEntry(r));
-		}
-
-		JScrollPane scroll = new JScrollPane(list);
-		scroll.setBorder(BorderFactory.createLineBorder(RogueScapeTheme.BORDER));
-		scroll.setPreferredSize(new Dimension(PluginPanel.PANEL_WIDTH - 40, 280));
-		scroll.setMaximumSize(new Dimension(Integer.MAX_VALUE, 280));
-		scroll.setAlignmentX(Component.LEFT_ALIGNMENT);
-		scroll.getViewport().setBackground(RogueScapeTheme.SECTION_BG);
-		scroll.getVerticalScrollBar().setUnitIncrement(12);
-		c.add(scroll);
-		return section;
-	}
-
-	private JLabel catalogHeader(String text)
-	{
-		JLabel lbl = new JLabel(text);
-		lbl.setForeground(RogueScapeTheme.GOLD);
-		lbl.setFont(lbl.getFont().deriveFont(java.awt.Font.BOLD, 12f));
-		lbl.setAlignmentX(Component.LEFT_ALIGNMENT);
-		lbl.setBorder(BorderFactory.createEmptyBorder(2, 0, 2, 0));
-		return lbl;
-	}
-
-	private JPanel catalogEntry(Relic relic)
-	{
-		JPanel p = new JPanel();
-		p.setLayout(new BoxLayout(p, BoxLayout.Y_AXIS));
-		p.setBackground(RogueScapeTheme.SECTION_BG);
-		p.setAlignmentX(Component.LEFT_ALIGNMENT);
-		p.setBorder(BorderFactory.createEmptyBorder(3, 2, 3, 2));
-
-		JLabel name = new JLabel(relic.name());
-		name.setForeground(RogueScapeTheme.ACCENT);
-		name.setFont(RogueScapeTheme.value(name.getFont()));
-		name.setAlignmentX(Component.LEFT_ALIGNMENT);
-		p.add(name);
-
-		JLabel desc = new JLabel("<html><body style='width:165px'>" + escape(relic.description()) + "</body></html>");
-		desc.setForeground(RogueScapeTheme.TEXT_MUTED);
-		desc.setFont(RogueScapeTheme.small(desc.getFont()));
-		desc.setAlignmentX(Component.LEFT_ALIGNMENT);
-		p.add(desc);
-		return p;
-	}
 
 	// ------------------------------------------------------------ SETTINGS
 

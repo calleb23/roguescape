@@ -73,9 +73,14 @@ These govern the workstreams below where they differ from the original menu of o
   `keyValueRow`, `routeRow`, `hintBox`, `featureBox`, `readOnlyArea`) moved out verbatim; the panel keeps
   thin private delegations so its ~130 internal call sites are untouched. New `PanelWidgetFactoryTest`
   pins the escape rules + the value/symbol colour logic; a 2-lens adversarial review confirmed the move is
-  byte-for-byte (also pruned a now-stale `java.awt.Font` import). `RogueScapePanel` 2443 → 2303. Remaining:
-  `ZoneBuilderSection`, `RelicCatalogSection` (now have `PanelWidgetFactory` to build on). Guarded by
-  `RogueScapePanelLayoutTest`. Suite green (334 tests).
+  byte-for-byte (also pruned a now-stale `java.awt.Font` import). `RogueScapePanel` 2443 → 2303.
+  Then extracted `ui.RelicCatalogSection` — the read-only relic/modifier catalog (`buildRelicsSection` +
+  `catalogHeader`/`catalogEntry`, used only there) moved verbatim into a stateless `build()` driven by
+  `RelicLibrary`/`ModifierLibrary`; the single caller was repointed and the now-orphaned `RelicLibrary`
+  import pruned. New `RelicCatalogSectionTest` pins the count headers, a rendered entry per relic/modifier,
+  and that the list is hosted inside the scroll pane; 2-lens review confirmed verbatim. `RogueScapePanel`
+  2303 → 2236. Remaining: `ZoneBuilderSection`. Guarded by `RogueScapePanelLayoutTest`. Suite green
+  (337 tests).
 - **W6a / W7 — IN PROGRESS.** Wired the kept recap/race packages onto the live path via the
   unit-tested `core.RunCompletionRecorder` (run-end snapshot -> `RunHistory` + `Leaderboard`, guarded
   one-shot tick edge in the plugin). Extracted two pure-logic services with tests:
