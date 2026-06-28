@@ -220,4 +220,39 @@ public class CustomRunSpecTest
 		assertEquals(realId, spec.selectedRoomIds().get(0));
 		assertEquals("Weapons", spec.selectedRoomAllowances().get(0));
 	}
+
+	@Test
+	public void applyCustomSeedIgnoresEmptyOrBlankSeed()
+	{
+		CustomRunSpec spec = new CustomRunSpec();
+		spec.selectCustomRoomIndex(0);
+		spec.addSelectedCustomRoom();
+		String before = spec.customSeedPreview();
+
+		assertFalse(spec.applyCustomSeed(""));
+		assertFalse(spec.applyCustomSeed("   "));
+		assertEquals(before, spec.customSeedPreview()); // unchanged
+	}
+
+	@Test
+	public void applyCustomSeedRoundTripsTheWholeSelection()
+	{
+		CustomRunSpec a = new CustomRunSpec();
+		a.selectCustomRoomIndex(0);
+		a.addSelectedCustomRoom();
+		a.selectCustomAllowanceIndex(2);
+		a.selectCustomRoomIndex(2);
+		a.addSelectedCustomRoom();
+		a.toggleModifierIndex(0);
+		a.setCustomBuilderGameMode("Rewarded");
+		a.cycleCustomStrictness(); // -> Trust
+		a.toggleCustomBankUnlocks();
+		a.cycleCustomTimeLimit(); // -> 30
+		a.cycleCustomBossLimit(); // -> 1
+		String seed = a.customSeedPreview();
+
+		CustomRunSpec b = new CustomRunSpec();
+		assertTrue(b.applyCustomSeed(seed));
+		assertEquals(seed, b.customSeedPreview());
+	}
 }

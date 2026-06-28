@@ -8,6 +8,7 @@ import com.pluginideahub.roguescape.core.relic.ModifierLibrary;
 import com.pluginideahub.roguescape.core.relic.Relic;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 /**
  * RuneLite/Swing-free model of the custom run-builder's state — the canonical store the side panel
@@ -167,6 +168,40 @@ public final class CustomRunSpec
 		sb.append(";time=").append(customTimeLimitMinutes == 0 ? "none" : customTimeLimitMinutes + "m");
 		sb.append(";bosscap=").append(customBossLimit == 0 ? "none" : customBossLimit);
 		return sb.toString();
+	}
+
+	/** Rebuilds the whole builder selection from a seed string; true iff the seed contained any fields. */
+	public boolean applyCustomSeed(String seed)
+	{
+		Map<String, String> fields = RunSeedCodec.parseFields(seed);
+		if (fields.isEmpty())
+		{
+			return false;
+		}
+		setCustomBuilderGameMode(fields.get("mode"));
+		setCustomBuilderLoadout(fields.get("loadout"));
+		applyRouteFromSeed(fields.get("rooms"), fields.get("boss"));
+		applyModifierIdsFromCsv(fields.get("mods"));
+		String strictness = fields.get("strictness");
+		if ("Trust".equalsIgnoreCase(strictness)) setCustomStrictness("Trust");
+		else if ("Strict".equalsIgnoreCase(strictness)) setCustomStrictness("Strict");
+		else if ("Balanced".equalsIgnoreCase(strictness)) setCustomStrictness("Balanced");
+		String bank = fields.get("bank");
+		if (bank != null)
+		{
+			setCustomBankUnlocks("on".equalsIgnoreCase(bank) || "true".equalsIgnoreCase(bank));
+		}
+		String time = fields.get("time");
+		if (time != null)
+		{
+			setCustomTimeLimitMinutes(RunSeedCodec.parseTimeMinutes(time));
+		}
+		String bossCap = fields.get("bosscap");
+		if (bossCap != null)
+		{
+			setCustomBossLimit(RunSeedCodec.parseBossLimit(bossCap));
+		}
+		return true;
 	}
 
 	// --- route: handpicked rooms/bosses + allowance, plus the room/allowance/boss option cursors ---

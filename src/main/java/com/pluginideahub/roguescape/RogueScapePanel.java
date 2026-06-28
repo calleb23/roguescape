@@ -4,7 +4,6 @@ import com.pluginideahub.roguescape.core.CustomRunSpec;
 import com.pluginideahub.roguescape.core.RunMode;
 import com.pluginideahub.roguescape.core.RunPreset;
 import com.pluginideahub.roguescape.core.RunRouteBuilder;
-import com.pluginideahub.roguescape.core.RunSeedCodec;
 import com.pluginideahub.roguescape.core.region.BossLibrary;
 import com.pluginideahub.roguescape.core.region.RoomDefinition;
 import com.pluginideahub.roguescape.core.region.RoomKind;
@@ -32,7 +31,6 @@ import java.awt.Graphics2D;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
 import javax.swing.BorderFactory;
@@ -611,38 +609,11 @@ public class RogueScapePanel extends PluginPanel
 
 	public void applyCustomSeed(String seed)
 	{
-		Map<String, String> fields = RunSeedCodec.parseFields(seed);
-		if (fields.isEmpty())
+		if (customRunSpec.applyCustomSeed(seed))
 		{
-			return;
+			refreshSelectedRoomsArea();
+			refreshSelectedModifiersArea();
 		}
-		setCustomBuilderGameMode(fields.get("mode"));
-		setCustomBuilderLoadout(fields.get("loadout"));
-
-		customRunSpec.applyRouteFromSeed(fields.get("rooms"), fields.get("boss"));
-
-		customRunSpec.applyModifierIdsFromCsv(fields.get("mods"));
-		String strictness = fields.get("strictness");
-		if ("Trust".equalsIgnoreCase(strictness)) customRunSpec.setCustomStrictness("Trust");
-		else if ("Strict".equalsIgnoreCase(strictness)) customRunSpec.setCustomStrictness("Strict");
-		else if ("Balanced".equalsIgnoreCase(strictness)) customRunSpec.setCustomStrictness("Balanced");
-		String bank = fields.get("bank");
-		if (bank != null)
-		{
-			customRunSpec.setCustomBankUnlocks("on".equalsIgnoreCase(bank) || "true".equalsIgnoreCase(bank));
-		}
-		String time = fields.get("time");
-		if (time != null)
-		{
-			customRunSpec.setCustomTimeLimitMinutes(RunSeedCodec.parseTimeMinutes(time));
-		}
-		String bossCap = fields.get("bosscap");
-		if (bossCap != null)
-		{
-			customRunSpec.setCustomBossLimit(RunSeedCodec.parseBossLimit(bossCap));
-		}
-		refreshSelectedRoomsArea();
-		refreshSelectedModifiersArea();
 	}
 
 	public void selectFirstBoss()
