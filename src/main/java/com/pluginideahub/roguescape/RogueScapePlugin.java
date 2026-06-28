@@ -43,6 +43,7 @@ import com.pluginideahub.roguescape.ui.RogueScapeCustomBuilderWidgetWindow;
 import com.pluginideahub.roguescape.ui.RogueScapeJournalTabAdapter;
 import com.pluginideahub.roguescape.ui.RogueScapeJournalWidgetProbe;
 import com.pluginideahub.roguescape.ui.RogueScapeActiveRoomWorldMapOverlay;
+import com.pluginideahub.roguescape.ui.OverlayTextModel;
 import com.pluginideahub.roguescape.ui.RogueScapeObjectiveOverlay;
 import com.pluginideahub.roguescape.ui.RogueScapeRoomMaskOverlay;
 import com.pluginideahub.roguescape.ui.RogueScapeIcons;
@@ -998,7 +999,7 @@ public class RogueScapePlugin extends Plugin
 		lines.add("Run: " + view.goal());
 		lines.add("State: " + view.state());
 		lines.add("Region: " + (currentRegionId.isEmpty() ? "unknown" : currentRegionId));
-		String target = targetRegionLabel();
+		String target = OverlayTextModel.targetRegionLabel(runContext());
 		if (!target.isEmpty())
 		{
 			lines.add("Target: " + target);
@@ -1069,68 +1070,7 @@ public class RogueScapePlugin extends Plugin
 
 	private RogueScapeObjectiveOverlay.View objectiveView()
 	{
-		if (rogueRun == null || runSession == null || runLoop == null || runSession.runState() != RunState.ACTIVE)
-		{
-			return null;
-		}
-		RunStage stage = rogueRun.currentEnteredStage();
-		if (stage == null)
-		{
-			return null;
-		}
-		int total = countStages(false);
-		int cleared = countStages(true);
-		double progress = total > 0 ? (double) cleared / total : 0.0;
-		String region = currentRegionId == null || currentRegionId.isEmpty() ? "unknown" : currentRegionId;
-		String target = targetRegionLabel();
-		if (!target.isEmpty())
-		{
-			region = runLoop.phase() == RunPhase.TRAVEL_TO_STAGE
-				? region + " -> " + target
-				: region + " / " + target;
-		}
-		String next = nextUnclearedStageName();
-		if (next.equals(stage.name()))
-		{
-			next = "";
-		}
-		String objective = stage.objectiveProgressLabel();
-		String score = "Score " + rogueRun.effectiveScore();
-		if (runLoop.phase() == RunPhase.TRAVEL_TO_STAGE)
-		{
-			objective = "Travel to the allowed room region";
-			score = runLoop.hasTimeLimit() ? "Timer " + runLoop.timeRemainingLabel() : score;
-		}
-		else if (runLoop.hasTimeLimit())
-		{
-			score = "Timer " + runLoop.timeRemainingLabel();
-		}
-		return new RogueScapeObjectiveOverlay.View(
-			stage.name(),
-			objective,
-			next,
-			region,
-			runLoop.phase().getDisplayName(),
-			score,
-			progress,
-			stage.objectiveComplete(),
-			rogueRun.currentRegionLegal());
-	}
-
-	private String targetRegionLabel()
-	{
-		if (rogueRun == null || rogueRun.currentStageRule() == null)
-		{
-			return "";
-		}
-		StageRegionRule rule = rogueRun.currentStageRule();
-		if (!rule.restrictsRegion() || rule.allowedRegionIds().isEmpty())
-		{
-			return "";
-		}
-		int count = rule.allowedRegionIds().size();
-		String first = rule.allowedRegionIds().iterator().next();
-		return count == 1 ? first : first + " +" + (count - 1);
+		return OverlayTextModel.objectiveView(runContext());
 	}
 
 	private boolean activeRoomWorldMapEnabled()

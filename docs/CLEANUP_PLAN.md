@@ -99,10 +99,19 @@ These govern the workstreams below where they differ from the original menu of o
     already pinned by `RogueScapeRunLoopTest`/`RogueScapeRunSessionTest`, and `RunContextTest` pins the
     lobby↔active discrimination `startRun`/`resetToLobby` produce. The private dispatch *switch* and the
     reset field-nulling get their honest home when **W10** extracts the triple into `RunController`.
-  - **Remaining (W7, now on the seam):** `OverlayTextModel` (from `overlayLines`/`objectiveView`) and
-    `CustomRoomZoneService` (from `applyCustomRoomZoneToRun`) consume `RunContext` next; the panel
-    sections (`RelicCatalogSection`, `ZoneBuilderSection`) want `PanelWidgetFactory` first. Then the
-    keystones: W9 `CustomRunSpec`/`RunBuilderSection`, W10 `RunController`, and W4 UI dedup.
+  - **W7c — DONE.** Extracted `ui.OverlayTextModel` behind the `RunContext` seam: the active-run
+    objective HUD (`objectiveView`) and the shared `targetRegionLabel` are now pure static functions of
+    a `RunContext` snapshot; the plugin delegates (`overlayLines` too) and the private `targetRegionLabel`
+    is gone. It lives in `ui` (not `core`) because it returns the sibling `RogueScapeObjectiveOverlay.View`
+    — same precedent as `MenuEnforcementController` living in root. `RogueScapePlugin` 2286 → 2226. New
+    `OverlayTextModelTest` (8 cases) pins the visibility gate, the travel-vs-non-travel region join, the
+    next-stage collapse, the travel objective override, and the target-label formatting. A 2-lens
+    adversarial review (behavior-preservation + seam/test-honesty) confirmed the move is 1:1 (its only
+    notes were unreachable defensive null-checks). Suite green (321 tests).
+  - **Remaining (W7, now on the seam):** `CustomRoomZoneService` (from `applyCustomRoomZoneToRun`)
+    consumes `RunContext` next; the panel sections (`RelicCatalogSection`, `ZoneBuilderSection`) want
+    `PanelWidgetFactory` first. Then the keystones: W9 `CustomRunSpec`/`RunBuilderSection`, W10
+    `RunController`, and W4 UI dedup.
 
 ## Plugin Hub size limit (the research question)
 
