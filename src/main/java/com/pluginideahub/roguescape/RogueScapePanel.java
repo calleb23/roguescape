@@ -19,6 +19,7 @@ import com.pluginideahub.roguescape.ui.RelicCatalogSection;
 import com.pluginideahub.roguescape.ui.RogueScapeCustomRoomEditorState;
 import com.pluginideahub.roguescape.ui.RogueScapeTheme;
 import com.pluginideahub.roguescape.ui.StatBar;
+import com.pluginideahub.roguescape.ui.ZoneBuilderSection;
 import java.awt.BorderLayout;
 import java.awt.CardLayout;
 import java.awt.Color;
@@ -113,14 +114,8 @@ public class RogueScapePanel extends PluginPanel
 	// DEV TOOLS section (visibility tracks developer mode)
 	private CollapsibleSection devSection;
 
-	// ZONE BUILDER widgets
-	private final JTextField zoneNameField = new JTextField("My Zone");
-	private final JButton addZoneToggleBtn = new JButton("Start adding regions");
-	private final JTextArea zoneStatusArea = new JTextArea(4, 14);
-	private final JTextArea zoneRegionsArea = new JTextArea(4, 14);
-	private final JButton saveZoneBtn = new JButton("Save Zone");
-	private final JButton clearZoneBtn = new JButton("Clear regions");
-	private final JButton useZoneBtn = new JButton("Use zone for current run");
+	// The custom-zone builder card (owns its own widgets + editor-state wiring).
+	private final ZoneBuilderSection zoneBuilderSection;
 
 	private SidePanelViewModel lastModel = null;
 
@@ -136,11 +131,7 @@ public class RogueScapePanel extends PluginPanel
 		this.useRoomRequest = useRoomRequest;
 		this.actionHandler = actionHandler;
 		this.devModeSupplier = devModeSupplier;
-
-		if (this.roomEditorState != null)
-		{
-			zoneNameField.setText(this.roomEditorState.selection().getName());
-		}
+		this.zoneBuilderSection = new ZoneBuilderSection(roomEditorState, saveRoomRequest, useRoomRequest);
 
 		setLayout(new BorderLayout());
 		setBackground(RogueScapeTheme.PANEL_BG);
@@ -168,10 +159,10 @@ public class RogueScapePanel extends PluginPanel
 
 		if (this.roomEditorState != null)
 		{
-			this.roomEditorState.onChange(() -> javax.swing.SwingUtilities.invokeLater(this::updateZoneBuilder));
+			this.roomEditorState.onChange(() -> javax.swing.SwingUtilities.invokeLater(zoneBuilderSection::update));
 		}
 
-		updateZoneBuilder();
+		zoneBuilderSection.update();
 		updateCampaignPreview();
 		updateRoute(null);
 	}
@@ -265,7 +256,7 @@ public class RogueScapePanel extends PluginPanel
 		content.putClientProperty("roguescape.builderCard", "Type");
 		content.add(buildRunControlTab(), "Type");
 		content.add(buildRouteTab(), "Route");
-		content.add(buildZoneBuilderTab(), "Zone");
+		content.add(zoneBuilderSection.buildTab(), "Zone");
 		content.add(buildCursesTab(), "Mods");
 
 		JPanel tabRow = new JPanel(new java.awt.GridLayout(1, 4, 3, 0));
@@ -1980,140 +1971,6 @@ public class RogueScapePanel extends PluginPanel
 	}
 
 	// ------------------------------------------------------------ ZONE BUILDER
-
-	private CollapsibleSection buildZoneBuilderSection()
-	{
-		CollapsibleSection section = new CollapsibleSection("Zone Builder", true);
-		section.content().add(buildZoneBuilderTab());
-		return section;
-	}
-
-	private JPanel buildZoneBuilderTab()
-	{
-		JPanel c = builderTab();
-		c.add(fieldLabel("Zone Name"));
-		c.add(vGap(3));
-		zoneNameField.setBackground(RogueScapeTheme.SECTION_HEADER_BG);
-		zoneNameField.setForeground(RogueScapeTheme.TEXT_PRIMARY);
-		zoneNameField.setCaretColor(RogueScapeTheme.TEXT_PRIMARY);
-		zoneNameField.setMaximumSize(new Dimension(Integer.MAX_VALUE, 24));
-		c.add(zoneNameField);
-		c.add(vGap(6));
-
-		styleButton(addZoneToggleBtn, true);
-		addZoneToggleBtn.addActionListener(e -> toggleZoneEditing());
-		c.add(addZoneToggleBtn);
-		c.add(vGap(6));
-
-		c.add(fieldLabel("Status"));
-		c.add(vGap(3));
-		c.add(readOnlyArea(zoneStatusArea, RogueScapeTheme.TEXT_MUTED, 70));
-		c.add(vGap(6));
-
-		c.add(fieldLabel("Selected Regions"));
-		c.add(vGap(3));
-		c.add(readOnlyArea(zoneRegionsArea, RogueScapeTheme.TEXT_PRIMARY, 70));
-		c.add(vGap(6));
-
-		styleButton(saveZoneBtn, true);
-		saveZoneBtn.addActionListener(e -> {
-			syncZoneNameToSelection();
-			if (saveRoomRequest != null) saveRoomRequest.run();
-			if (roomEditorState != null)
-			{
-				roomEditorState.markChanged("Zone \"" + roomEditorState.selection().getName() + "\" saved");
-			}
-			updateZoneBuilder();
-		});
-		c.add(saveZoneBtn);
-		c.add(vGap(4));
-
-		styleButton(clearZoneBtn, false);
-		clearZoneBtn.addActionListener(e -> {
-			if (roomEditorState != null)
-			{
-				roomEditorState.selection().clear();
-				roomEditorState.markChanged("Selected regions cleared");
-				if (saveRoomRequest != null) saveRoomRequest.run();
-			}
-			updateZoneBuilder();
-		});
-		c.add(clearZoneBtn);
-		c.add(vGap(4));
-
-		styleButton(useZoneBtn, false);
-		useZoneBtn.addActionListener(e -> {
-			syncZoneNameToSelection();
-			if (useRoomRequest != null && roomEditorState != null && !roomEditorState.selection().isEmpty())
-			{
-				useRoomRequest.run();
-				roomEditorState.markChanged("Zone \"" + roomEditorState.selection().getName() + "\" activated");
-			}
-			updateZoneBuilder();
-		});
-		c.add(useZoneBtn);
-		c.add(vGap(6));
-
-		c.add(hintBox(new String[]{
-			"How to add regions:",
-			"1. Click 'Start adding regions'",
-			"2. Open the world map",
-			"3. Hover a region tile",
-			"4. Right-click → Toggle region"
-		}));
-
-		return c;
-	}
-
-	private void updateZoneBuilder()
-	{
-		if (roomEditorState == null) return;
-		boolean editing = roomEditorState.isEditing();
-		addZoneToggleBtn.setText(editing ? "Stop adding regions" : "Start adding regions");
-		addZoneToggleBtn.setBackground(editing ? RogueScapeTheme.NEGATIVE : RogueScapeTheme.POSITIVE);
-
-		int hoveredId = roomEditorState.getHoveredRegionId();
-		int selectedCount = roomEditorState.selection().size();
-		String lastSummary = roomEditorState.getLastToggleSummary();
-		String zoneName = roomEditorState.selection().getName();
-
-		StringBuilder status = new StringBuilder();
-		status.append("Editing: ").append(editing ? "ON" : "OFF").append("\n");
-		status.append("Zone: ").append(zoneName).append("\n");
-		if (editing)
-		{
-			status.append("Hovered: ").append(hoveredId >= 0 ? Integer.toString(hoveredId) : "none").append("\n");
-		}
-		status.append("Selected: ").append(selectedCount).append(" region(s)\n");
-		if (lastSummary != null && !lastSummary.isEmpty())
-		{
-			status.append("Last: ").append(lastSummary);
-		}
-		zoneStatusArea.setText(status.toString());
-
-		clearZoneBtn.setEnabled(selectedCount > 0);
-		useZoneBtn.setEnabled(selectedCount > 0);
-
-		StringBuilder sb = new StringBuilder();
-		for (String id : roomEditorState.selection().selectedRegionIdStrings())
-		{
-			sb.append(id).append("\n");
-		}
-		zoneRegionsArea.setText(sb.toString());
-	}
-
-	void syncZoneNameToSelection()
-	{
-		if (roomEditorState == null) return;
-		roomEditorState.selection().setName(zoneNameField.getText());
-	}
-
-	private void toggleZoneEditing()
-	{
-		if (roomEditorState == null) return;
-		roomEditorState.setEditing(!roomEditorState.isEditing());
-		updateZoneBuilder();
-	}
 
 	// ------------------------------------------------------------ RELICS
 

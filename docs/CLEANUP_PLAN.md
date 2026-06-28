@@ -79,8 +79,18 @@ These govern the workstreams below where they differ from the original menu of o
   `RelicLibrary`/`ModifierLibrary`; the single caller was repointed and the now-orphaned `RelicLibrary`
   import pruned. New `RelicCatalogSectionTest` pins the count headers, a rendered entry per relic/modifier,
   and that the list is hosted inside the scroll pane; 2-lens review confirmed verbatim. `RogueScapePanel`
-  2303 → 2236. Remaining: `ZoneBuilderSection`. Guarded by `RogueScapePanelLayoutTest`. Suite green
-  (337 tests).
+  2303 → 2236.
+  Finally promoted `builderTab` + the `styleButton` overloads into `PanelWidgetFactory` (shared stateless
+  primitives) and extracted the stateful `ui.ZoneBuilderSection` — the custom-zone builder card (7 widgets +
+  the `RogueScapeCustomRoomEditorState` wiring, `buildTab`/`update`/`syncNameToSelection`/`toggleEditing`)
+  moved verbatim into a class the panel constructs and forwards `update()` to; the dead
+  `buildZoneBuilderSection()` was dropped. New `ZoneBuilderSectionTest` pins the name seeding, the
+  status/region readout + clear/use enablement, the editing toggle, and the save (name-sync + request +
+  status note); a 2-lens review confirmed the move (incl. init ordering, single listener registration) is
+  behavior-preserving. `RogueScapePanel` 2236 → 2064. **W8 panel ladder complete** (`PanelActionPresenter`,
+  `RunSeedCodec`, `PanelWidgetFactory`, `RelicCatalogSection`, `ZoneBuilderSection` all extracted). Guarded
+  by `RogueScapePanelLayoutTest`. Suite green (342 tests). Next on the panel ladder: **W9** —
+  `CustomRunSpec` then `RunBuilderSection`.
 - **W6a / W7 — IN PROGRESS.** Wired the kept recap/race packages onto the live path via the
   unit-tested `core.RunCompletionRecorder` (run-end snapshot -> `RunHistory` + `Leaderboard`, guarded
   one-shot tick edge in the plugin). Extracted two pure-logic services with tests:
