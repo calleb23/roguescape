@@ -108,10 +108,22 @@ These govern the workstreams below where they differ from the original menu of o
     next-stage collapse, the travel objective override, and the target-label formatting. A 2-lens
     adversarial review (behavior-preservation + seam/test-honesty) confirmed the move is 1:1 (its only
     notes were unreachable defensive null-checks). Suite green (321 tests).
-  - **Remaining (W7, now on the seam):** `CustomRoomZoneService` (from `applyCustomRoomZoneToRun`)
-    consumes `RunContext` next; the panel sections (`RelicCatalogSection`, `ZoneBuilderSection`) want
-    `PanelWidgetFactory` first. Then the keystones: W9 `CustomRunSpec`/`RunBuilderSection`, W10
-    `RunController`, and W4 UI dedup.
+  - **W7d — DONE.** Extracted `core.CustomRoomZoneService` behind the `RunContext` seam:
+    `applyCustomRoomZoneToRun` is now a pure static that stamps the creator's selected regions onto every
+    non-boss stage (preserving each stage's existing `RoomKind`) and records the zone note; the plugin
+    delegates and the now-unused `RoomKind`/`StageRegionRule` imports are gone. The `run`/`session`-only
+    guard (not `loop`) and the `useCustomRoom = config == null || config.useCustomRoomForCurrentRun()`
+    gate were preserved exactly. `RogueScapePlugin` 2226 → 2206. New `CustomRoomZoneServiceTest` (5 cases)
+    pins the boss-skip, kind preservation, and the useCustomRoom / empty-selection / lobby no-op gates.
+    A 2-lens adversarial review confirmed the move is 1:1. Suite green (326 tests). **W7 is now complete**
+    — all of `OverlayTextModel`, `InventoryProvenanceTracker`, `MenuEnforcementController`,
+    `ChatEventInterpreter`, `CustomRoomZoneService` are extracted; the plugin's `@Subscribe` handlers and
+    overlay/zone glue are thin delegations.
+  - **Remaining (panel ladder + keystones):** the panel sections (`RelicCatalogSection`,
+    `ZoneBuilderSection`) want `PanelWidgetFactory` first (W8). Then the keystones: W9
+    `CustomRunSpec`/`RunBuilderSection`, W10 `RunController` (owns the `runSession`/`rogueRun`/`runLoop`
+    triple + lifecycle, where the private dispatch switch + reset field-nulling get their honest home),
+    and W4 UI dedup.
 
 ## Plugin Hub size limit (the research question)
 

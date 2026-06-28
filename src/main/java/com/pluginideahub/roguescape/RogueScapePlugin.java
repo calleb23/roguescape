@@ -3,6 +3,7 @@ package com.pluginideahub.roguescape;
 import com.google.inject.Provides;
 import com.pluginideahub.roguescape.bridge.ShortestPathBridge;
 import com.pluginideahub.roguescape.core.ChatEventInterpreter;
+import com.pluginideahub.roguescape.core.CustomRoomZoneService;
 import com.pluginideahub.roguescape.core.ModePresetParser;
 import com.pluginideahub.roguescape.core.RogueScapeCustomRunFactory;
 import com.pluginideahub.roguescape.core.RogueScapeRun;
@@ -25,8 +26,6 @@ import com.pluginideahub.roguescape.core.adapter.ProvenanceSignalTracker;
 import com.pluginideahub.roguescape.core.enforcement.RogueScapeEnforcementRules;
 import com.pluginideahub.roguescape.core.legality.InventorySnapshot;
 import com.pluginideahub.roguescape.core.region.RogueScapeCustomRoomSelection;
-import com.pluginideahub.roguescape.core.region.RoomKind;
-import com.pluginideahub.roguescape.core.region.StageRegionRule;
 import com.pluginideahub.roguescape.core.relic.Relic;
 import com.pluginideahub.roguescape.core.relic.RelicEffect;
 import com.pluginideahub.roguescape.core.relic.RelicEffectKind;
@@ -726,28 +725,9 @@ public class RogueScapePlugin extends Plugin
 
 	private void applyCustomRoomZoneToRun()
 	{
-		if (rogueRun == null || runSession == null || customRoomEditorState == null
-			|| customRoomEditorState.selection().isEmpty())
-		{
-			return;
-		}
-		if (config != null && !config.useCustomRoomForCurrentRun())
-		{
-			return;
-		}
-		Set<String> selectedRegions = customRoomEditorState.selection().selectedRegionIdStrings();
-		for (RunStage stage : runSession.route().stages())
-		{
-			if (stage == null || stage.type() == RunStageType.BOSS)
-			{
-				continue;
-			}
-			StageRegionRule existing = rogueRun.regionPolicy().ruleFor(stage.id());
-			RoomKind kind = existing == null ? RoomKind.REGION : existing.roomKind();
-			rogueRun.setRegionRule(stage.id(), new StageRegionRule(kind, selectedRegions, true));
-		}
-		runSession.recordRunLoopNote("Applied custom zone: " + customRoomEditorState.selection().getName()
-			+ " (" + customRoomEditorState.selection().size() + " regions)");
+		CustomRoomZoneService.applyToRun(runContext(),
+			customRoomEditorState == null ? null : customRoomEditorState.selection(),
+			config == null || config.useCustomRoomForCurrentRun());
 	}
 
 	private void refreshOverlaySummary()
