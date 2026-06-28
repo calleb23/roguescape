@@ -66,10 +66,16 @@ These govern the workstreams below where they differ from the original menu of o
   the `ITEM_*` icon constants). Plugin keeps thin delegations. `RogueScapePlugin` is down from
   **2739 → ~2230 lines**. Added `RewardPresenterTest`. Suite green (288 tests).
 
-- **W8 — IN PROGRESS (panel track, interleaved).** Started decomposing `RogueScapePanel` (2554):
-  extracted `ui.PanelActionPresenter` (action -> label/role mapping) and `core.RunSeedCodec` (pure
-  seed field/time/boss-cap parsing, with `RunSeedCodecTest`). Remaining: `PanelWidgetFactory`,
-  `ZoneBuilderSection`, `RelicCatalogSection`. Guarded by `RogueScapePanelLayoutTest`. Suite green.
+- **W8 — IN PROGRESS (panel track, interleaved).** Decomposing `RogueScapePanel` (2554):
+  extracted `ui.PanelActionPresenter` (action -> label/role mapping), `core.RunSeedCodec` (pure
+  seed field/time/boss-cap parsing, with `RunSeedCodecTest`), and now `ui.PanelWidgetFactory` — the 11
+  stateless leaf Swing builders (`escape`, `vGap`, `fieldLabel`, `mutedRow`, `detailRow`, `statRow`,
+  `keyValueRow`, `routeRow`, `hintBox`, `featureBox`, `readOnlyArea`) moved out verbatim; the panel keeps
+  thin private delegations so its ~130 internal call sites are untouched. New `PanelWidgetFactoryTest`
+  pins the escape rules + the value/symbol colour logic; a 2-lens adversarial review confirmed the move is
+  byte-for-byte (also pruned a now-stale `java.awt.Font` import). `RogueScapePanel` 2443 → 2303. Remaining:
+  `ZoneBuilderSection`, `RelicCatalogSection` (now have `PanelWidgetFactory` to build on). Guarded by
+  `RogueScapePanelLayoutTest`. Suite green (334 tests).
 - **W6a / W7 — IN PROGRESS.** Wired the kept recap/race packages onto the live path via the
   unit-tested `core.RunCompletionRecorder` (run-end snapshot -> `RunHistory` + `Leaderboard`, guarded
   one-shot tick edge in the plugin). Extracted two pure-logic services with tests:
