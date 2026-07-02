@@ -7,17 +7,21 @@ and the *levers*, not the numbers.
 
 The three things a run accumulates, split by **domain** (not mechanics):
 
-- **UPGRADES = equipment.** The build's equipment story, one tall list.
-  - *Boss Ladder:* gear-tier ladder steps — **per-category lanes: Weapon / Armour / Jewellery**
-    ("May now wield rune-grade weapons"). A tier raise is an upgrade, never a relic.
-  - *Scavenger:* the gear you **found & kept** in rooms (the four-category collection log).
+- **UPGRADES = equipment (and, in Boss Ladder, supplies).** The build's kit story, one tall list.
+  - *Boss Ladder:* ladder steps in **four lanes: Weapon / Armour / Jewellery / Supplies**
+    ("May now wield rune-grade weapons", "May now bring better supplies"). A lane raise is an
+    upgrade, never a relic. Weapon/Armour/Jewellery tier = equip-level requirement; the Supplies
+    lane needs its own grading scale (consumables have no equip req) — authoring/playtest data.
+  - *Scavenger:* the gear you **found & kept** in rooms (the four-category collection log);
+    supplies are simply **whatever you can find** — no supply upgrades in Scav.
 - **RELICS = everything that isn't equipment.** Named artifacts, each a binary permit: prayer
   back, a high prayer (Piety/Rigour/Augury), spellbook swap, bank/GE/trade back, teleports,
   food/potions permitted, inventory slots (Deep Pockets stays a relic). The old separate
   bank/prayer/potion "unlock" reward type is **retired — those are relics now**.
 - **CURSES = setup burdens** (unchanged): chosen before the run, add restrictions, score.
-- **Supplies are neither** — consumables are just items, tracked in the tally; the *permission*
-  to use them (food allowed, potions allowed) is relic territory.
+- **Supplies:** in Boss Ladder they are an upgrade lane (above); in Scavenger they are just
+  items — tracked in the tally, no panel. The *permission* to use a consumable class at all
+  (food allowed, potions allowed) remains relic territory in both modes.
 - **No slot caps** on relics/curses — pockets and strips grow/scroll; the sketch counts were
   incidental.
 - **Relics in Scavenger** get their footing from (a) combat-toggle locks Scav starts with —
