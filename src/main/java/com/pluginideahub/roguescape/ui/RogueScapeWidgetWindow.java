@@ -435,9 +435,80 @@ public final class RogueScapeWidgetWindow implements MouseListener
 				return drawCards(b, y);
 			case MODE_TILES:
 				return drawModeTiles(b, y);
+			case BOSS_BAND:
+				return drawBossBand(b, y);
 			default:
 				return y;
 		}
+	}
+
+	/**
+	 * The boss line-up band with REAL 3D chatheads: each boss card holds a MODEL-type child
+	 * widget (WidgetModelType.NPC_CHATHEAD + the boss's NPC id), which the game engine renders
+	 * live — the same mechanism as dialog chatheads. Locked bosses are dimmed with a cover
+	 * rectangle; felled ones show their name struck (via strikethrough tag).
+	 */
+	private int drawBossBand(Block b, int y)
+	{
+		java.util.List<com.pluginideahub.roguescape.core.ui.SidePanelViewModel.Chapter> bosses =
+			b.chapters == null ? java.util.Collections.emptyList() : b.chapters;
+		if (bosses.isEmpty())
+		{
+			return y;
+		}
+		int gap = 6;
+		int shown = Math.min(4, bosses.size());
+		int cardW = (CONTENT_W - gap * (shown - 1)) / shown;
+		int cardH = 74;
+		for (int i = 0; i < shown; i++)
+		{
+			com.pluginideahub.roguescape.core.ui.SidePanelViewModel.Chapter boss = bosses.get(i);
+			int px = CONTENT_X + i * (cardW + gap);
+
+			Widget card = contentLayer.createChild(-1, WidgetType.RECTANGLE);
+			card.setFilled(true);
+			card.setTextColor(boss.isCurrent() ? 0x4A3A24 : 0x3A2E1C);
+			card.setOpacity(60);
+			fill(card, px, y, cardW, cardH);
+
+			int npcId = com.pluginideahub.roguescape.core.region.BossLibrary.npcIdFor(boss.name());
+			if (npcId > 0)
+			{
+				Widget model = contentLayer.createChild(-1, WidgetType.MODEL);
+				model.setModelType(net.runelite.api.widgets.WidgetModelType.NPC_CHATHEAD);
+				model.setModelId(npcId);
+				model.setModelZoom(796);
+				model.setRotationX(40);
+				model.setRotationZ(1882);
+				fill(model, px + (cardW - 36) / 2, y + 4, 36, 40);
+				if (!boss.isDone() && !boss.isCurrent())
+				{
+					// Locked: dim the head under a translucent cover.
+					Widget cover = contentLayer.createChild(-1, WidgetType.RECTANGLE);
+					cover.setFilled(true);
+					cover.setTextColor(0x14100A);
+					cover.setOpacity(120);
+					fill(cover, px + 2, y + 2, cardW - 4, cardH - 22);
+				}
+			}
+
+			String label = boss.isDone()
+				? "<str>" + RogueScapeWindowOverlay.ascii(boss.name()) + "</str>"
+				: RogueScapeWindowOverlay.ascii(boss.name());
+			if (!boss.isDone() && !boss.isCurrent())
+			{
+				label = "[LOCKED] " + label;
+			}
+			Widget name = text(contentLayer, px + 2, y + cardH - 18, cardW - 4, label,
+				boss.isCurrent() ? COL_GOLD : COL_MUTED, FontID.PLAIN_11, false);
+			name.setXTextAlignment(WidgetTextAlignment.CENTER);
+		}
+		if (bosses.size() > shown)
+		{
+			text(contentLayer, CONTENT_X + CONTENT_W - 40, y + cardH / 2, 40,
+				"+" + (bosses.size() - shown) + " >", COL_MUTED, FontID.PLAIN_11, false);
+		}
+		return y + cardH + 8;
 	}
 
 	private int drawStatBar(Block b, int y)

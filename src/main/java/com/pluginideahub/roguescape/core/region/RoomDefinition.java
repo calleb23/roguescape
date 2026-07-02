@@ -19,8 +19,15 @@ public final class RoomDefinition
 	private final String name;
 	private final RoomKind kind;
 	private final Set<String> regionIds;
+	/** OSRS NPC id for boss stages (0 = none) — lets the widget UI render the 3D chathead. */
+	private final int npcId;
 
 	public RoomDefinition(String id, String name, RoomKind kind, Set<String> regionIds)
+	{
+		this(id, name, kind, regionIds, 0);
+	}
+
+	public RoomDefinition(String id, String name, RoomKind kind, Set<String> regionIds, int npcId)
 	{
 		if (id == null || id.isEmpty()) throw new IllegalArgumentException("id required");
 		if (name == null || name.isEmpty()) throw new IllegalArgumentException("name required");
@@ -37,10 +44,13 @@ public final class RoomDefinition
 			}
 		}
 		this.regionIds = Collections.unmodifiableSet(copy);
+		this.npcId = Math.max(0, npcId);
 	}
 
 	public String id() { return id; }
 	public String name() { return name; }
 	public RoomKind kind() { return kind; }
 	public Set<String> regionIds() { return regionIds; }
+	/** OSRS NPC id for the boss's chathead model, or 0 when none applies. */
+	public int npcId() { return npcId; }
 }
