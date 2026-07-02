@@ -974,10 +974,10 @@ public class RogueScapePlugin extends Plugin
 		String panelGoal = panel != null ? panel.selectedGoal() : "";
 		String goal = (panelGoal == null || panelGoal.trim().isEmpty()) ? config.goalText() : panelGoal.trim();
 		String rawSeed = panel != null ? panel.selectedSeed() : config.seedText();
-		// No user seed -> start the exact route the Contract previewed (the rolled pending seed),
-		// so the run is always the one you signed for, never a surprise re-roll.
+		// No user seed -> start the exact catalogue route the Contract previews, so the run is
+		// always the one you signed for, never a surprise re-roll.
 		String seed = (rawSeed == null || rawSeed.trim().isEmpty())
-			? (windowContent != null ? windowContent.consumePendingRouteSeed() : null)
+			? (windowContent != null ? windowContent.selectedRouteSeed() : null)
 			: rawSeed.trim();
 		RunPreset preset = panel != null ? panel.selectedPreset() : RunPreset.UNSPECIFIED;
 
@@ -1528,7 +1528,7 @@ public class RogueScapePlugin extends Plugin
 	{
 		if (mode == RunMode.BANK_DRAFT) return "Boss Ladder";
 		if (mode == RunMode.CUSTOM_CREATOR) return "Custom";
-		return "Scavenger";
+		return "Dungeon Crawl";
 	}
 	/** Logs the live side journal widget tree (for tuning the journal injection). */
 	private void logJournalDump()

@@ -80,7 +80,8 @@ public final class RogueScapeWidgetWindow implements MouseListener
 	private final Supplier<List<Tab>> tabsSupplier;
 	private String diag = "";
 
-	private boolean wantOpen;
+	// Shows as soon as the experimental flag allows it — the config toggle IS the switch.
+	private boolean wantOpen = true;
 	private int winX = 40;
 	private int winY = 40;
 	private int selectedTab;

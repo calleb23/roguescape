@@ -786,7 +786,7 @@ public class RogueScapeWindowOverlay extends Overlay implements MouseListener
 		int cols = Math.min(5, Math.max(1, n));
 		int gap = 10;
 		int tileW = (w - gap * (cols - 1)) / cols;
-		int tileH = Math.min(116, bottom - y);
+		int tileH = Math.min(tallTiles(b) ? 116 : 56, bottom - y);
 		g.setFont(FontManager.getRunescapeBoldFont());
 		for (int i = 0; i < n; i++)
 		{
@@ -992,6 +992,14 @@ public class RogueScapeWindowOverlay extends Overlay implements MouseListener
 				case HOURGLASS:
 					h += 40;
 					break;
+				case MODE_TILES:
+				{
+					int n = b.modeTiles == null ? 0 : b.modeTiles.size();
+					int cols = Math.min(5, Math.max(1, n));
+					int rows = n == 0 ? 0 : (n + cols - 1) / cols;
+					h += rows * ((tallTiles(b) ? 116 : 56) + 10) + 8;
+					break;
+				}
 				default:
 					h += LINE_H;
 					break;
@@ -1136,6 +1144,24 @@ public class RogueScapeWindowOverlay extends Overlay implements MouseListener
 			g.drawString("+" + (bosses.size() - shown) + " »", x + w - 34, y + cardH / 2 + 4);
 		}
 		return y + cardH + 8;
+	}
+
+	/** Tall tiles carry a subtitle (contract cards); subtitle-less tiles (route entries, page
+	 *  arrows) render compact. */
+	private static boolean tallTiles(Block b)
+	{
+		if (b.modeTiles == null)
+		{
+			return true;
+		}
+		for (ModeTile t : b.modeTiles)
+		{
+			if (!t.subtitle.isEmpty())
+			{
+				return true;
+			}
+		}
+		return false;
 	}
 
 	/** A small inked padlock: body + shackle. */

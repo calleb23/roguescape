@@ -26,7 +26,7 @@ public class RunBriefingBuilderTest
 		RunBriefing briefing = RunBriefingBuilder.preview(RunMode.FRESH_SOURCE, RunPreset.UNSPECIFIED,
 			"fixed-seed", "Naked", false, 0);
 
-		assertEquals("Scavenger", briefing.modeLabel());
+		assertEquals("Dungeon Crawl", briefing.modeLabel());
 		assertTrue("a seeded route is locked", briefing.routeLocked());
 		assertTrue(briefing.roomCount() >= 1);
 		assertEquals(1, briefing.bossCount());

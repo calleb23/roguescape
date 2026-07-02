@@ -178,23 +178,28 @@ public final class SidePanelViewModel
 	/** Active curse names — the seals on the curse strip. */
 	public List<String> curseNames() { return curseNames; }
 
+	/** Routes shown per catalogue page (2x2 tiles). */
+	public static final int ROUTE_PAGE_SIZE = 4;
+
 	/**
 	 * The Contract (lobby) as a two-page spread. Left page = the choices: the mode contracts,
-	 * the run title, and the Begin stamp. Right page = the context: the live briefing of the
-	 * route the current selection will build (or why it could not be previewed). Pure core —
-	 * the adapter supplies the selection state and the pre-built {@link RunBriefing}.
+	 * the run title, and the Begin stamp. Right page = the ROUTE CATALOGUE — a table of contents
+	 * of named routes (full choice, not a roll: pick any entry, page with the dog-ear arrows) —
+	 * followed by the selected route's condensed briefing. Pure core — the adapter supplies the
+	 * catalogue names, the selection state, and the pre-built {@link RunBriefing}.
 	 */
 	public static JournalSpread contractSpread(RunMode mode, String runTitle, String seed,
-		RunBriefing briefing, String briefingError)
+		RunBriefing briefing, String briefingError,
+		List<String> routeNames, int selectedRoute, int routePageStart)
 	{
 		List<JournalSpread.Block> left = new ArrayList<>();
 		left.add(JournalSpread.Block.heading("Pick Your Contract"));
 		List<JournalSpread.Choice> contracts = new ArrayList<>();
-		contracts.add(new JournalSpread.Choice("Scavenger", "Earn power, room by room.", "Fresh source",
+		contracts.add(new JournalSpread.Choice("Dungeon Crawl", "Earn power, room by room.", "Found gear",
 			JournalSpread.Tone.POSITIVE, mode == RunMode.FRESH_SOURCE || mode == RunMode.UNSPECIFIED, "scavenger"));
-		contracts.add(new JournalSpread.Choice("Boss Ladder", "Short prep, boss loot.", "Climb",
+		contracts.add(new JournalSpread.Choice("Boss Ladder", "Bosses only. Un-shackle between fights.", "Climb",
 			JournalSpread.Tone.GOLD, mode == RunMode.BANK_DRAFT, "rewarded"));
-		contracts.add(new JournalSpread.Choice("Custom", "Draw your own route.", "Open builder",
+		contracts.add(new JournalSpread.Choice("Custom", "Draw your own route.", "Coming soon",
 			JournalSpread.Tone.MUTED, mode == RunMode.CUSTOM_CREATOR, "custom"));
 		left.add(JournalSpread.Block.choices(contracts));
 		left.add(JournalSpread.Block.gap());
@@ -204,13 +209,10 @@ public final class SidePanelViewModel
 		{
 			left.add(JournalSpread.Block.note("Seed: " + seed.trim(), JournalSpread.Tone.MUTED));
 		}
-		left.add(JournalSpread.Block.gap());
-		List<JournalSpread.Choice> actions = new ArrayList<>();
-		actions.add(new JournalSpread.Choice("BEGIN THE RUN", "Sign and stamp the contract", "This exact route",
-			JournalSpread.Tone.POSITIVE, false, "start-run"));
-		actions.add(new JournalSpread.Choice("REROLL", "Tear the page, draw another route", "New fate",
-			JournalSpread.Tone.MUTED, false, "reroll-route"));
-		left.add(JournalSpread.Block.choices(actions));
+		left.add(JournalSpread.Block.fill());
+		left.add(JournalSpread.Block.choices(Collections.singletonList(
+			new JournalSpread.Choice("BEGIN THE RUN", "Sign and stamp the contract", "This exact route",
+				JournalSpread.Tone.POSITIVE, false, "start-run"))));
 
 		List<JournalSpread.Block> right = new ArrayList<>();
 		if (mode == RunMode.CUSTOM_CREATOR)
@@ -220,8 +222,40 @@ public final class SidePanelViewModel
 			right.add(JournalSpread.Block.text("Coming soon.", JournalSpread.Tone.MUTED));
 			right.add(JournalSpread.Block.note("Draw-your-own-route contracts are being rebuilt "
 				+ "around the new restriction rules.", JournalSpread.Tone.MUTED));
+			return new JournalSpread("The Contract", "choose, sign, and stamp", left, right);
 		}
-		else if (briefing == null)
+
+		// The route catalogue: a paged table of contents, every entry directly pickable.
+		if (routeNames != null && !routeNames.isEmpty())
+		{
+			int pages = (routeNames.size() + ROUTE_PAGE_SIZE - 1) / ROUTE_PAGE_SIZE;
+			int page = Math.min(Math.max(0, routePageStart), pages - 1);
+			right.add(JournalSpread.Block.heading("The Routes — page " + (page + 1) + " of " + pages));
+			int from = page * ROUTE_PAGE_SIZE;
+			int to = Math.min(routeNames.size(), from + ROUTE_PAGE_SIZE);
+			// Two tiles per row so the names stay readable.
+			for (int i = from; i < to; i += 2)
+			{
+				List<JournalSpread.Choice> row = new ArrayList<>();
+				for (int j = i; j < Math.min(to, i + 2); j++)
+				{
+					row.add(new JournalSpread.Choice(routeNames.get(j), "", "No. " + (j + 1),
+						JournalSpread.Tone.INK, j == selectedRoute, "route:" + j));
+				}
+				right.add(JournalSpread.Block.choices(row));
+			}
+			if (pages > 1)
+			{
+				List<JournalSpread.Choice> arrows = new ArrayList<>();
+				arrows.add(new JournalSpread.Choice("< Prev", "", "", JournalSpread.Tone.MUTED, false, "routes-page:prev"));
+				arrows.add(new JournalSpread.Choice("Next >", "", "", JournalSpread.Tone.MUTED, false, "routes-page:next"));
+				right.add(JournalSpread.Block.choices(arrows));
+			}
+			right.add(JournalSpread.Block.gap());
+		}
+
+		// The selected route's condensed briefing beneath the catalogue.
+		if (briefing == null)
 		{
 			right.add(JournalSpread.Block.text(
 				"Could not preview this route" + (briefingError == null || briefingError.isEmpty()
@@ -229,32 +263,12 @@ public final class SidePanelViewModel
 		}
 		else
 		{
-			right.add(JournalSpread.Block.heading("The Route — " + briefing.roomCount() + " rooms"
-				+ (briefing.bossCount() > 0 ? " + boss" : "")));
-			if (!briefing.routeLocked())
-			{
-				right.add(JournalSpread.Block.note("Rooms re-roll on Begin. Set a seed to lock this route.",
-					JournalSpread.Tone.MUTED));
-			}
 			for (RunBriefing.RoomLine room : briefing.rooms())
 			{
-				right.add(JournalSpread.Block.text(room.index() + ". " + room.name() + "  [" + room.kindLabel() + "]",
-					room.bossStage() ? JournalSpread.Tone.NEGATIVE : JournalSpread.Tone.GOLD));
-				right.add(JournalSpread.Block.note("   " + room.collectLabel() + " — clear by "
-					+ room.gatingLabel(), JournalSpread.Tone.MUTED));
+				right.add(JournalSpread.Block.note(room.index() + ". " + room.name() + "  [" + room.kindLabel() + "] — "
+					+ room.collectLabel(), room.bossStage() ? JournalSpread.Tone.NEGATIVE : JournalSpread.Tone.INK));
 			}
-			right.add(JournalSpread.Block.gap());
-			right.add(JournalSpread.Block.heading("The Rules"));
-			right.add(JournalSpread.Block.note("Loadout: " + briefing.loadoutLabel(), JournalSpread.Tone.INK));
-			right.add(JournalSpread.Block.note(briefing.bankAccessLabel(), JournalSpread.Tone.INK));
-			right.add(JournalSpread.Block.note(briefing.timeModelLabel(), JournalSpread.Tone.INK));
-			right.add(JournalSpread.Block.note("Seed: " + briefing.seedLabel(), JournalSpread.Tone.MUTED));
-			right.add(JournalSpread.Block.gap());
 			right.add(JournalSpread.Block.note("WIN: " + briefing.winCondition(), JournalSpread.Tone.POSITIVE));
-			for (String lose : briefing.loseConditions())
-			{
-				right.add(JournalSpread.Block.note("LOSE: " + lose, JournalSpread.Tone.NEGATIVE));
-			}
 		}
 
 		return new JournalSpread("The Contract", "choose, sign, and stamp", left, right);

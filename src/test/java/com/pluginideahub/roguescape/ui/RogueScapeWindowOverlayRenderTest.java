@@ -103,11 +103,16 @@ public class RogueScapeWindowOverlayRenderTest
 			com.pluginideahub.roguescape.core.briefing.RunBriefingBuilder.preview(
 				com.pluginideahub.roguescape.core.RunMode.FRESH_SOURCE,
 				com.pluginideahub.roguescape.core.RunPreset.UNSPECIFIED,
-				"rat-king-42", "Naked", false, 0);
+				"crawl-route-2", "Naked", false, 0);
+		java.util.List<String> catalog = new ArrayList<>();
+		for (int i = 0; i < 12; i++)
+		{
+			catalog.add(com.pluginideahub.roguescape.core.seed.RouteNames.smartName("crawl-route-" + (i + 1)));
+		}
 		List<RogueScapeWindowOverlay.Tab> tabs = Collections.singletonList(
 			new RogueScapeWindowOverlay.Tab("THE CONTRACT", JournalSpreadBlocks.render(
 				SidePanelViewModel.contractSpread(com.pluginideahub.roguescape.core.RunMode.FRESH_SOURCE,
-					"Scavenger Run", "rat-king-42", briefing, ""))));
+					"Dungeon Crawl Run", "", briefing, "", catalog, 1, 0))));
 		writePng(tabs, 0, new File(dir, "window-contract-book.png"), true);
 		assertTrue(new File(dir, "window-contract-book.png").exists());
 	}

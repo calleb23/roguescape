@@ -133,7 +133,7 @@ public final class RunBriefingBuilder
 
 	static String modeLabel(RunMode mode)
 	{
-		if (mode == null) return "Scavenger";
+		if (mode == null) return "Dungeon Crawl";
 		switch (mode)
 		{
 			case BANK_DRAFT: return "Boss Ladder";
@@ -142,7 +142,7 @@ public final class RunBriefingBuilder
 			case SEEDED_RACE: return "Seeded Race";
 			case FRESH_SOURCE:
 			case UNSPECIFIED:
-			default: return "Scavenger";
+			default: return "Dungeon Crawl";
 		}
 	}
 

@@ -124,43 +124,57 @@ final class RogueScapeWindowContent
 {
 	private final RogueScapePlugin plugin;
 
-	/**
-	 * The lobby's rolled route seed: the briefing previews THIS route and Begin starts THIS
-	 * route — what you see is what you sign. Reroll replaces it; a user-typed seed overrides it.
-	 */
-	private String pendingRouteSeed;
+	/** Fixed routes per mode in the catalogue — the table of contents the player picks from. */
+	static final int ROUTE_CATALOG_SIZE = 12;
+
+	/** The catalogue selection: which numbered route the contract previews and Begin starts. */
+	private int selectedRouteIndex;
+	private int routePage;
 
 	RogueScapeWindowContent(RogueScapePlugin plugin)
 	{
 		this.plugin = plugin;
 	}
 
-	/** The seed the lobby is currently previewing (user seed wins; else the rolled one). */
+	/** The lobby's current mode (panel first, config fallback). */
+	private RunMode lobbyMode()
+	{
+		return plugin.panel != null ? plugin.panel.selectedMode()
+			: ModePresetParser.parseMode(plugin.config.modePreset());
+	}
+
+	/** Deterministic seed for catalogue entry {@code i} of the mode — same book every session. */
+	private static String routeSeed(RunMode mode, int i)
+	{
+		String prefix = mode == RunMode.BANK_DRAFT ? "ladder" : "crawl";
+		return prefix + "-route-" + (i + 1);
+	}
+
+	/** The catalogue's smart names for the mode, in order. */
+	private static List<String> routeCatalogNames(RunMode mode)
+	{
+		List<String> names = new ArrayList<>();
+		for (int i = 0; i < ROUTE_CATALOG_SIZE; i++)
+		{
+			names.add(com.pluginideahub.roguescape.core.seed.RouteNames.smartName(routeSeed(mode, i)));
+		}
+		return names;
+	}
+
+	/** The seed of the route the player has picked — what Begin starts. */
+	String selectedRouteSeed()
+	{
+		return routeSeed(lobbyMode(), Math.max(0, selectedRouteIndex));
+	}
+
+	/** The seed the lobby previews (a user-typed seed overrides the catalogue pick). */
 	String effectiveLobbySeed(String userSeed)
 	{
 		if (userSeed != null && !userSeed.trim().isEmpty())
 		{
 			return userSeed.trim();
 		}
-		if (pendingRouteSeed == null)
-		{
-			rerollRoute();
-		}
-		return pendingRouteSeed;
-	}
-
-	/** Roll a fresh route seed for the lobby preview. */
-	void rerollRoute()
-	{
-		pendingRouteSeed = "route-" + Integer.toHexString(new java.util.Random().nextInt(0xFFFFFF));
-	}
-
-	/** The seed Begin should start with (and roll a fresh one for the next contract). */
-	String consumePendingRouteSeed()
-	{
-		String seed = pendingRouteSeed;
-		rerollRoute();
-		return seed;
+		return selectedRouteSeed();
 	}
 
 	List<RogueScapeWindowOverlay.Tab> windowTabs()
@@ -196,7 +210,8 @@ final class RogueScapeWindowContent
 				}
 			}
 			tabs.add(new RogueScapeWindowOverlay.Tab("THE CONTRACT", JournalSpreadBlocks.render(
-				SidePanelViewModel.contractSpread(mode, runTitle, seed, briefing, briefingError))));
+				SidePanelViewModel.contractSpread(mode, runTitle, seed, briefing, briefingError,
+					routeCatalogNames(mode), selectedRouteIndex, routePage))));
 			return tabs;
 		}
 
@@ -246,9 +261,25 @@ final class RogueScapeWindowContent
 			plugin.dispatchAction(PanelAction.START_RUN);
 			return;
 		}
-		if ("reroll-route".equals(actionId))
+		if (actionId != null && actionId.startsWith("route:"))
 		{
-			rerollRoute();
+			try
+			{
+				int idx = Integer.parseInt(actionId.substring("route:".length()));
+				selectedRouteIndex = Math.max(0, Math.min(ROUTE_CATALOG_SIZE - 1, idx));
+				routePage = selectedRouteIndex / SidePanelViewModel.ROUTE_PAGE_SIZE;
+			}
+			catch (NumberFormatException ignored)
+			{
+			}
+			plugin.refreshSidePanel();
+			return;
+		}
+		if ("routes-page:prev".equals(actionId) || "routes-page:next".equals(actionId))
+		{
+			int pages = (ROUTE_CATALOG_SIZE + SidePanelViewModel.ROUTE_PAGE_SIZE - 1) / SidePanelViewModel.ROUTE_PAGE_SIZE;
+			routePage += actionId.endsWith("next") ? 1 : -1;
+			routePage = Math.max(0, Math.min(pages - 1, routePage));
 			plugin.refreshSidePanel();
 			return;
 		}
