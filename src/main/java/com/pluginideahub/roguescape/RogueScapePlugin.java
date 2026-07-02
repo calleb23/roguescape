@@ -334,8 +334,10 @@ public class RogueScapePlugin extends Plugin
 			mouseManager.unregisterMouseListener(widgetWindow);
 			widgetWindow.shutDown();
 			widgetWindow = null;
-			clientThread.invoke(() -> com.pluginideahub.roguescape.ui.RogueScapeWidgetSkin.unregister(client));
 		}
+		// Unconditional: the skin registers before widgetWindow is assigned, so its removal
+		// must not depend on the window having been constructed. Removing absent keys is a no-op.
+		clientThread.invoke(() -> com.pluginideahub.roguescape.ui.RogueScapeWidgetSkin.unregister(client));
 		if (navigationButton != null)
 		{
 			clientToolbar.removeNavigation(navigationButton);

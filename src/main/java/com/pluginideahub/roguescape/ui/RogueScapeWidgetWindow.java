@@ -438,6 +438,10 @@ public final class RogueScapeWidgetWindow implements MouseListener
 				{
 					for (Block child : b.left)
 					{
+						if (ly >= CONTENT_BOTTOM)
+						{
+							break;
+						}
 						ly = drawBlock(child, leftX, leftW, ly);
 					}
 				}
@@ -449,6 +453,10 @@ public final class RogueScapeWidgetWindow implements MouseListener
 				{
 					for (Block child : b.right)
 					{
+						if (ry >= CONTENT_BOTTOM)
+						{
+							break;
+						}
 						ry = drawBlock(child, rightX, rightW, ry);
 					}
 				}
@@ -727,7 +735,7 @@ public final class RogueScapeWidgetWindow implements MouseListener
 	private int drawCards(Block b, int x, int w, int y)
 	{
 		int n = b.cards == null ? 0 : b.cards.size();
-		if (n == 0)
+		if (n == 0 || y >= CONTENT_BOTTOM - 20)
 		{
 			return y;
 		}
@@ -781,7 +789,7 @@ public final class RogueScapeWidgetWindow implements MouseListener
 	private int drawModeTiles(Block b, int x, int w, int y)
 	{
 		int n = b.modeTiles == null ? 0 : b.modeTiles.size();
-		if (n == 0)
+		if (n == 0 || y >= CONTENT_BOTTOM - 20)
 		{
 			return y;
 		}
