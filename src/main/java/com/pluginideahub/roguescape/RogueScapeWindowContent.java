@@ -176,25 +176,24 @@ final class RogueScapeWindowContent
 			String userSeed = plugin.panel != null && plugin.panel.selectedSeed() != null && !plugin.panel.selectedSeed().trim().isEmpty()
 				? plugin.panel.selectedSeed().trim()
 				: plugin.config.seedText();
-			if (mode == RunMode.CUSTOM_CREATOR)
-			{
-				// Custom mode: the window becomes the route builder (mirrors the widget window).
-				return customBuilderTabs();
-			}
 			// The Contract spread: choices on the left page, the live briefing on the right.
 			// The previewed route is pinned to a rolled seed, so Begin starts exactly what you see.
+			// Custom mode shows its coming-soon note on the right (the old builder is being reworked).
 			String seed = effectiveLobbySeed(userSeed);
 			String loadout = plugin.panel != null ? plugin.panel.customBuilderLoadout() : "Naked";
 			RunBriefing briefing = null;
 			String briefingError = "";
-			try
+			if (mode != RunMode.CUSTOM_CREATOR)
 			{
-				briefing = RunBriefingBuilder.preview(mode, preset, seed, loadout,
-					plugin.config.bankAccessAllowed(), 0);
-			}
-			catch (RuntimeException ex)
-			{
-				briefingError = ex.getMessage() == null ? "" : ex.getMessage();
+				try
+				{
+					briefing = RunBriefingBuilder.preview(mode, preset, seed, loadout,
+						plugin.config.bankAccessAllowed(), 0);
+				}
+				catch (RuntimeException ex)
+				{
+					briefingError = ex.getMessage() == null ? "" : ex.getMessage();
+				}
 			}
 			tabs.add(new RogueScapeWindowOverlay.Tab("THE CONTRACT", JournalSpreadBlocks.render(
 				SidePanelViewModel.contractSpread(mode, runTitle, seed, briefing, briefingError))));
@@ -254,13 +253,8 @@ final class RogueScapeWindowContent
 			return;
 		}
 		plugin.panel.selectRunBuilderMode(actionId);
-		if ("custom".equals(actionId))
-		{
-			if (plugin.customBuilderWidgetWindow != null)
-			{
-				plugin.customBuilderWidgetWindow.setOpen(true);
-			}
-		}
+		// Custom no longer opens the old builder window — the contract page shows Coming Soon
+		// until the builder is rebuilt around the restriction rules.
 		plugin.refreshSidePanel();
 	}
 

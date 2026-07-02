@@ -1107,6 +1107,26 @@ public class RogueScapePlugin extends Plugin
 					runLoop.markNow(now);
 				}
 				break;
+			case DEV_ENTER_ROOM:
+				// Emulate walking into the current stage's allowed region — skips travel.
+				if (rogueRun != null && runLoop != null)
+				{
+					StageRegionRule rule = rogueRun.currentStageRule();
+					if (rule != null && rule.restrictsRegion() && !rule.allowedRegionIds().isEmpty())
+					{
+						rogueRun.moveToRegion(rule.allowedRegionIds().iterator().next());
+					}
+					runLoop.markNow(now);
+				}
+				break;
+			case DEV_BOSS_KILL:
+				// Emulate the boss falling — same signal the chat matcher fires.
+				if (rogueRun != null && runLoop != null)
+				{
+					rogueRun.recordBossDefeatSignal("dev");
+					runLoop.markNow(now);
+				}
+				break;
 			case DEV_LOG_JOURNAL:
 				if (clientThread != null)
 				{

@@ -1366,7 +1366,20 @@ public class RogueScapeWindowOverlay extends Overlay implements MouseListener
 				return e;
 			}
 		}
+		// The window is solid: clicks on its body must never fall through to the game.
+		// The title bar stays unconsumed so RuneLite's overlay dragging keeps working.
+		if (insideWindowBody(local))
+		{
+			e.consume();
+		}
 		return e;
+	}
+
+	/** True when the point sits on the window body (below the draggable title bar). */
+	private boolean insideWindowBody(Point local)
+	{
+		return local != null && local.x >= 0 && local.x < winW()
+			&& local.y > 3 + TITLE_H && local.y < winH();
 	}
 
 	@Override
@@ -1407,12 +1420,20 @@ public class RogueScapeWindowOverlay extends Overlay implements MouseListener
 	@Override
 	public MouseEvent mouseClicked(MouseEvent e)
 	{
+		if (open && insideWindowBody(toLocal(e)))
+		{
+			e.consume();
+		}
 		return e;
 	}
 
 	@Override
 	public MouseEvent mouseReleased(MouseEvent e)
 	{
+		if (open && insideWindowBody(toLocal(e)))
+		{
+			e.consume();
+		}
 		return e;
 	}
 

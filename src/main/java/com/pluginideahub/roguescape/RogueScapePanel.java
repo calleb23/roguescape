@@ -1685,6 +1685,10 @@ public class RogueScapePanel extends PluginPanel
 		JPanel c = section.content();
 		c.add(mutedRow("Simulate stepping a run to test UI states. Buttons drive the run loop through valid transitions."));
 		c.add(vGap(4));
+		c.add(devButton("Enter Room (skip travel)", PanelAction.DEV_ENTER_ROOM));
+		c.add(vGap(3));
+		c.add(devButton("Kill Boss (fire signal)", PanelAction.DEV_BOSS_KILL));
+		c.add(vGap(3));
 		c.add(devButton("Force Complete Stage", PanelAction.DEV_COMPLETE_STAGE));
 		c.add(vGap(3));
 		c.add(devButton("Pick Reward 1", PanelAction.CHOOSE_REWARD_1));

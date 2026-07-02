@@ -88,10 +88,10 @@ public class RogueScapeRealContentRenderTest
 		assertFalse("lobby should produce window tabs", lobby.isEmpty());
 		writePng(lobby, 0, new File("build/ui-preview/real-lobby.png"));
 
-		// Switch the panel to Custom mode; the window should serve the custom builder tabs.
+		// Custom mode now shows the coming-soon contract page (old builder retired for rework).
 		clickNamedButton(plugin.panel, "roguescape.modeTile.custom");
 		List<RogueScapeWindowOverlay.Tab> custom = content.windowTabs();
-		assertTrue("custom mode should produce the builder tab set", custom.size() >= 5);
+		assertTrue("custom mode shows the single coming-soon contract spread", custom.size() == 1);
 		writeAll(custom, "real-custom");
 	}
 

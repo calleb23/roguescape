@@ -213,7 +213,15 @@ public final class SidePanelViewModel
 		left.add(JournalSpread.Block.choices(actions));
 
 		List<JournalSpread.Block> right = new ArrayList<>();
-		if (briefing == null)
+		if (mode == RunMode.CUSTOM_CREATOR)
+		{
+			// The custom route builder is being reworked — honest placeholder for now.
+			right.add(JournalSpread.Block.heading("Custom"));
+			right.add(JournalSpread.Block.text("Coming soon.", JournalSpread.Tone.MUTED));
+			right.add(JournalSpread.Block.note("Draw-your-own-route contracts are being rebuilt "
+				+ "around the new restriction rules.", JournalSpread.Tone.MUTED));
+		}
+		else if (briefing == null)
 		{
 			right.add(JournalSpread.Block.text(
 				"Could not preview this route" + (briefingError == null || briefingError.isEmpty()

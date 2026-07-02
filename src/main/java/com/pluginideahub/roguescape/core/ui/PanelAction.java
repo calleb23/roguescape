@@ -21,6 +21,10 @@ public enum PanelAction
 	DEV_COMPLETE_STAGE,
 	/** Developer-only: force the run to a completed state for UI testing. */
 	DEV_COMPLETE_RUN,
+	/** Developer-only: emulate walking into the current stage's allowed region (skips travel). */
+	DEV_ENTER_ROOM,
+	/** Developer-only: emulate the current boss falling (fires the kill signal). */
+	DEV_BOSS_KILL,
 	/** Developer-only: log the live in-game side journal widget tree. */
 	DEV_LOG_JOURNAL
 }
