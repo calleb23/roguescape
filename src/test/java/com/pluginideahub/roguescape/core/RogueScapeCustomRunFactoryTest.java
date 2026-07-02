@@ -4,8 +4,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
-import com.pluginideahub.roguescape.core.legality.InventorySnapshot;
-import com.pluginideahub.roguescape.core.legality.StrictnessMode;
+import com.pluginideahub.roguescape.core.item.InventorySnapshot;
 import com.pluginideahub.roguescape.core.region.RoomKind;
 import java.util.Arrays;
 import org.junit.Test;
@@ -24,9 +23,7 @@ public class RogueScapeCustomRunFactoryTest
 				.roomIds(Arrays.asList("lumbridge-swamp", "boss-king-black-dragon", "edgeville"))
 				.roomAllowances(Arrays.asList("Weapons", "Boss", "Shopping"))
 				.modifierIds(Arrays.asList("mod-no-food", "mod-no-teleports"))
-				.strictness("Strict")
 				.bankUnlocks(true)
-				.preRunSupplyExpected(true)
 				.timeLimitMinutes(30)
 				.startedAtMillis(1_000L)
 				.startSnapshot(new InventorySnapshot()));
@@ -42,9 +39,7 @@ public class RogueScapeCustomRunFactoryTest
 		assertTrue(loop.travelGatedStages());
 		assertTrue(loop.baseRewardsEnabled());
 		assertEquals(30 * 60_000L, loop.timeLimitMillis());
-		assertEquals(StrictnessMode.STRICT, run.strictness());
 		assertTrue(run.bankAccessAllowed());
-		assertTrue(run.preRunSupplyExpected());
 		assertFalse(run.starterKit().isEmpty());
 		assertEquals(2, run.heldRelics().size());
 

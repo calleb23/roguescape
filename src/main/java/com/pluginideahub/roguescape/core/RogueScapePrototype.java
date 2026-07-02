@@ -46,19 +46,19 @@ public final class RogueScapePrototype
 			"room-drop-only",
 			"Room Drop Only",
 			"Build is constrained to drops from a single chosen area.",
-			Arrays.asList("Pick one area at run start.", "Drops outside that area count as UNKNOWN_OR_ILLEGAL.")
+			Arrays.asList("Pick one area at run start.", "Picking up items outside that area is blocked.")
 		));
 		deck.add(new PrototypeRuleCard(
 			"clue-scroll-build",
 			"Clue Scroll Build",
 			"Each clue scroll reward is a roguelike item draw seeding the build.",
-			Arrays.asList("Start with one clue scroll.", "Each clue reward becomes a legal build piece.")
+			Arrays.asList("Start with one clue scroll.", "Each clue reward becomes a build piece.")
 		));
 		deck.add(new PrototypeRuleCard(
 			"skilling-only-build",
 			"Skilling-Only Build",
 			"No combat loot; the build comes entirely from gathering and crafting.",
-			Arrays.asList("Mining, fishing, woodcutting, and farming drops are legal.", "Any combat drop counts as UNKNOWN_OR_ILLEGAL.")
+			Arrays.asList("Mining, fishing, woodcutting, and farming drops count.", "Combat drops are not part of the build.")
 		));
 		deck.add(new PrototypeRuleCard(
 			"race-mode-any-percent",

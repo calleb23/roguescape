@@ -66,9 +66,7 @@ public final class RunHistory
 		if (byScore != 0) return byScore;
 		int byTime = Long.compare(a.durationMillis(), b.durationMillis());
 		if (byTime != 0) return byTime;
-		int byLegal = Integer.compare(b.legalCount(), a.legalCount());
-		if (byLegal != 0) return byLegal;
-		return Integer.compare(a.illegalCount(), b.illegalCount());
+		return Integer.compare(b.itemsCollected(), a.itemsCollected());
 	}
 
 	public Map<String, RunRecap> personalBestsBySeed()

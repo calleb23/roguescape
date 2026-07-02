@@ -1,4 +1,4 @@
-package com.pluginideahub.roguescape.core.legality;
+package com.pluginideahub.roguescape.core.item;
 
 import java.util.Objects;
 

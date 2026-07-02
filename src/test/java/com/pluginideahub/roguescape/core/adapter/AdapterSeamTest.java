@@ -1,8 +1,8 @@
 package com.pluginideahub.roguescape.core.adapter;
 
-import com.pluginideahub.roguescape.core.legality.InventorySnapshot;
-import com.pluginideahub.roguescape.core.legality.ItemDelta;
-import com.pluginideahub.roguescape.core.legality.ProvenanceHint;
+import com.pluginideahub.roguescape.core.item.InventorySnapshot;
+import com.pluginideahub.roguescape.core.item.ItemDelta;
+import com.pluginideahub.roguescape.core.item.ProvenanceHint;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;

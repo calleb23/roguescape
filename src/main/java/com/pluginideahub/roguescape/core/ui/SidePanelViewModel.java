@@ -7,7 +7,6 @@ import com.pluginideahub.roguescape.core.RunMode;
 import com.pluginideahub.roguescape.core.RunPhase;
 import com.pluginideahub.roguescape.core.RunStageType;
 import com.pluginideahub.roguescape.core.RunState;
-import com.pluginideahub.roguescape.core.legality.StrictnessMode;
 import com.pluginideahub.roguescape.core.relic.Relic;
 import com.pluginideahub.roguescape.core.reward.RewardDraft;
 import com.pluginideahub.roguescape.core.reward.RewardOption;
@@ -32,6 +31,54 @@ public final class SidePanelViewModel
 	private final List<String> zoneRows;
 	private final List<String> relicRows;
 	private final List<String> routeRows;
+	private final List<Chapter> chapters;
+
+	/**
+	 * One stage of the run as a journal chapter: an ordinal label, the place name, and
+	 * whether it is the boss finale, already cleared (stamped), or the current bookmark.
+	 * Pure data — the journal painters turn this into ink, stamps and ribbons.
+	 */
+	public static final class Chapter
+	{
+		private final String numeral;
+		private final String name;
+		private final boolean boss;
+		private final boolean done;
+		private final boolean current;
+
+		public Chapter(String numeral, String name, boolean boss, boolean done, boolean current)
+		{
+			this.numeral = numeral == null ? "" : numeral;
+			this.name = name == null ? "" : name;
+			this.boss = boss;
+			this.done = done;
+			this.current = current;
+		}
+
+		public String numeral() { return numeral; }
+		public String name() { return name; }
+		public boolean isBoss() { return boss; }
+		public boolean isDone() { return done; }
+		public boolean isCurrent() { return current; }
+	}
+
+	/** Roman numeral for small chapter ordinals (1..~50); plain number beyond. */
+	private static String roman(int n)
+	{
+		if (n <= 0 || n >= 400) return Integer.toString(n);
+		int[] vals = {100, 90, 50, 40, 10, 9, 5, 4, 1};
+		String[] syms = {"C", "XC", "L", "XL", "X", "IX", "V", "IV", "I"};
+		StringBuilder sb = new StringBuilder();
+		for (int i = 0; i < vals.length; i++)
+		{
+			while (n >= vals[i])
+			{
+				sb.append(syms[i]);
+				n -= vals[i];
+			}
+		}
+		return sb.toString();
+	}
 	private final List<String> modifierRows;
 	private final List<String> progressionRows;
 	private final Set<PanelAction> enabledActions;
@@ -44,12 +91,14 @@ public final class SidePanelViewModel
 	private final String roomName;
 	private final String regionId;
 	private final int score;
-	private final int legalCount;
-	private final int illegalCount;
+	private final int itemsCollected;
 	private final int floorCurrent;
 	private final int floorTotal;
 	private final int bossesDefeated;
 	private final int bossesTotal;
+	private final String objective;
+	private final boolean objectiveDone;
+	private final String nextStage;
 
 	private SidePanelViewModel(Builder b)
 	{
@@ -61,6 +110,7 @@ public final class SidePanelViewModel
 		this.zoneRows = Collections.unmodifiableList(new ArrayList<>(b.zoneRows));
 		this.relicRows = Collections.unmodifiableList(new ArrayList<>(b.relicRows));
 		this.routeRows = Collections.unmodifiableList(new ArrayList<>(b.routeRows));
+		this.chapters = Collections.unmodifiableList(new ArrayList<>(b.chapters));
 		this.modifierRows = Collections.unmodifiableList(new ArrayList<>(b.modifierRows));
 		this.progressionRows = Collections.unmodifiableList(new ArrayList<>(b.progressionRows));
 		this.enabledActions = Collections.unmodifiableSet(EnumSet.copyOf(b.enabledActions));
@@ -71,12 +121,14 @@ public final class SidePanelViewModel
 		this.roomName = b.roomName;
 		this.regionId = b.regionId;
 		this.score = b.score;
-		this.legalCount = b.legalCount;
-		this.illegalCount = b.illegalCount;
+		this.itemsCollected = b.itemsCollected;
 		this.floorCurrent = b.floorCurrent;
 		this.floorTotal = b.floorTotal;
 		this.bossesDefeated = b.bossesDefeated;
 		this.bossesTotal = b.bossesTotal;
+		this.objective = b.objective;
+		this.objectiveDone = b.objectiveDone;
+		this.nextStage = b.nextStage;
 	}
 
 	public PanelTab activeTab() { return activeTab; }
@@ -87,6 +139,7 @@ public final class SidePanelViewModel
 	public List<String> zoneRows() { return zoneRows; }
 	public List<String> relicRows() { return relicRows; }
 	public List<String> routeRows() { return routeRows; }
+	public List<Chapter> chapters() { return chapters; }
 	public List<String> modifierRows() { return modifierRows; }
 	public List<String> progressionRows() { return progressionRows; }
 	public Set<PanelAction> enabledActions() { return enabledActions; }
@@ -99,12 +152,120 @@ public final class SidePanelViewModel
 	public String roomName() { return roomName; }
 	public String regionId() { return regionId; }
 	public int score() { return score; }
-	public int legalCount() { return legalCount; }
-	public int illegalCount() { return illegalCount; }
+	public int itemsCollected() { return itemsCollected; }
 	public int floorCurrent() { return floorCurrent; }
 	public int floorTotal() { return floorTotal; }
 	public int bossesDefeated() { return bossesDefeated; }
 	public int bossesTotal() { return bossesTotal; }
+	public String objective() { return objective; }
+	public boolean objectiveDone() { return objectiveDone; }
+	public String nextStage() { return nextStage; }
+
+	/**
+	 * The Run phase as a two-page journal spread. Left page = "what I have / my choices" (the
+	 * current objective, what is next, and the rules of this place); right page = "the world /
+	 * route / context" (The Record chapter list, The Hourglass, the running score). Derived only
+	 * from this view model, so the per-phase split is unit-testable without RuneLite; the window
+	 * overlay layer paints it.
+	 */
+	public JournalSpread runSpread()
+	{
+		String elapsed = timerLabel;
+		Chapter current = null;
+		for (Chapter c : chapters)
+		{
+			if (c.isCurrent())
+			{
+				current = c;
+				break;
+			}
+		}
+
+		String title;
+		String subtitle;
+		if (current != null)
+		{
+			title = "Chapter " + current.numeral() + " — " + current.name();
+			subtitle = phaseLabel + " — " + elapsed + " afoot";
+		}
+		else
+		{
+			title = stateLabel;
+			subtitle = "Time " + elapsed;
+		}
+
+		// Left page: the entry (objective + what is next) and the rules of this place.
+		List<JournalSpread.Block> left = new ArrayList<>();
+		if (!objective.isEmpty())
+		{
+			left.add(JournalSpread.Block.text(objective,
+				objectiveDone ? JournalSpread.Tone.POSITIVE : JournalSpread.Tone.INK));
+		}
+		if (!nextStage.isEmpty())
+		{
+			left.add(JournalSpread.Block.text("Next: " + nextStage, JournalSpread.Tone.MUTED));
+		}
+		List<JournalSpread.Block> rules = ruleBlocks();
+		if (!rules.isEmpty())
+		{
+			left.add(JournalSpread.Block.gap());
+			left.add(JournalSpread.Block.heading("The rules of this place"));
+			left.addAll(rules);
+		}
+		else if (current == null)
+		{
+			// Terminal page: the recap rows become the entry.
+			for (String row : statusRows)
+			{
+				if (row == null || row.trim().isEmpty())
+				{
+					continue;
+				}
+				JournalSpread.Tone tone = row.contains("✓") ? JournalSpread.Tone.POSITIVE
+					: row.contains("✗") ? JournalSpread.Tone.NEGATIVE : JournalSpread.Tone.INK;
+				left.add(JournalSpread.Block.text(row, tone));
+			}
+		}
+
+		// Right page: THE RECORD, the hourglass, and the running score.
+		List<JournalSpread.Block> right = new ArrayList<>();
+		if (!chapters.isEmpty())
+		{
+			right.add(JournalSpread.Block.heading("The Record"));
+			right.add(JournalSpread.Block.chapters(chapters));
+		}
+		right.add(JournalSpread.Block.hourglass("The Hourglass", elapsed));
+		right.add(JournalSpread.Block.text("Score: " + score, JournalSpread.Tone.GOLD));
+
+		return new JournalSpread(title, subtitle, left, right);
+	}
+
+	/** Extracts the ✓ / ✗ / ! rule rows from the status rows as tone-coded margin notes. */
+	private List<JournalSpread.Block> ruleBlocks()
+	{
+		List<JournalSpread.Block> rules = new ArrayList<>();
+		for (String row : statusRows)
+		{
+			if (row == null)
+			{
+				continue;
+			}
+			String trimmed = row.trim();
+			if (trimmed.startsWith("Permitted here") || trimmed.startsWith("Forbidden here"))
+			{
+				rules.add(JournalSpread.Block.note(trimmed, JournalSpread.Tone.INK));
+			}
+			else if (trimmed.startsWith("✓"))
+			{
+				rules.add(JournalSpread.Block.note(trimmed, JournalSpread.Tone.POSITIVE));
+			}
+			else if (trimmed.startsWith("✗") || trimmed.startsWith("!"))
+			{
+				rules.add(JournalSpread.Block.note(trimmed, JournalSpread.Tone.NEGATIVE));
+			}
+		}
+		return rules;
+	}
 
 	public List<String> rowsFor(PanelTab tab)
 	{
@@ -169,8 +330,7 @@ public final class SidePanelViewModel
 			.roomName(run.currentRoomName() == null ? "" : run.currentRoomName())
 			.regionId(run.currentRegionId() == null ? "" : run.currentRegionId())
 			.score(run.effectiveScore())
-			.legalCount(run.legalCount())
-			.illegalCount(run.illegalCount())
+			.itemsCollected(run.itemsCollected())
 			.floorTotal(floorTotal)
 			.floorCurrent(floorTotal == 0 ? 0 : Math.min(cleared + 1, floorTotal));
 
@@ -198,16 +358,56 @@ public final class SidePanelViewModel
 				String tag = boss ? "[Boss] " : "";
 				b.route(marker + tag + stage.name() + " - " + stage.objectiveProgressLabel());
 			}
+			// Structured chapters (CHAPTERS / RECORD) for the journal painters.
+			List<com.pluginideahub.roguescape.core.RunStage> stages = s.route().stages();
+			int currentIdx = -1;
+			for (int i = 0; i < stages.size(); i++)
+			{
+				if (!stages.get(i).isCleared())
+				{
+					currentIdx = i;
+					break;
+				}
+			}
+			for (int i = 0; i < stages.size(); i++)
+			{
+				com.pluginideahub.roguescape.core.RunStage stage = stages.get(i);
+				boolean boss = stage.type() == RunStageType.BOSS;
+				boolean lastBoss = boss && i == stages.size() - 1;
+				b.chapter(new Chapter(
+					lastBoss ? "Final" : roman(i + 1),
+					stage.name(),
+					boss,
+					stage.isCleared(),
+					i == currentIdx));
+			}
 		}
 		b.bossesDefeated(bossesCleared).bossesTotal(bossesTotal);
 
+		// Typed entry/next for the journal spread (left page): the current objective and what is
+		// coming next, taken straight from run state rather than re-parsed from status strings.
+		com.pluginideahub.roguescape.core.RunStage enteredStage = run.currentEnteredStage();
+		b.objective(enteredStage == null ? "" : enteredStage.objectiveProgressLabel());
+		b.objectiveDone(enteredStage != null && enteredStage.objectiveComplete());
+		String upcoming = "";
+		if (s.route() != null)
+		{
+			for (com.pluginideahub.roguescape.core.RunStage st : s.route().stages())
+			{
+				if (!st.isCleared() && (enteredStage == null || !st.name().equals(enteredStage.name())))
+				{
+					upcoming = st.name();
+					break;
+				}
+			}
+		}
+		b.nextStage(upcoming);
+
 		// MODIFIERS section: the run's active rules (real state, not invented).
-		b.modifier("Strictness: " + run.strictness());
 		b.modifier("Bank unlocks: " + (run.bankUnlocked() ? "ON" : "off"));
 		b.modifier("Prayer: " + (run.prayerUnlocked() ? "unlocked" : "locked"));
 		b.modifier("Potions: " + (run.potionUnlocked() ? "unlocked" : "locked"));
 		b.modifier("Trade: " + (run.tradeUnlocked() ? "unlocked" : "locked"));
-		b.modifier("Pre-run supplies: " + (run.preRunSupplyExpected() ? "flagged" : "allowed"));
 		if (loop.hasTimeLimit())
 		{
 			b.modifier("Time limit: " + loop.timeRemainingLabel() + " remaining");
@@ -215,7 +415,7 @@ public final class SidePanelViewModel
 		List<Relic> held = run.heldRelics();
 		if (!held.isEmpty())
 		{
-			b.modifier("Relics (" + held.size() + "):");
+			b.modifier("Relics in pocket (" + held.size() + "):");
 			for (Relic relic : held)
 			{
 				b.modifier("• " + relic.name());
@@ -236,8 +436,7 @@ public final class SidePanelViewModel
 		b.progression("Bosses defeated: " + bossesCleared + " / " + bossesTotal);
 		b.progression("Rooms cleared: " + roomsCleared + " / " + roomsTotal);
 		b.progression("Score: " + run.effectiveScore());
-		b.progression("Rewards kept: " + s.legalRewardCount()
-			+ (s.illegalRewardCount() > 0 ? " (illegal " + s.illegalRewardCount() + ")" : ""));
+		b.progression("Items collected: " + s.itemsCollected());
 		if (run.unlocks().isEmpty())
 		{
 			b.progression("Unlocks: none yet");
@@ -265,15 +464,17 @@ public final class SidePanelViewModel
 		RunState runState = s.runState();
 		if (runState == RunState.COMPLETE)
 		{
-			b.status("\u2713 RUN COMPLETE!");
+			b.status("\u2713 The run is complete.");
 			appendRecap(b, run, loop, roomsCleared, roomsTotal, bossesCleared, bossesTotal);
+			b.action(PanelAction.EXPORT_RECAP);
 			b.action(PanelAction.RESET_RUN);
 			return b.build();
 		}
 		if (runState == RunState.FAILED)
 		{
-			b.status("\u2717 RUN FAILED");
+			b.status("\u2717 The run has failed.");
 			appendRecap(b, run, loop, roomsCleared, roomsTotal, bossesCleared, bossesTotal);
+			b.action(PanelAction.EXPORT_RECAP);
 			b.action(PanelAction.RESET_RUN);
 			return b.build();
 		}
@@ -284,17 +485,17 @@ public final class SidePanelViewModel
 		// Relic category-limit breaches are flagged prominently in any active phase.
 		for (com.pluginideahub.roguescape.core.reward.BankItemCategory cat : run.relicOverLimit())
 		{
-			b.status("✗ Over " + humanCategory(cat) + " limit! (relic)");
+			b.status("✗ Over the " + humanCategory(cat).toLowerCase() + " limit — a curse bites.");
 		}
 		if (phase == RunPhase.TRAVEL_TO_STAGE)
 		{
 			String roomName = run.currentRoomName();
 			com.pluginideahub.roguescape.core.RunStage stage = run.currentEnteredStage();
 			com.pluginideahub.roguescape.core.region.StageRegionRule rule = run.currentStageRule();
-			b.status("Travel to: " + (roomName == null ? "Unknown room" : roomName));
+			b.status("Travel to " + (roomName == null ? "parts unknown" : roomName) + ".");
 			if (stage != null)
 			{
-				b.status("Objective waits there: " + stage.objectiveProgressLabel());
+				b.status("The task waits there: " + stage.objectiveProgressLabel());
 			}
 			if (rule != null && rule.restrictsRegion())
 			{
@@ -324,67 +525,28 @@ public final class SidePanelViewModel
 			String roomName = run.currentRoomName();
 			com.pluginideahub.roguescape.core.RunStage stage = run.currentEnteredStage();
 			b.status("Room: " + (roomName == null ? "Unknown" : roomName));
-			b.status("Region: " + (run.currentRegionId() == null || run.currentRegionId().isEmpty() ? "-" : run.currentRegionId()));
 			if (loop.hasTimeLimit())
 			{
 				b.status("Room timer: " + loop.timeRemainingLabel());
 			}
 			if (stage != null)
 			{
-				b.status("Objective: " + stage.objectiveProgressLabel());
+				b.status("The task: " + stage.objectiveProgressLabel());
 				if (stage.objectiveComplete())
 				{
-					b.status("Objective complete - claim your reward when ready.");
+					b.status("The task is done — the chest can open.");
 				}
 				else if (stage.objectiveIsTrackable())
 				{
-					b.status("Complete Stage unlocks when this objective is done.");
+					b.status("Finish the task to stamp this chapter.");
 				}
 				else
 				{
 					b.status("Manual completion required once the objective is done.");
 				}
 			}
-			b.status("");
-			b.status("You CAN:");
-			b.status("  \u2713 Fight monsters in this room");
-			b.status("  \u2713 Pick up drops");
-			b.status("  \u2713 Use resources found here");
-			b.status("");
-			b.status("You CANNOT:");
-			if (!run.bankUnlocked())
-			{
-				b.status("  \u2717 Bank / deposit box");
-			}
-			if (!run.prayerUnlocked())
-			{
-				b.status("  \u2717 Prayers");
-			}
-			if (!run.potionUnlocked())
-			{
-				b.status("  \u2717 Potions");
-			}
-			if (run.strictness() == StrictnessMode.STRICT)
-			{
-				b.status("  \u2717 Leave the room region");
-				b.status(run.tradeUnlocked() ? "  \u2717 GE" : "  \u2717 Trade / GE");
-			}
-			else
-			{
-				b.status(run.tradeUnlocked() ? "  \u2717 GE (moderate)" : "  \u2717 Trade / GE (moderate)");
-			}
-			b.status("  \u2717 Pick up ground items outside room");
-			b.status("  \u2717 Walk while outside the active room");
-			// Relic-imposed restrictions and caps surface here so the live rules reflect them.
-			for (com.pluginideahub.roguescape.core.reward.BankItemCategory cat : run.relicRestrictedCategories())
-			{
-				b.status("  \u2717 " + humanCategory(cat) + " (relic)");
-			}
-			for (java.util.Map.Entry<com.pluginideahub.roguescape.core.reward.BankItemCategory, Integer> cap
-				: run.relicCategoryLimits().entrySet())
-			{
-				b.status("  ! Max " + cap.getValue() + " " + humanCategory(cap.getKey()) + " (relic)");
-			}
+			// Rules are collapsed to one glanceable line; the renderer folds it into a section.
+			appendRoomRules(b, run);
 			if (loop.canCompleteCurrentStage())
 			{
 				b.action(PanelAction.COMPLETE_STAGE);
@@ -394,8 +556,8 @@ public final class SidePanelViewModel
 		{
 			boolean hasNextStage = hasUnclearedStage(s);
 			b.status(hasNextStage
-				? "Choose one reward before the next room."
-				: "Choose one final reward before the run completes.");
+				? "Choose one before the page turns."
+				: "Choose one final reward — the journal is nearly full.");
 			RewardDraft draft = loop.pendingRewardDraft();
 			if (draft != null && draft.options() != null && !loop.baseRewardResolved())
 			{
@@ -420,7 +582,7 @@ public final class SidePanelViewModel
 		}
 		b.status("");
 		b.status("Score: " + run.effectiveScore());
-		b.status("Legal/Illegal: " + run.legalCount() + "/" + run.illegalCount());
+		b.status("Items collected: " + run.itemsCollected());
 		b.action(PanelAction.FAIL_RUN);
 		b.action(PanelAction.RESET_RUN);
 
@@ -467,20 +629,43 @@ public final class SidePanelViewModel
 		int roomsCleared, int roomsTotal, int bossesCleared, int bossesTotal)
 	{
 		b.status("");
-		b.status("Time: " + loop.runElapsedLabel());
+		b.status("Time afoot: " + loop.runElapsedLabel());
 		b.status("Score: " + run.effectiveScore());
-		b.status("Rooms: " + roomsCleared + " / " + roomsTotal);
-		b.status("Bosses: " + bossesCleared + " / " + bossesTotal);
-		b.status("Items legal/illegal: " + run.legalCount() + " / " + run.illegalCount());
+		b.status("Chapters: " + roomsCleared + " of " + roomsTotal);
+		b.status("Bosses: " + bossesCleared + " of " + bossesTotal);
+		b.status("Items collected: " + run.itemsCollected());
 		List<Relic> held = run.heldRelics();
 		if (!held.isEmpty())
 		{
 			b.status("");
-			b.status("Relics (" + held.size() + "):");
+			b.status("Relics in pocket (" + held.size() + "):");
 			for (Relic relic : held)
 			{
 				b.status("  • " + relic.name());
 			}
+		}
+	}
+
+	/**
+	 * Collapsed room rules: one glanceable line of what is blocked here, plus any active relic
+	 * restrictions/caps. The window renderer folds these into a "rules of this place" section.
+	 */
+	private static void appendRoomRules(Builder b, RogueScapeRun run)
+	{
+		java.util.List<String> blocked = new java.util.ArrayList<>();
+		if (!run.bankUnlocked()) blocked.add("bank");
+		if (!run.tradeUnlocked()) blocked.add("trade/GE");
+		if (!run.prayerUnlocked()) blocked.add("prayer");
+		if (!run.potionUnlocked()) blocked.add("potions");
+		b.status("✗ Stay in this room" + (blocked.isEmpty() ? "." : " — no " + String.join(", ", blocked) + "."));
+		for (com.pluginideahub.roguescape.core.reward.BankItemCategory cat : run.relicRestrictedCategories())
+		{
+			b.status("✗ " + humanCategory(cat) + " forbidden (relic)");
+		}
+		for (java.util.Map.Entry<com.pluginideahub.roguescape.core.reward.BankItemCategory, Integer> cap
+			: run.relicCategoryLimits().entrySet())
+		{
+			b.status("! Max " + cap.getValue() + " " + humanCategory(cap.getKey()) + " (relic)");
 		}
 	}
 
@@ -514,6 +699,7 @@ public final class SidePanelViewModel
 		private final List<String> zoneRows = new ArrayList<>();
 		private final List<String> relicRows = new ArrayList<>();
 		private final List<String> routeRows = new ArrayList<>();
+		private final List<Chapter> chapters = new ArrayList<>();
 		private final List<String> modifierRows = new ArrayList<>();
 		private final List<String> progressionRows = new ArrayList<>();
 		private final Set<PanelAction> enabledActions = EnumSet.noneOf(PanelAction.class);
@@ -525,12 +711,14 @@ public final class SidePanelViewModel
 		private String roomName = "";
 		private String regionId = "";
 		private int score;
-		private int legalCount;
-		private int illegalCount;
+		private int itemsCollected;
 		private int floorCurrent;
 		private int floorTotal;
 		private int bossesDefeated;
 		private int bossesTotal;
+		private String objective = "";
+		private boolean objectiveDone;
+		private String nextStage = "";
 
 		public Builder activeTab(PanelTab t) { this.activeTab = t; return this; }
 		public Builder lobby(boolean v) { this.lobby = v; return this; }
@@ -540,6 +728,7 @@ public final class SidePanelViewModel
 		public Builder zone(String s) { zoneRows.add(s); return this; }
 		public Builder relic(String s) { relicRows.add(s); return this; }
 		public Builder route(String s) { routeRows.add(s); return this; }
+		public Builder chapter(Chapter c) { if (c != null) chapters.add(c); return this; }
 		public Builder modifier(String s) { modifierRows.add(s); return this; }
 		public Builder progression(String s) { progressionRows.add(s); return this; }
 		public Builder action(PanelAction a) { enabledActions.add(a); return this; }
@@ -550,12 +739,14 @@ public final class SidePanelViewModel
 		public Builder roomName(String s) { this.roomName = s == null ? "" : s; return this; }
 		public Builder regionId(String s) { this.regionId = s == null ? "" : s; return this; }
 		public Builder score(int v) { this.score = v; return this; }
-		public Builder legalCount(int v) { this.legalCount = v; return this; }
-		public Builder illegalCount(int v) { this.illegalCount = v; return this; }
+		public Builder itemsCollected(int v) { this.itemsCollected = v; return this; }
 		public Builder floorCurrent(int v) { this.floorCurrent = v; return this; }
 		public Builder floorTotal(int v) { this.floorTotal = v; return this; }
 		public Builder bossesDefeated(int v) { this.bossesDefeated = v; return this; }
 		public Builder bossesTotal(int v) { this.bossesTotal = v; return this; }
+		public Builder objective(String s) { this.objective = s == null ? "" : s; return this; }
+		public Builder objectiveDone(boolean v) { this.objectiveDone = v; return this; }
+		public Builder nextStage(String s) { this.nextStage = s == null ? "" : s; return this; }
 		public SidePanelViewModel build() { return new SidePanelViewModel(this); }
 	}
 }

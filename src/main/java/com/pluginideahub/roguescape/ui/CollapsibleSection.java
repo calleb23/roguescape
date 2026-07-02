@@ -37,7 +37,7 @@ public class CollapsibleSection extends JPanel
 		this.collapsed = collapsed;
 
 		setLayout(new BorderLayout());
-		setBackground(RogueScapeTheme.PANEL_BG);
+		setOpaque(false);
 		setBorder(BorderFactory.createEmptyBorder(0, 0, 4, 0));
 		setAlignmentX(Component.LEFT_ALIGNMENT);
 		setMaximumSize(new Dimension(Integer.MAX_VALUE, Integer.MAX_VALUE));
@@ -45,11 +45,8 @@ public class CollapsibleSection extends JPanel
 		add(buildHeader(), BorderLayout.NORTH);
 
 		content.setLayout(new BoxLayout(content, BoxLayout.Y_AXIS));
-		content.setBackground(RogueScapeTheme.SECTION_BG);
-		content.setBorder(BorderFactory.createCompoundBorder(
-			BorderFactory.createMatteBorder(0, 1, 1, 1, RogueScapeTheme.BORDER),
-			BorderFactory.createEmptyBorder(6, 8, 6, 8)
-		));
+		content.setOpaque(false);
+		content.setBorder(BorderFactory.createEmptyBorder(4, 8, 4, 8));
 		add(content, BorderLayout.CENTER);
 
 		applyCollapsedState();
@@ -57,21 +54,19 @@ public class CollapsibleSection extends JPanel
 
 	private JPanel buildHeader()
 	{
+		// Journal style: a centered "— TITLE —" ink line over transparent paper.
 		JPanel header = new JPanel(new BorderLayout());
-		header.setBackground(RogueScapeTheme.SECTION_HEADER_BG);
-		header.setBorder(BorderFactory.createCompoundBorder(
-			BorderFactory.createLineBorder(RogueScapeTheme.BORDER),
-			BorderFactory.createEmptyBorder(4, 8, 4, 8)
-		));
+		header.setOpaque(false);
+		header.setBorder(BorderFactory.createEmptyBorder(4, 8, 2, 8));
 		header.setMaximumSize(new Dimension(Integer.MAX_VALUE, 24));
 		header.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
 
-		JLabel titleLabel = new JLabel("✦ " + title.toUpperCase());
-		titleLabel.setForeground(RogueScapeTheme.ACCENT);
+		JLabel titleLabel = new JLabel("— " + title.toUpperCase() + " —", JLabel.CENTER);
+		titleLabel.setForeground(RogueScapeTheme.INK);
 		titleLabel.setFont(RogueScapeTheme.sectionTitle(titleLabel.getFont()));
-		header.add(titleLabel, BorderLayout.WEST);
+		header.add(titleLabel, BorderLayout.CENTER);
 
-		toggle.setForeground(RogueScapeTheme.TEXT_MUTED);
+		toggle.setForeground(RogueScapeTheme.INK_FADED);
 		toggle.setFont(RogueScapeTheme.sectionTitle(toggle.getFont()));
 		header.add(toggle, BorderLayout.EAST);
 
@@ -115,7 +110,14 @@ public class CollapsibleSection extends JPanel
 	{
 		content.setVisible(!collapsed);
 		toggle.setText(collapsed ? "▸" : "▾");
-		// Section width should track the sidebar; height is content-driven.
-		setMaximumSize(new Dimension(PluginPanel.PANEL_WIDTH, Integer.MAX_VALUE));
+	}
+
+	@Override
+	public Dimension getMaximumSize()
+	{
+		// Width tracks the sidebar; height stays content-driven so a stretching BoxLayout
+		// gives spare vertical space to the trailing glue instead of opening gaps between
+		// sections (or inside collapsed ones).
+		return new Dimension(PluginPanel.PANEL_WIDTH, getPreferredSize().height);
 	}
 }

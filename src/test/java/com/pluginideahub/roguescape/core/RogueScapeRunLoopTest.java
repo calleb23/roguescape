@@ -15,7 +15,7 @@ public class RogueScapeRunLoopTest
 {
 	private static RogueScapeRunLoop loopWithTwoStages()
 	{
-		RogueScapeRunSession base = RogueScapeRunSession.start("Loop test", "seed-loop", RunMode.FRESH_SOURCE, RunPreset.GOBLIN_RAT);
+		RogueScapeRunSession base = RogueScapeRunSession.start("Loop test", "seed-loop", RunMode.FRESH_SOURCE, RunPreset.UNSPECIFIED);
 		base.addStage("R1", RunStageType.ROOM, "Lumbridge", "starter room");
 		base.addStage("B1", RunStageType.BOSS, "Obor", "boss room");
 		base.enterStage("R1");
@@ -24,7 +24,7 @@ public class RogueScapeRunLoopTest
 
 	private static void completeObjective(RogueScapeRunLoop loop)
 	{
-		loop.run().session().recordCurrentStageLegalItemGain();
+		loop.run().session().recordCurrentStageItemGain();
 	}
 
 	@Test

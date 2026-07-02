@@ -23,29 +23,10 @@ public final class RogueScapeFrame
 
 	static final Color SHADOW = new Color(0x08, 0x06, 0x04);
 
-	/** Fills a dark dungeon background: vertical gradient + a soft dark vignette at every edge. */
+	/** Fills an aged-paper page (cached texture blit). */
 	public static void background(Graphics2D g, int x, int y, int w, int h)
 	{
-		g.setPaint(new GradientPaint(
-			0, y, lighten(RogueScapeTheme.PANEL_BG, 8),
-			0, y + h, darken(RogueScapeTheme.PANEL_BG, 4)));
-		g.fillRect(x, y, w, h);
-		backgroundPattern(g, x, y, w, h);
-
-		int vig = Math.min(90, w / 3);
-		Color edge = new Color(0, 0, 0, 110);
-		Color none = new Color(0, 0, 0, 0);
-		// Left / right.
-		g.setPaint(new GradientPaint(x, 0, edge, x + vig, 0, none));
-		g.fillRect(x, y, vig, h);
-		g.setPaint(new GradientPaint(x + w, 0, edge, x + w - vig, 0, none));
-		g.fillRect(x + w - vig, y, vig, h);
-		// Top / bottom.
-		int vigV = Math.min(70, h / 3);
-		g.setPaint(new GradientPaint(0, y, edge, 0, y + vigV, none));
-		g.fillRect(x, y, w, vigV);
-		g.setPaint(new GradientPaint(0, y + h, edge, 0, y + h - vigV, none));
-		g.fillRect(x, y + h - vigV, w, vigV);
+		g.drawImage(RogueScapePaper.sheet(w, h), x, y, x + w, y + h, 0, 0, w, h, null);
 	}
 
 	private static void backgroundPattern(Graphics2D g, int x, int y, int w, int h)
@@ -82,30 +63,14 @@ public final class RogueScapeFrame
 		}
 	}
 
-	/** Chiselled gold frame with a bevel (lit top-left, shadowed bottom-right) + corner brackets. */
+	/** Burnt page edge with a plain wood rim — the journal cover seen edge-on. */
 	public static void frame(Graphics2D g, int x, int y, int w, int h)
 	{
-		int x1 = x + w - 1;
-		int y1 = y + h - 1;
-
-		// Dark outer drop edge.
 		g.setColor(SHADOW);
 		g.drawRect(x, y, w - 1, h - 1);
-
-		// Gold rim, bevelled: bright on top/left, dim on bottom/right.
-		g.setColor(lighten(RogueScapeTheme.BORDER_BRIGHT, 18));
-		g.drawLine(x + 1, y + 1, x1 - 1, y + 1);
-		g.drawLine(x + 1, y + 1, x + 1, y1 - 1);
-		g.setColor(RogueScapeTheme.GOLD_DIM);
-		g.drawLine(x + 1, y1 - 1, x1 - 1, y1 - 1);
-		g.drawLine(x1 - 1, y + 1, x1 - 1, y1 - 1);
-
-		// Recessed inner line.
-		g.setColor(RogueScapeTheme.BORDER);
-		g.drawRect(x + 2, y + 2, w - 5, h - 5);
-
-		cornerBrackets(g, x, y, w, h);
-		edgeOrnaments(g, x, y, w, h);
+		g.setColor(RogueScapeTheme.EDGE);
+		g.drawRect(x + 1, y + 1, w - 3, h - 3);
+		RogueScapePaper.burntEdge(g, x + 2, y + 2, w - 4, h - 4);
 	}
 
 	/** Small rune-like ornaments for testing a more magical frame silhouette. */

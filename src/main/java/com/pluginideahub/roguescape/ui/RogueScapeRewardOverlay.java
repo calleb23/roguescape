@@ -2,6 +2,7 @@ package com.pluginideahub.roguescape.ui;
 
 import java.awt.Color;
 import java.awt.Dimension;
+import java.awt.Font;
 import java.awt.FontMetrics;
 import java.awt.GradientPaint;
 import java.awt.Graphics2D;
@@ -35,14 +36,15 @@ public class RogueScapeRewardOverlay extends Overlay implements MouseListener
 {
 	private static final int WIDTH = 760;
 	private static final int HEIGHT = 458;
-	private static final int HEADER_H = 48;
-	private static final int FOOTER_H = 58;
-	private static final int ARTIFACT_H = 60;
 	private static final int PAD = 16;
 	private static final int CARD_GAP = 12;
-	private static final int RAIL_W = 150;
-	private static final int RAIL_GAP = 12;
-	private static final int LINE_H = 15;
+	private static final int LINE_H = 16;
+	// The open-book spread: two pages around a central spine.
+	private static final int PAGE_Y = 8;
+	private static final int PAGE_H = HEIGHT - 16;
+	private static final int PAGE_W = 366;
+	private static final int LEFT_X = 10;
+	private static final int RIGHT_X = WIDTH - 10 - PAGE_W;
 
 	/** Display rarity for a reward card; maps to a frame/label colour. */
 	public enum Rarity
@@ -198,12 +200,9 @@ public class RogueScapeRewardOverlay extends Overlay implements MouseListener
 
 		g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 
-		drawFrame(g);
-		drawHeader(g, view);
-		drawCards(g, view);
-		drawRail(g, view);
-		drawArtifacts(g, view);
-		drawFooter(g, view);
+		drawSpread(g);
+		drawLeftPage(g, view);
+		drawRightPage(g, view);
 
 		return new Dimension(WIDTH, HEIGHT);
 	}
@@ -224,41 +223,75 @@ public class RogueScapeRewardOverlay extends Overlay implements MouseListener
 		wasVisible = true;
 	}
 
-	private void drawFrame(Graphics2D g)
+	/** Dark desk backdrop, two aged pages, and the spine shadow between them. */
+	private void drawSpread(Graphics2D g)
 	{
-		RogueScapeFrame.background(g, 0, 0, WIDTH, HEIGHT);
-		RogueScapeFrame.frame(g, 0, 0, WIDTH, HEIGHT);
+		g.setColor(new Color(0x2A2620));
+		g.fillRoundRect(0, 0, WIDTH, HEIGHT, 8, 8);
+		g.setColor(RogueScapeFrame.SHADOW);
+		g.drawRoundRect(0, 0, WIDTH - 1, HEIGHT - 1, 8, 8);
+		RogueScapePaper.page(g, LEFT_X, PAGE_Y, PAGE_W, PAGE_H);
+		RogueScapePaper.page(g, RIGHT_X, PAGE_Y, PAGE_W, PAGE_H);
+		int mid = WIDTH / 2;
+		g.setPaint(new GradientPaint(mid - 14, 0, new Color(0, 0, 0, 0), mid, 0, new Color(0, 0, 0, 70)));
+		g.fillRect(mid - 14, PAGE_Y, 14, PAGE_H);
+		g.setPaint(new GradientPaint(mid, 0, new Color(0, 0, 0, 70), mid + 14, 0, new Color(0, 0, 0, 0)));
+		g.fillRect(mid, PAGE_Y, 14, PAGE_H);
 	}
 
-	private void drawHeader(Graphics2D g, RewardView view)
+	/** Left page: the chest — title, the loot cards, the chosen note, TAKE IT / skip. */
+	private void drawLeftPage(Graphics2D g, RewardView view)
 	{
-		int x0 = 3, y0 = 3, w = WIDTH - 6;
-		RogueScapeFrame.headerBar(g, x0, y0, w, HEADER_H);
+		int x = LEFT_X + 20;
+		int w = PAGE_W - 40;
 
-		// Title, centred, flanked by crest diamonds.
-		g.setFont(FontManager.getRunescapeBoldFont());
-		FontMetrics fm = g.getFontMetrics();
-		String title = RogueScapeWindowOverlay.ascii(view.title);
-		int tw = fm.stringWidth(title);
-		int cx = WIDTH / 2;
-		int ty = y0 + 22;
-		g.setColor(RogueScapeFrame.SHADOW);
-		g.drawString(title, cx - tw / 2 + 1, ty + 1);
-		g.setColor(RogueScapeTheme.GOLD);
-		g.drawString(title, cx - tw / 2, ty);
-		drawDiamond(g, cx - tw / 2 - 16, ty - 5, 7, RogueScapeTheme.ACCENT_DIM, RogueScapeTheme.ACCENT);
-		drawDiamond(g, cx + tw / 2 + 16, ty - 5, 7, RogueScapeTheme.ACCENT_DIM, RogueScapeTheme.ACCENT);
-
-		// Subtitle.
+		g.setFont(new Font(Font.SERIF, Font.BOLD, 19));
+		g.setColor(RogueScapeTheme.INK);
+		g.drawString(view.title, x, PAGE_Y + 30);
 		if (!view.subtitle.isEmpty())
 		{
-			g.setFont(FontManager.getRunescapeFont());
-			FontMetrics sfm = g.getFontMetrics();
-			String sub = RogueScapeWindowOverlay.ascii(view.subtitle);
-			int sw = sfm.stringWidth(sub);
-			g.setColor(RogueScapeTheme.TEXT_MUTED);
-			g.drawString(sub, cx - sw / 2, y0 + HEADER_H - 8);
+			g.setFont(new Font(Font.SERIF, Font.ITALIC, 12));
+			g.setColor(RogueScapeTheme.INK_FADED);
+			g.drawString(view.subtitle, x, PAGE_Y + 46);
 		}
+		RogueScapePaper.inkRule(g, x, PAGE_Y + 54, w);
+
+		drawCards(g, view);
+
+		// The chosen card's name, as a margin note above the stamp row.
+		int noteY = PAGE_Y + PAGE_H - 52;
+		if (selected >= 0 && selected < view.cards.size())
+		{
+			String pick = "\u00ab " + view.cards.get(selected).title + " calls to you \u00bb";
+			g.setFont(new Font(Font.SERIF, Font.ITALIC, 12));
+			FontMetrics fm = g.getFontMetrics();
+			g.setColor(RogueScapeTheme.STAMP);
+			g.drawString(pick, x + (w - fm.stringWidth(pick)) / 2, noteY);
+		}
+
+		// TAKE IT stamp + the quieter skip as an inked underline link.
+		int by = PAGE_Y + PAGE_H - 44;
+		confirmRect.setBounds(x, by, 150, 34);
+		Graphics2D c = (Graphics2D) g.create();
+		c.rotate(Math.toRadians(-1.5), confirmRect.getCenterX(), confirmRect.getCenterY());
+		RogueScapePaper.stamp(c, confirmRect.x, confirmRect.y, confirmRect.width, confirmRect.height,
+			RogueScapeTheme.STAMP, hoverConfirm);
+		c.setFont(new Font(Font.SERIF, Font.BOLD, 15));
+		FontMetrics cfm = c.getFontMetrics();
+		c.setColor(RogueScapeTheme.STAMP);
+		c.drawString("Take It",
+			confirmRect.x + (confirmRect.width - cfm.stringWidth("Take It")) / 2,
+			confirmRect.y + 22);
+		c.dispose();
+
+		g.setFont(new Font(Font.SERIF, Font.ITALIC, 13));
+		FontMetrics sfm = g.getFontMetrics();
+		String skip = "or leave the chest\u2026";
+		int skipW = sfm.stringWidth(skip);
+		skipRect.setBounds(x + 170, by + 6, skipW + 8, 24);
+		g.setColor(hoverSkip ? RogueScapeTheme.STAMP : RogueScapeTheme.INK_FADED);
+		g.drawString(skip, skipRect.x + 4, skipRect.y + 16);
+		RogueScapePaper.leader(g, skipRect.x + 2, skipRect.y + 20, skipRect.x + skipW + 6);
 	}
 
 	private void drawCards(Graphics2D g, RewardView view)
@@ -266,11 +299,10 @@ public class RogueScapeRewardOverlay extends Overlay implements MouseListener
 		cardRects.clear();
 		List<Card> cards = view.cards;
 		int n = cards.size();
-		int areaX = PAD;
-		int areaY = 3 + HEADER_H + PAD;
-		int railSpace = view.railRows.isEmpty() ? 0 : RAIL_W + RAIL_GAP;
-		int areaW = WIDTH - PAD * 2 - railSpace;
-		int areaH = HEIGHT - FOOTER_H - ARTIFACT_H - areaY - PAD;
+		int areaX = LEFT_X + 20;
+		int areaY = PAGE_Y + 64;
+		int areaW = PAGE_W - 40;
+		int areaH = PAGE_Y + PAGE_H - 64 - areaY;
 		int cardW = (areaW - CARD_GAP * (n - 1)) / n;
 
 		for (int i = 0; i < n; i++)
@@ -283,144 +315,153 @@ public class RogueScapeRewardOverlay extends Overlay implements MouseListener
 		}
 	}
 
-	private void drawRail(Graphics2D g, RewardView view)
+	/** Right page: The Ledger — leader-line stats, modifier notes, and the relic pockets. */
+	private void drawRightPage(Graphics2D g, RewardView view)
 	{
-		if (view.railRows.isEmpty())
-		{
-			return;
-		}
-		int x = WIDTH - PAD - RAIL_W;
-		int y = 3 + HEADER_H + PAD;
-		int h = HEIGHT - FOOTER_H - ARTIFACT_H - y - PAD;
-		g.setPaint(new GradientPaint(0, y, RogueScapeTheme.SECTION_HEADER_BG,
-			0, y + h, darken(RogueScapeTheme.PANEL_BG, 7)));
-		g.fillRoundRect(x, y, RAIL_W, h, 10, 10);
-		g.setColor(RogueScapeTheme.BORDER);
-		g.drawRoundRect(x, y, RAIL_W - 1, h - 1, 10, 10);
+		int x = RIGHT_X + 24;
+		int w = PAGE_W - 48;
 
-		g.setFont(FontManager.getRunescapeBoldFont());
-		g.setColor(RogueScapeTheme.GOLD);
-		g.drawString("RUN STATUS", x + 12, y + 18);
-		g.setColor(new Color(0, 0, 0, 90));
-		g.drawLine(x + 10, y + 25, x + RAIL_W - 10, y + 25);
-		g.setColor(RogueScapeTheme.BORDER);
-		g.drawLine(x + 10, y + 26, x + RAIL_W - 10, y + 26);
+		g.setFont(new Font(Font.SERIF, Font.BOLD, 17));
+		g.setColor(RogueScapeTheme.INK);
+		g.drawString("The Ledger", x, PAGE_Y + 30);
+		RogueScapePaper.inkRule(g, x, PAGE_Y + 38, w);
 
-		g.setFont(FontManager.getRunescapeFont());
-		FontMetrics fm = g.getFontMetrics();
-		int cy = y + 45;
+		int pocketsTop = PAGE_Y + PAGE_H - 88;
+		int cy = PAGE_Y + 58;
 		boolean modifierSection = false;
-		for (String raw : view.railRows)
+		for (String row : view.railRows)
 		{
-			if (raw == null)
+			if (row == null || cy > pocketsTop - 8)
 			{
 				continue;
 			}
-			String row = RogueScapeWindowOverlay.ascii(raw);
-			if (row.trim().isEmpty())
+			String trimmed = row.trim();
+			if (trimmed.isEmpty())
 			{
-				cy += 8;
+				cy += 6;
 				modifierSection = false;
 				continue;
 			}
-			if (row.endsWith(":"))
+			if (trimmed.endsWith(":") && trimmed.indexOf(':') == trimmed.length() - 1)
 			{
-				modifierSection = row.equals("Modifiers:");
-				g.setColor(RogueScapeTheme.ACCENT);
-				g.drawString(row, x + 12, cy);
+				modifierSection = trimmed.equals("Curses:");
+				g.setFont(new Font(Font.SERIF, Font.BOLD, 12));
+				g.setColor(RogueScapeTheme.INK);
+				g.drawString(trimmed.substring(0, trimmed.length() - 1).toUpperCase(), x, cy);
 				cy += LINE_H;
 				continue;
 			}
-			if (modifierSection && row.indexOf(':') < 0)
+			int idx = trimmed.indexOf(':');
+			if (!modifierSection && idx > 0)
 			{
-				cy = drawModifierBadge(g, x + 10, cy - 11, RAIL_W - 20, row) + 4;
-				if (cy > y + h - 12)
-				{
-					return;
-				}
-				continue;
+				drawLedgerLine(g, x, cy, w, trimmed.substring(0, idx).trim(),
+					trimmed.substring(idx + 1).trim());
 			}
-			for (String line : wrap(row, fm, RAIL_W - 24))
+			else
 			{
-				if (cy > y + h - 12)
+				// Modifier curses and plain notes: red wax dot + ink note.
+				if (modifierSection)
 				{
-					return;
+					RogueScapePaper.waxSeal(g, x + 5, cy - 4, 4, RogueScapeTheme.WAX_RED);
 				}
-				if (line.indexOf(':') > 0)
-				{
-					drawStatLine(g, x + 12, cy, RAIL_W - 24, line);
-				}
-				else
-				{
-					g.setColor(RogueScapeTheme.TEXT_MUTED);
-					g.drawString(line, x + 12, cy);
-				}
-				cy += LINE_H;
+				g.setFont(new Font(Font.SERIF, modifierSection ? Font.PLAIN : Font.ITALIC, 12));
+				g.setColor(modifierSection ? RogueScapeTheme.NEGATIVE : RogueScapeTheme.INK_FADED);
+				g.drawString(trimmed, x + (modifierSection ? 14 : 0), cy);
 			}
+			cy += LINE_H;
+		}
+
+		// Relic pockets along the page bottom.
+		g.setFont(new Font(Font.SERIF, Font.BOLD, 12));
+		g.setColor(RogueScapeTheme.INK);
+		g.drawString("RELICS IN POCKET  (" + view.artifactItemIds.size() + ")", x, pocketsTop + 2);
+		Color[] seals = {RogueScapeTheme.WAX_BLUE, RogueScapeTheme.WAX_GREEN,
+			RogueScapeTheme.WAX_GOLD, RogueScapeTheme.WAX_RED};
+		int slots = Math.max(6, Math.min(8, view.artifactItemIds.size() + 1));
+		int slot = 38;
+		int gap = 6;
+		for (int i = 0; i < slots; i++)
+		{
+			int px = x + i * (slot + gap);
+			if (px + slot > RIGHT_X + PAGE_W - 20)
+			{
+				break;
+			}
+			boolean filled = i < view.artifactItemIds.size();
+			RogueScapePaper.pocket(g, px, pocketsTop + 10, slot, slot,
+				filled ? seals[i % seals.length] : null);
 		}
 	}
 
-	/** Draws one reward card; shared by the reward popup and the window's CARDS block. */
+	/** One ledger line: ink label, dotted leader, bold value right-aligned. */
+	private static void drawLedgerLine(Graphics2D g, int x, int baseline, int w, String label, String value)
+	{
+		g.setFont(new Font(Font.SERIF, Font.PLAIN, 13));
+		g.setColor(RogueScapeTheme.INK);
+		g.drawString(label, x, baseline);
+		int labelEnd = x + g.getFontMetrics().stringWidth(label) + 6;
+		g.setFont(new Font(Font.SERIF, Font.BOLD, 13));
+		FontMetrics vfm = g.getFontMetrics();
+		int vx = Math.max(labelEnd + 10, x + w - vfm.stringWidth(value));
+		RogueScapePaper.leader(g, labelEnd, baseline - 4, vx - 6);
+		Color valueColor = label.equalsIgnoreCase("Illegal") && !value.equals("0")
+			? RogueScapeTheme.NEGATIVE : RogueScapeTheme.INK;
+		g.setColor(valueColor);
+		g.drawString(value, vx, baseline);
+	}
+
 	static void drawCard(Graphics2D g, RogueScapeIcons icons, Card card, Rectangle r, boolean sel, boolean hov)
 	{
 		Color rarity = card.rarity.color();
 		int cx = r.x + r.width / 2;
 
-		// Soft rarity glow behind the card (always present, stronger when selected/hovered).
-		int glowA = sel ? 95 : hov ? 55 : 28;
-		g.setColor(new Color(rarity.getRed(), rarity.getGreen(), rarity.getBlue(), glowA));
-		g.fillRoundRect(r.x - 5, r.y - 5, r.width + 10, r.height + 10, 16, 16);
-
-		// Card body: vertical gradient for depth (lighter top, darker bottom).
-		g.setPaint(new GradientPaint(0, r.y, RogueScapeTheme.SECTION_HEADER_BG,
-			0, r.y + r.height, darken(RogueScapeTheme.PANEL_BG, 6)));
+		// Card body: an aged-paper loot card with a drop shadow on the page.
+		g.setColor(new Color(0, 0, 0, 60));
+		g.fillRoundRect(r.x + 2, r.y + 4, r.width, r.height, 10, 10);
+		g.setColor(sel ? RogueScapeTheme.lighten(RogueScapeTheme.PAPER_CARD, 8) : RogueScapeTheme.PAPER_CARD);
 		g.fillRoundRect(r.x, r.y, r.width, r.height, 10, 10);
 
-		// Rarity-tinted double border.
-		g.setColor(new Color(0, 0, 0, 130));
-		g.drawRoundRect(r.x + 1, r.y + 1, r.width - 3, r.height - 3, 9, 9);
-		g.setColor(sel ? RogueScapeTheme.lighten(rarity, 55) : hov ? RogueScapeTheme.lighten(rarity, 20) : rarity);
-		g.drawRoundRect(r.x, r.y, r.width - 1, r.height - 1, 10, 10);
-		drawCardCornerAccents(g, r, rarity);
+		// Border: rarity ink normally; the chosen card wears the red ink frame.
 		if (sel)
 		{
-			g.setColor(new Color(255, 246, 210, 70));
-			g.drawRoundRect(r.x + 3, r.y + 3, r.width - 7, r.height - 7, 8, 8);
+			g.setStroke(new java.awt.BasicStroke(2.4f));
+			g.setColor(RogueScapeTheme.STAMP);
+			g.drawRoundRect(r.x, r.y, r.width - 1, r.height - 1, 10, 10);
+			g.setStroke(new java.awt.BasicStroke(1f));
 		}
+		else
+		{
+			g.setColor(hov ? RogueScapeTheme.lighten(rarity, 20) : rarity);
+			g.drawRoundRect(r.x, r.y, r.width - 1, r.height - 1, 10, 10);
+		}
+		drawCardCornerAccents(g, r, rarity);
 
-		// Rarity banner across the top.
+		// Wax seal at the top (its color is the rarity), with the tier named beneath in ink.
 		int bannerH = 19;
-		g.setColor(new Color(rarity.getRed(), rarity.getGreen(), rarity.getBlue(), sel ? 235 : 175));
-		g.fillRoundRect(r.x + 4, r.y + 4, r.width - 8, bannerH, 8, 8);
-		g.setColor(new Color(0, 0, 0, 70));
-		g.fillRect(r.x + 4, r.y + 4 + bannerH - 1, r.width - 8, 1);
+		RogueScapePaper.waxSeal(g, cx, r.y + 16, 12, rarity);
 		g.setFont(FontManager.getRunescapeBoldFont());
 		FontMetrics fm = g.getFontMetrics();
 		String rword = card.rarity.name();
-		int rwx = cx - fm.stringWidth(rword) / 2;
-		g.setColor(new Color(0x14110A));
-		g.drawString(rword, rwx + 1, r.y + 4 + 14 + 1);
-		g.setColor(new Color(0xFFF3D6));
-		g.drawString(rword, rwx, r.y + 4 + 14);
+		g.setColor(RogueScapeTheme.INK_FADED);
+		g.drawString(rword, cx - fm.stringWidth(rword) / 2, r.y + 42);
 
 		// Title (item / relic name), wrapped to at most two lines.
 		g.setFont(FontManager.getRunescapeBoldFont());
 		FontMetrics tfm = g.getFontMetrics();
 		List<String> nameLines = wrap(RogueScapeWindowOverlay.ascii(card.title), tfm, r.width - 12);
-		int nameY = r.y + bannerH + 21;
+		int nameY = r.y + bannerH + 37;
 		for (int i = 0; i < Math.min(2, nameLines.size()); i++)
 		{
 			String ln = nameLines.get(i);
 			int lx = cx - tfm.stringWidth(ln) / 2;
-			g.setColor(SHADOW);
-			g.drawString(ln, lx + 1, nameY + 1);
-			g.setColor(RogueScapeTheme.TEXT_PRIMARY);
+			g.setColor(RogueScapeTheme.INK);
 			g.drawString(ln, lx, nameY);
 			nameY += 14;
 		}
 
 		// Model pedestal — a recessed disc where the item icon / spinning 3D model sits.
-		int pedR = Math.max(18, Math.min(30, r.width / 2 - 16));
+		// Shrinks on short cards so the description lines below keep at least two rows.
+		int pedR = Math.max(14, Math.min(Math.min(30, r.width / 2 - 16), (r.height - 120) / 2));
 		int pedCy = nameY + pedR + 2;
 		// Ground shadow under the pedestal.
 		g.setColor(new Color(0, 0, 0, 90));
@@ -464,9 +505,20 @@ public class RogueScapeRewardOverlay extends Overlay implements MouseListener
 			}
 		}
 
-		// Category pill at the bottom.
-		if (!card.category.isEmpty())
+		if (sel)
 		{
+			// The chosen card: a tilted red CHOSEN stamp at the bottom.
+			Graphics2D c = (Graphics2D) g.create();
+			c.rotate(Math.toRadians(-10), cx, r.y + r.height - 16);
+			c.setFont(new Font(Font.SERIF, Font.BOLD, 13));
+			FontMetrics sfm = c.getFontMetrics();
+			c.setColor(RogueScapeTheme.STAMP);
+			c.drawString("CHOSEN", cx - sfm.stringWidth("CHOSEN") / 2, r.y + r.height - 12);
+			c.dispose();
+		}
+		else if (!card.category.isEmpty())
+		{
+			// Category pill at the bottom (unchosen cards).
 			String cat = RogueScapeWindowOverlay.ascii(card.category);
 			int cw = dfm.stringWidth(cat) + 16;
 			int px = cx - cw / 2;
@@ -478,125 +530,6 @@ public class RogueScapeRewardOverlay extends Overlay implements MouseListener
 			g.setColor(RogueScapeTheme.lighten(rarity, 50));
 			g.drawString(cat, px + 8, py + 11);
 		}
-
-		if (sel)
-		{
-			String selected = "SELECTED";
-			g.setFont(FontManager.getRunescapeBoldFont());
-			FontMetrics sfm = g.getFontMetrics();
-			int sw = sfm.stringWidth(selected) + 14;
-			int sx = r.x + r.width - sw - 8;
-			int sy = r.y + r.height - 21;
-			g.setColor(new Color(0x2C230D));
-			g.fillRoundRect(sx, sy, sw, 15, 7, 7);
-			g.setColor(RogueScapeTheme.GOLD);
-			g.drawRoundRect(sx, sy, sw, 15, 7, 7);
-			g.setColor(new Color(0xFFF3D6));
-			g.drawString(selected, sx + 7, sy + 11);
-		}
-	}
-
-	private void drawArtifacts(Graphics2D g, RewardView view)
-	{
-		int y = HEIGHT - FOOTER_H - ARTIFACT_H - 3;
-		int x = PAD;
-		int w = WIDTH - PAD * 2;
-		g.setPaint(new GradientPaint(0, y, darken(RogueScapeTheme.PANEL_BG, 2),
-			0, y + ARTIFACT_H, RogueScapeTheme.SECTION_HEADER_BG));
-		g.fillRoundRect(x, y, w, ARTIFACT_H - 8, 8, 8);
-		g.setColor(RogueScapeTheme.BORDER);
-		g.drawRoundRect(x, y, w, ARTIFACT_H - 8, 8, 8);
-
-		g.setFont(FontManager.getRunescapeBoldFont());
-		FontMetrics fm = g.getFontMetrics();
-		int maxSlots = Math.min(12, Math.max(8, view.artifactItemIds.size() + 2));
-		String title = "YOUR ARTIFACTS  " + view.artifactItemIds.size() + " / " + maxSlots;
-		int tx = x + (w - fm.stringWidth(title)) / 2;
-		g.setColor(RogueScapeTheme.GOLD_DIM);
-		g.drawString(title, tx, y + 16);
-
-		int slot = 34;
-		int gap = 8;
-		int rowW = maxSlots * slot + (maxSlots - 1) * gap;
-		int sx = x + (w - rowW) / 2;
-		int sy = y + 23;
-		for (int i = 0; i < maxSlots; i++)
-		{
-			int px = sx + i * (slot + gap);
-			boolean filled = i < view.artifactItemIds.size() && view.artifactItemIds.get(i) != null
-				&& view.artifactItemIds.get(i) > 0;
-			g.setColor(filled ? RogueScapeTheme.SECTION_BG : darken(RogueScapeTheme.PANEL_BG, 6));
-			g.fillRoundRect(px, sy, slot, slot, 5, 5);
-			g.setColor(filled ? RogueScapeTheme.ACCENT_DIM : darken(RogueScapeTheme.BORDER, 28));
-			g.drawRoundRect(px, sy, slot, slot, 5, 5);
-			if (filled && icons != null)
-			{
-				RogueScapeIcons.draw(g, icons.item(view.artifactItemIds.get(i)), px + 4, sy + 4, slot - 8);
-			}
-			else if (filled)
-			{
-				drawArtifactGlyph(g, view.artifactItemIds.get(i), px + slot / 2, sy + slot / 2, slot / 2 - 5);
-			}
-			else if (!filled)
-			{
-				drawEmptyArtifactSlot(g, px + slot / 2, sy + slot / 2);
-			}
-		}
-	}
-
-	private void drawFooter(Graphics2D g, RewardView view)
-	{
-		int y0 = HEIGHT - FOOTER_H - 3;
-		int x0 = 3, w = WIDTH - 6;
-		g.setPaint(new GradientPaint(0, y0, RogueScapeTheme.PANEL_BG, 0, y0 + FOOTER_H,
-			RogueScapeTheme.SECTION_HEADER_BG));
-		g.fillRect(x0, y0, w, FOOTER_H);
-		g.setColor(SHADOW);
-		g.drawLine(x0, y0, x0 + w - 1, y0);
-		g.setColor(RogueScapeTheme.BORDER);
-		g.drawLine(x0, y0 + 1, x0 + w - 1, y0 + 1);
-
-		if (view != null && selected >= 0 && selected < view.cards.size())
-		{
-			String pick = "Selected: " + RogueScapeWindowOverlay.ascii(view.cards.get(selected).title);
-			g.setFont(FontManager.getRunescapeFont());
-			FontMetrics fm = g.getFontMetrics();
-			int tx = WIDTH / 2 - fm.stringWidth(pick) / 2;
-			g.setColor(RogueScapeTheme.TEXT_MUTED);
-			g.drawString(pick, tx, y0 + 14);
-		}
-
-		int by = y0 + (FOOTER_H - 28) / 2 + 10;
-		int bh = 28;
-		// Reroll (disabled — no core support yet), Confirm (primary), Skip (neutral).
-		rerollRect.setBounds(PAD, by, 96, bh);
-		drawButton(g, rerollRect, "Reroll", RogueScapeTheme.ButtonRole.NEUTRAL, false, false);
-
-		skipRect.setBounds(WIDTH - PAD - 110, by, 110, bh);
-		drawButton(g, skipRect, "Skip Reward", RogueScapeTheme.ButtonRole.NEUTRAL, true, hoverSkip);
-
-		int confirmW = 150;
-		confirmRect.setBounds(WIDTH / 2 - confirmW / 2, by, confirmW, bh);
-		drawButton(g, confirmRect, "Confirm Choice", RogueScapeTheme.ButtonRole.PRIMARY, true, hoverConfirm);
-	}
-
-	private static void drawButton(Graphics2D g, Rectangle r, String label,
-		RogueScapeTheme.ButtonRole role, boolean enabled, boolean hover)
-	{
-		Color bg = !enabled ? RogueScapeTheme.BTN_DISABLED
-			: hover ? RogueScapeTheme.buttonHoverBg(role) : RogueScapeTheme.buttonBg(role);
-		Color fg = !enabled ? RogueScapeTheme.TEXT_MUTED : RogueScapeTheme.buttonText(role);
-		g.setColor(bg);
-		g.fillRoundRect(r.x, r.y, r.width, r.height, 7, 7);
-		g.setColor(enabled ? RogueScapeTheme.BORDER : darken(RogueScapeTheme.BORDER, 40));
-		g.drawRoundRect(r.x, r.y, r.width - 1, r.height - 1, 7, 7);
-		g.setFont(FontManager.getRunescapeBoldFont());
-		FontMetrics fm = g.getFontMetrics();
-		String t = RogueScapeWindowOverlay.ascii(label);
-		int tx = r.x + (r.width - fm.stringWidth(t)) / 2;
-		int ty = r.y + (r.height + fm.getAscent()) / 2 - 2;
-		g.setColor(fg);
-		g.drawString(t, tx, ty);
 	}
 
 	// ------------------------------------------------------------ helpers

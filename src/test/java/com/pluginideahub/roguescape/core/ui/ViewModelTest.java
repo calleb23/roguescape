@@ -7,7 +7,7 @@ import com.pluginideahub.roguescape.core.RunMode;
 import com.pluginideahub.roguescape.core.RunPhase;
 import com.pluginideahub.roguescape.core.RunStageType;
 import com.pluginideahub.roguescape.core.RunState;
-import com.pluginideahub.roguescape.core.legality.ProvenanceHint;
+import com.pluginideahub.roguescape.core.item.ProvenanceHint;
 import com.pluginideahub.roguescape.core.region.RoomKind;
 import com.pluginideahub.roguescape.core.region.StageRegionRule;
 import java.util.Collections;
@@ -29,23 +29,9 @@ public class ViewModelTest
 		OverlayViewModel overlay = OverlayViewModel.from(run);
 		assertEquals("Demo run", overlay.goal());
 		assertEquals("Lumbridge", overlay.currentRoom());
-		assertEquals(1, overlay.legalCount());
+		assertEquals(1, overlay.itemsCollected());
 		assertTrue(overlay.currentRegionLegal());
 		assertTrue(overlay.warnings().isEmpty());
-	}
-
-	@Test
-	public void overlaySurfacesIllegalAndSuspiciousWarnings()
-	{
-		RogueScapeRunSession base = RogueScapeRunSession.start("Warn run");
-		base.addStage("R1", RunStageType.ROOM, "Lumbridge", "");
-		RogueScapeRun run = RogueScapeRun.wrap(base);
-		base.enterStage("R1");
-		run.applyItemDelta("Mystery", 1, ProvenanceHint.OBSERVED_GROUND_PICKUP); // suspicious
-
-		OverlayViewModel overlay = OverlayViewModel.from(run);
-		assertEquals(1, overlay.suspiciousCount());
-		assertFalse(overlay.warnings().isEmpty());
 	}
 
 	@Test
@@ -78,8 +64,8 @@ public class ViewModelTest
 		assertTrue(vm.headerRows().stream().anyMatch(s -> s.contains("RUNNING")));
 		assertTrue(vm.headerRows().stream().anyMatch(s -> s.contains("01:01")));
 		assertTrue(vm.statusRows().stream().anyMatch(s -> s.contains("Lumbridge")));
-		assertTrue(vm.statusRows().stream().anyMatch(s -> s.startsWith("Objective:")));
-		assertTrue(vm.statusRows().stream().anyMatch(s -> s.contains("unlocks when this objective is done")));
+		assertTrue(vm.statusRows().stream().anyMatch(s -> s.startsWith("The task:")));
+		assertTrue(vm.statusRows().stream().anyMatch(s -> s.contains("Finish the task to stamp this chapter")));
 		assertFalse(vm.isActionEnabled(PanelAction.COMPLETE_STAGE));
 		assertTrue(vm.isActionEnabled(PanelAction.FAIL_RUN));
 	}
@@ -100,8 +86,8 @@ public class ViewModelTest
 
 		assertEquals(RunPhase.TRAVEL_TO_STAGE.getDisplayName(), vm.phaseLabel());
 		assertTrue(vm.statusRows().stream().anyMatch(s -> s.equals("CURRENT: Travel")));
-		assertTrue(vm.statusRows().stream().anyMatch(s -> s.equals("Travel to: Lumbridge")));
-		assertTrue(vm.statusRows().stream().anyMatch(s -> s.contains("Objective waits there: Find one legal upgrade")));
+		assertTrue(vm.statusRows().stream().anyMatch(s -> s.equals("Travel to Lumbridge.")));
+		assertTrue(vm.statusRows().stream().anyMatch(s -> s.contains("The task waits there: Find one legal upgrade")));
 		assertTrue(vm.statusRows().stream().anyMatch(s -> s.equals("Allowed regions: lumbridge")));
 		assertTrue(vm.statusRows().stream().anyMatch(s -> s.equals("Room timer: 01:00 once you enter")));
 		assertTrue(vm.statusRows().stream().anyMatch(s -> s.contains("Walk to the allowed room")));
@@ -124,7 +110,7 @@ public class ViewModelTest
 
 		SidePanelViewModel vm = SidePanelViewModel.active(loop, PanelTab.RUN);
 
-		assertTrue(vm.statusRows().stream().anyMatch(s -> s.contains("Objective complete")));
+		assertTrue(vm.statusRows().stream().anyMatch(s -> s.contains("The task is done")));
 		assertTrue(vm.routeRows().stream().anyMatch(s -> s.contains("1 / 1")));
 		assertTrue(vm.isActionEnabled(PanelAction.COMPLETE_STAGE));
 	}
@@ -137,7 +123,7 @@ public class ViewModelTest
 		base.addStage("R2", RunStageType.ROOM, "Varrock", "");
 		base.enterStage("R1");
 		RogueScapeRunLoop loop = new RogueScapeRunLoop(RogueScapeRun.wrap(base), 0L);
-		base.recordCurrentStageLegalItemGain();
+		base.recordCurrentStageItemGain();
 		loop.completeCurrentStage(1_000L);
 
 		SidePanelViewModel vm = SidePanelViewModel.active(loop, PanelTab.RUN);
@@ -148,7 +134,7 @@ public class ViewModelTest
 		assertEquals(3L, vm.statusRows().stream().filter(s -> s.contains("[RELIC]")).count());
 		assertTrue(vm.isActionEnabled(PanelAction.SKIP_REWARD));
 		assertFalse(vm.isActionEnabled(PanelAction.NEXT_STAGE));
-		assertTrue(vm.statusRows().stream().anyMatch(s -> s.equals("Choose one reward before the next room.")));
+		assertTrue(vm.statusRows().stream().anyMatch(s -> s.equals("Choose one before the page turns.")));
 	}
 
 	@Test
@@ -163,7 +149,7 @@ public class ViewModelTest
 		loop.completeCurrentStage(1_000L);
 
 		SidePanelViewModel choosing = SidePanelViewModel.active(loop, PanelTab.RUN);
-		assertTrue(choosing.statusRows().stream().anyMatch(s -> s.equals("Choose one final reward before the run completes.")));
+		assertTrue(choosing.statusRows().stream().anyMatch(s -> s.equals("Choose one final reward — the journal is nearly full.")));
 		assertTrue(choosing.isActionEnabled(PanelAction.CHOOSE_REWARD_1));
 
 		loop.skipReward(2_000L);
@@ -186,7 +172,6 @@ public class ViewModelTest
 		SidePanelViewModel vm = SidePanelViewModel.active(loop, PanelTab.RUN);
 
 		// Modifiers reflect real run rules.
-		assertTrue(vm.modifierRows().stream().anyMatch(s -> s.startsWith("Strictness:")));
 		assertTrue(vm.modifierRows().stream().anyMatch(s -> s.startsWith("Bank unlocks:")));
 		assertTrue(vm.modifierRows().stream().anyMatch(s -> s.startsWith("Time limit:")));
 
@@ -212,7 +197,7 @@ public class ViewModelTest
 
 		run.recordBossDefeatSignal("test");
 		SidePanelViewModel ready = SidePanelViewModel.active(loop, PanelTab.RUN);
-		assertTrue(ready.statusRows().stream().anyMatch(s -> s.contains("Objective complete")));
+		assertTrue(ready.statusRows().stream().anyMatch(s -> s.contains("The task is done")));
 		assertTrue(ready.isActionEnabled(PanelAction.COMPLETE_STAGE));
 	}
 
@@ -264,9 +249,9 @@ public class ViewModelTest
 		RogueScapeRunLoop loop = new RogueScapeRunLoop(run, 0L);
 
 		SidePanelViewModel vm = SidePanelViewModel.active(loop, PanelTab.RUN);
-		assertTrue(vm.statusRows().stream().anyMatch(s -> s.startsWith("✓ RUN COMPLETE")));
-		assertTrue(vm.statusRows().stream().anyMatch(s -> s.startsWith("Time:")));
-		assertTrue(vm.statusRows().stream().anyMatch(s -> s.startsWith("Rooms:")));
+		assertTrue(vm.statusRows().stream().anyMatch(s -> s.startsWith("✓ The run is complete")));
+		assertTrue(vm.statusRows().stream().anyMatch(s -> s.startsWith("Time afoot:")));
+		assertTrue(vm.statusRows().stream().anyMatch(s -> s.startsWith("Chapters:")));
 		assertTrue(vm.statusRows().stream().anyMatch(s -> s.startsWith("Bosses:")));
 		assertTrue("recap lists held relics",
 			vm.statusRows().stream().anyMatch(s -> s.contains("Gluttony")));
@@ -286,7 +271,7 @@ public class ViewModelTest
 		SidePanelViewModel vm = SidePanelViewModel.active(loop, PanelTab.RUN);
 
 		assertTrue(vm.headerRows().stream().anyMatch(s -> s.contains("FAILED")));
-		assertTrue(vm.statusRows().stream().anyMatch(s -> s.startsWith("\u2717 RUN FAILED")));
+		assertTrue(vm.statusRows().stream().anyMatch(s -> s.startsWith("\u2717 The run has failed")));
 		assertTrue(vm.isActionEnabled(PanelAction.RESET_RUN));
 		assertFalse(vm.isActionEnabled(PanelAction.FAIL_RUN));
 		assertFalse(vm.isActionEnabled(PanelAction.COMPLETE_STAGE));

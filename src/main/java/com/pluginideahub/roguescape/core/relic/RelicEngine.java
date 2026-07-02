@@ -1,13 +1,11 @@
 package com.pluginideahub.roguescape.core.relic;
 
-import com.pluginideahub.roguescape.core.legality.ItemEvent;
-import com.pluginideahub.roguescape.core.legality.ItemLegality;
 import com.pluginideahub.roguescape.core.reward.BankItemCategory;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.EnumMap;
 import java.util.EnumSet;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -18,15 +16,13 @@ import java.util.Set;
  *
  * The engine is pure-Java with no RuneLite dependencies. The run engine is expected to:
  *   1. {@link #addRelic} the relics chosen by the player at start/draft.
- *   2. Resolve every item event with {@link #adjustLegality}, which may apply one-shot
- *      mercies or apply category restrictions.
- *   3. Track running totals with {@link #recordItem} so category-limit warnings surface.
- *   4. Use {@link #scoreBonus} when summing run score at recap.
+ *   2. Track running totals with {@link #recordItem} so category-limit warnings surface.
+ *   3. Use {@link #scoreBonus} when summing run score at recap.
  */
 public final class RelicEngine
 {
 	private final List<Relic> relics = new ArrayList<>();
-	private final Map<String, Integer> mercyChargesLeft = new HashMap<>();
+	private final Map<String, Integer> mercyChargesLeft = new LinkedHashMap<>();
 	private final EnumMap<BankItemCategory, Integer> categoryCounts = new EnumMap<>(BankItemCategory.class);
 	private final List<String> consumedNotes = new ArrayList<>();
 
@@ -57,51 +53,6 @@ public final class RelicEngine
 	{
 		Integer v = categoryCounts.get(cat);
 		return v == null ? 0 : v;
-	}
-
-	/**
-	 * Returns the relic-adjusted legality for a delta+legality observation. Mercies are
-	 * consumed lazily — only when a still-illegal event matches the mercy's scope.
-	 */
-	public ItemLegality adjustLegality(ItemEvent event, BankItemCategory itemCategory)
-	{
-		if (event == null) return ItemLegality.SUSPICIOUS_UNKNOWN;
-		ItemLegality legality = event.legality();
-		// Restriction: legally sourced item that hits a forbidden category becomes illegal.
-		if (legality.isLegal())
-		{
-			for (Relic r : relics)
-			{
-				for (RelicEffect e : r.effects())
-				{
-					if (e.kind() != RelicEffectKind.RESTRICTION) continue;
-					if (itemCategory != null && e.categories().contains(itemCategory))
-					{
-						return ItemLegality.ILLEGAL_MANUAL_MARK;
-					}
-					if (e.matchesItemId(event.delta().itemId()) && !e.itemIds().isEmpty())
-					{
-						return ItemLegality.ILLEGAL_MANUAL_MARK;
-					}
-				}
-			}
-			return legality;
-		}
-		// Mercy: convert one illegal bank withdrawal to suspicious if a charge is available.
-		if (legality == ItemLegality.ILLEGAL_BANK_WITHDRAWAL)
-		{
-			for (Relic r : relics)
-			{
-				Integer charges = mercyChargesLeft.get(r.relicId());
-				if (charges != null && charges > 0)
-				{
-					mercyChargesLeft.put(r.relicId(), charges - 1);
-					consumedNotes.add(r.name() + " consumed: " + event.delta().itemName());
-					return ItemLegality.SUSPICIOUS_UNKNOWN;
-				}
-			}
-		}
-		return legality;
 	}
 
 	/** Increment counts after the engine has accepted an item event. */

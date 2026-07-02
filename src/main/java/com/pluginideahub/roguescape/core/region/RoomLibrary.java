@@ -28,7 +28,7 @@ public final class RoomLibrary
 
 	public static RoomDefinition lumbridgeSwamp()
 	{
-		return new RoomDefinition("lumbridge-swamp", "Lumbridge Swamp", RoomKind.REGION, regions("12851", "12850"));
+		return new RoomDefinition("lumbridge-swamp", "Lumbridge Swamp", RoomKind.REGION, regions("12851", "12850", "12849"));
 	}
 
 	public static RoomDefinition draynorVillage()
@@ -63,7 +63,7 @@ public final class RoomLibrary
 
 	public static RoomDefinition falador()
 	{
-		return new RoomDefinition("falador", "Falador", RoomKind.ARMOUR, regions("11828"));
+		return new RoomDefinition("falador", "Falador", RoomKind.ARMOUR, regions("11828", "12084"));
 	}
 
 	public static RoomDefinition portSarim()

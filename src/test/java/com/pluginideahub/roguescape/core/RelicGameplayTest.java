@@ -1,7 +1,6 @@
 package com.pluginideahub.roguescape.core;
 
-import com.pluginideahub.roguescape.core.legality.ItemEvent;
-import com.pluginideahub.roguescape.core.legality.ProvenanceHint;
+import com.pluginideahub.roguescape.core.item.ProvenanceHint;
 import com.pluginideahub.roguescape.core.relic.ModifierLibrary;
 import com.pluginideahub.roguescape.core.relic.RelicLibrary;
 import com.pluginideahub.roguescape.core.reward.RelicDraftGenerator;
@@ -48,23 +47,11 @@ public class RelicGameplayTest
 	}
 
 	@Test
-	public void baselineLootIsLegalWithoutRelics()
+	public void collectingAnItemCountsTowardTheRun()
 	{
 		RogueScapeRun run = roomRun("Control");
-		ItemEvent e = run.applyItemDelta("Shark", 1, ProvenanceHint.OBSERVED_LOOT);
-		assertTrue("loot in a room should be legal without restrictions", e.isLegal());
-	}
-
-	@Test
-	public void noFoodRelicTurnsLegalFoodIllegal()
-	{
-		RogueScapeRun run = roomRun("Restrict");
-		run.chooseRelic(ModifierLibrary.noFood());
-		assertEquals(1, run.heldRelics().size());
-
-		ItemEvent e = run.applyItemDelta("Shark", 1, ProvenanceHint.OBSERVED_LOOT);
-		assertTrue("noFood should make a food gain illegal", e.isIllegal());
-		assertEquals(1, run.illegalCount());
+		run.applyItemDelta("Shark", 1, ProvenanceHint.OBSERVED_LOOT);
+		assertEquals(1, run.itemsCollected());
 	}
 
 	@Test
@@ -72,8 +59,7 @@ public class RelicGameplayTest
 	{
 		RogueScapeRun run = roomRun("Score");
 		run.chooseRelic(RelicLibrary.gluttony()); // food scores +3 each
-		ItemEvent e = run.applyItemDelta("Shark", 1, ProvenanceHint.OBSERVED_LOOT);
-		assertTrue(e.isLegal());
+		run.applyItemDelta("Shark", 1, ProvenanceHint.OBSERVED_LOOT);
 
 		int sessionScore = run.session().runScore();
 		assertEquals(sessionScore + 3, run.effectiveScore());
@@ -97,7 +83,7 @@ public class RelicGameplayTest
 	{
 		RogueScapeRun run = roomRun("Loop");
 		RogueScapeRunLoop loop = new RogueScapeRunLoop(run, 0L);
-		run.session().recordCurrentStageLegalItemGain();
+		run.session().recordCurrentStageItemGain();
 		loop.completeCurrentStage(1_000L);
 
 		RewardDraft draft = loop.pendingRewardDraft();

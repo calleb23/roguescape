@@ -40,6 +40,16 @@ public final class DeterministicRng
 		return (int) (bits % boundExclusive);
 	}
 
+	/** Fisher–Yates shuffle driven by this RNG, for seed-stable ordering of pools. */
+	public <T> void shuffle(java.util.List<T> list)
+	{
+		for (int i = list.size() - 1; i > 0; i--)
+		{
+			int j = nextInt(i + 1);
+			java.util.Collections.swap(list, i, j);
+		}
+	}
+
 	public static long hash(String text)
 	{
 		if (text == null) return 0L;

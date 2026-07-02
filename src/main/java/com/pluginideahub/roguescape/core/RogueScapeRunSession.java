@@ -16,9 +16,7 @@ public class RogueScapeRunSession
 		STARTER_KIT,
 		FOUND_DURING_RUN,
 		BOUGHT_DURING_RUN,
-		GATHERED_OR_CRAFTED,
-		MANUALLY_APPROVED,
-		UNKNOWN_OR_ILLEGAL
+		GATHERED_OR_CRAFTED
 	}
 
 	private static final class Reward
@@ -122,18 +120,18 @@ public class RogueScapeRunSession
 	}
 
 	public RunStage addStage(String id, RunStageType type, String name, String note,
-		String objectiveLabel, int requiredLegalItemGains)
+		String objectiveLabel, int requiredItemGains)
 	{
-		return addStage(id, type, name, note, objectiveLabel, null, requiredLegalItemGains);
+		return addStage(id, type, name, note, objectiveLabel, null, requiredItemGains);
 	}
 
 	public RunStage addStage(String id, RunStageType type, String name, String note,
-		String objectiveLabel, RunObjectiveKind objectiveKind, int requiredLegalItemGains)
+		String objectiveLabel, RunObjectiveKind objectiveKind, int requiredItemGains)
 	{
 		if (state != RunState.ACTIVE) return null;
 		if (route.contains(id)) return route.stageById(id);
-		RunStage stage = requiredLegalItemGains >= 0
-			? new RunStage(id, name, type, note, objectiveLabel, objectiveKind, requiredLegalItemGains)
+		RunStage stage = requiredItemGains >= 0
+			? new RunStage(id, name, type, note, objectiveLabel, objectiveKind, requiredItemGains)
 			: new RunStage(id, name, type, note);
 		route.addStage(stage);
 		recordTimeline(RunTimelineEvent.Type.STAGE_ADDED, id + ": " + name);
@@ -158,20 +156,20 @@ public class RogueScapeRunSession
 		recordTimeline(RunTimelineEvent.Type.STAGE_CLEARED, id + ": " + stage.name());
 	}
 
-	public void recordCurrentStageLegalItemGain()
+	public void recordCurrentStageItemGain()
 	{
-		recordCurrentStageLegalItemGain(null, null);
+		recordCurrentStageItemGain(null, null);
 	}
 
-	public void recordCurrentStageLegalItemGain(
+	public void recordCurrentStageItemGain(
 		com.pluginideahub.roguescape.core.reward.BankItemCategory category,
-		com.pluginideahub.roguescape.core.legality.ProvenanceHint hint)
+		com.pluginideahub.roguescape.core.item.ProvenanceHint hint)
 	{
 		if (state != RunState.ACTIVE) return;
 		RunStage stage = currentOpenStage();
 		if (stage == null) return;
 		boolean wasComplete = stage.objectiveComplete();
-		stage.recordLegalItemGain(category, hint);
+		stage.recordItemGain(category, hint);
 		if (!wasComplete && stage.objectiveComplete())
 		{
 			recordRunLoopNote("Objective ready: " + stage.name() + " - " + stage.objectiveProgressLabel());
@@ -248,17 +246,13 @@ public class RogueScapeRunSession
 		recordTimeline(RunTimelineEvent.Type.STAGE_ENTERED, id + ": " + roomName);
 	}
 
-	/** Records an observed inventory gain with source provenance. UNKNOWN_OR_ILLEGAL auto-fails the run. */
+	/** Records an observed inventory gain. Items are never judged — they simply count toward the run. */
 	public void observeItemGain(String itemName, int quantity, ItemSource source, String locationNote, String role, int points)
 	{
 		if (state != RunState.ACTIVE) return;
 		rewards.add(new Reward(itemName, quantity, source, locationNote, role, points));
 		recordTimeline(RunTimelineEvent.Type.ITEM_GAINED,
 			itemName + (quantity > 1 ? " x" + quantity : "") + " [" + source.name() + "]");
-		if (source == ItemSource.UNKNOWN_OR_ILLEGAL)
-		{
-			recordViolation("Unknown/illegal source: " + itemName, RunEnding.UNKNOWN_ITEM_SOURCE);
-		}
 	}
 
 	/** Backward-compatible convenience: records a FOUND_DURING_RUN reward in the current room. */
@@ -332,24 +326,10 @@ public class RogueScapeRunSession
 		return rewards.size();
 	}
 
-	public int legalRewardCount()
+	/** Total items collected during the run (no legality judgment — every gain counts). */
+	public int itemsCollected()
 	{
-		int count = 0;
-		for (Reward r : rewards)
-		{
-			if (r.source != ItemSource.UNKNOWN_OR_ILLEGAL) count++;
-		}
-		return count;
-	}
-
-	public int illegalRewardCount()
-	{
-		int count = 0;
-		for (Reward r : rewards)
-		{
-			if (r.source == ItemSource.UNKNOWN_OR_ILLEGAL) count++;
-		}
-		return count;
+		return rewards.size();
 	}
 
 	public int relicCount()
@@ -389,8 +369,7 @@ public class RogueScapeRunSession
 		else if (mode != RunMode.UNSPECIFIED) sb.append("[").append(mode.name()).append("] | ");
 		if (preset != RunPreset.UNSPECIFIED) sb.append("{").append(preset.name()).append("} | ");
 		sb.append("Rooms: ").append(roomCount());
-		sb.append(" | Legal: ").append(legalRewardCount());
-		sb.append(" | Illegal: ").append(illegalRewardCount());
+		sb.append(" | Items: ").append(itemsCollected());
 		sb.append(" | Relics: ").append(relics.size());
 		sb.append(" | Score: ").append(runScore());
 		sb.append(" | ").append(state.name());

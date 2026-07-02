@@ -1,8 +1,7 @@
 package com.pluginideahub.roguescape.core;
 
-import com.pluginideahub.roguescape.core.legality.InventorySnapshot;
-import com.pluginideahub.roguescape.core.legality.StarterKit;
-import com.pluginideahub.roguescape.core.legality.StrictnessMode;
+import com.pluginideahub.roguescape.core.item.InventorySnapshot;
+import com.pluginideahub.roguescape.core.item.StarterKit;
 import com.pluginideahub.roguescape.core.relic.Relic;
 import com.pluginideahub.roguescape.core.relic.RelicCatalog;
 import java.util.ArrayList;
@@ -31,9 +30,7 @@ public final class RogueScapeCustomRunFactory
 			RunMode.CUSTOM_CREATOR, RunPreset.UNSPECIFIED);
 		RogueScapeRun run = RogueScapeRun.wrap(session)
 			.declareStarterKit(starterKitForLoadout(config.loadout))
-			.setStrictness(strictnessForLabel(config.strictness))
 			.setBankAccessAllowed(config.bankUnlocks)
-			.setPreRunSupplyExpected(config.preRunSupplyExpected)
 			.setStartSnapshot(config.startSnapshot);
 
 		session.recordRunLoopNote("Custom mode: " + (config.customMode == null || config.customMode.isEmpty()
@@ -89,14 +86,6 @@ public final class RogueScapeCustomRunFactory
 			lines.add("No starter items");
 		}
 		return lines;
-	}
-
-	public static StrictnessMode strictnessForLabel(String label)
-	{
-		String value = label == null ? "" : label.trim().toLowerCase();
-		if ("trust".equals(value)) return StrictnessMode.TRUST;
-		if ("strict".equals(value)) return StrictnessMode.STRICT;
-		return StrictnessMode.BALANCED;
 	}
 
 	private static Map<String, Integer> loadoutKitItems(String loadout)
@@ -179,9 +168,7 @@ public final class RogueScapeCustomRunFactory
 		private List<String> roomAllowances = Collections.emptyList();
 		private String bossId = "";
 		private List<String> modifierIds = Collections.emptyList();
-		private String strictness = "Balanced";
 		private boolean bankUnlocks;
-		private boolean preRunSupplyExpected;
 		private int timeLimitMinutes;
 		private long startedAtMillis;
 		private InventorySnapshot startSnapshot = new InventorySnapshot();
@@ -198,9 +185,7 @@ public final class RogueScapeCustomRunFactory
 		public Config roomAllowances(List<String> values) { this.roomAllowances = values; return this; }
 		public Config bossId(String value) { this.bossId = value; return this; }
 		public Config modifierIds(List<String> values) { this.modifierIds = values; return this; }
-		public Config strictness(String value) { this.strictness = value; return this; }
 		public Config bankUnlocks(boolean value) { this.bankUnlocks = value; return this; }
-		public Config preRunSupplyExpected(boolean value) { this.preRunSupplyExpected = value; return this; }
 		public Config timeLimitMinutes(int value) { this.timeLimitMinutes = Math.max(0, value); return this; }
 		public Config startedAtMillis(long value) { this.startedAtMillis = value; return this; }
 		public Config startSnapshot(InventorySnapshot value)

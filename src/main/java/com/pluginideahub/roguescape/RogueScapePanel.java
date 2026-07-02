@@ -2,7 +2,6 @@ package com.pluginideahub.roguescape;
 
 import com.pluginideahub.roguescape.core.RunMode;
 import com.pluginideahub.roguescape.core.RunPreset;
-import com.pluginideahub.roguescape.core.RunRouteBuilder;
 import com.pluginideahub.roguescape.core.region.BossLibrary;
 import com.pluginideahub.roguescape.core.region.RoomDefinition;
 import com.pluginideahub.roguescape.core.region.RoomKind;
@@ -12,16 +11,24 @@ import com.pluginideahub.roguescape.core.relic.Relic;
 import com.pluginideahub.roguescape.core.relic.RelicLibrary;
 import com.pluginideahub.roguescape.core.ui.PanelAction;
 import com.pluginideahub.roguescape.core.ui.SidePanelViewModel;
+import com.pluginideahub.roguescape.ui.ChapterList;
 import com.pluginideahub.roguescape.ui.CollapsibleSection;
+import com.pluginideahub.roguescape.ui.ContractCard;
 import com.pluginideahub.roguescape.ui.RogueScapeCustomRoomEditorState;
+import com.pluginideahub.roguescape.ui.RogueScapePaper;
 import com.pluginideahub.roguescape.ui.RogueScapeTheme;
+import com.pluginideahub.roguescape.ui.StampButton;
 import com.pluginideahub.roguescape.ui.StatBar;
 import java.awt.BorderLayout;
 import java.awt.CardLayout;
 import java.awt.Color;
 import java.awt.Component;
+import java.awt.Container;
+import java.awt.Cursor;
 import java.awt.Dimension;
 import java.awt.Font;
+import java.awt.FontMetrics;
+import java.awt.RenderingHints;
 import java.awt.GradientPaint;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
@@ -63,12 +70,9 @@ public class RogueScapePanel extends PluginPanel
 
 	// RUN CONTROL widgets
 	private final JComboBox<String> modeCombo = new JComboBox<>();
-	private final JComboBox<String> presetCombo = new JComboBox<>();
 	private final JTextField seedField = new JTextField("");
 	private final JPanel runControlActions = new JPanel();
 	private final JPanel modeTilesPanel = new JPanel();
-	private final JPanel presetCardsPanel = new JPanel();
-	private final JPanel campaignPreviewPanel = new JPanel();
 
 	// ROUTE widgets
 	private final List<RoomDefinition> roomDefs = new ArrayList<>();
@@ -87,7 +91,6 @@ public class RogueScapePanel extends PluginPanel
 	private int customModifierCursor = 0;
 	private String customBuilderGameMode = "Scavenger";
 	private String customBuilderLoadout = "Naked";
-	private String customStrictness = "Balanced";
 	private boolean customBankUnlocks;
 	private int customTimeLimitMinutes;
 	private int customBossLimit;
@@ -110,6 +113,10 @@ public class RogueScapePanel extends PluginPanel
 
 	// DEV TOOLS section (visibility tracks developer mode)
 	private CollapsibleSection devSection;
+	private CollapsibleSection runBuilderSection;
+	private CollapsibleSection chaptersSection;
+	private final ChapterList chapterList = new ChapterList();
+	private boolean wasLobby = true;
 
 	// ZONE BUILDER widgets
 	private final JTextField zoneNameField = new JTextField("My Zone");
@@ -145,13 +152,20 @@ public class RogueScapePanel extends PluginPanel
 		setBorder(BorderFactory.createEmptyBorder(4, 4, 4, 4));
 
 		column.setLayout(new BoxLayout(column, BoxLayout.Y_AXIS));
-		column.setBackground(RogueScapeTheme.PANEL_BG);
+		column.setOpaque(false);
 
 		this.devSection = buildDevToolsSection();
 
 		column.add(buildPluginHeader());
 		column.add(vGap(4));
-		column.add(buildRunBuilderSection());
+		runBuilderSection = buildRunBuilderSection();
+		column.add(runBuilderSection);
+		runControlActions.setLayout(new BoxLayout(runControlActions, BoxLayout.Y_AXIS));
+		runControlActions.setOpaque(false);
+		runControlActions.setBorder(BorderFactory.createEmptyBorder(6, 4, 2, 4));
+		runControlActions.setAlignmentX(Component.LEFT_ALIGNMENT);
+		column.add(runControlActions);
+		column.add(buildChaptersSection());
 		column.add(buildLiveRunSection());
 		column.add(buildBuildSection());
 		column.add(buildArtifactsSection());
@@ -163,6 +177,7 @@ public class RogueScapePanel extends PluginPanel
 		column.add(Box.createVerticalGlue());
 
 		add(column, BorderLayout.NORTH);
+		paperize(column);
 
 		if (this.roomEditorState != null)
 		{
@@ -170,13 +185,56 @@ public class RogueScapePanel extends PluginPanel
 		}
 
 		updateZoneBuilder();
-		updateCampaignPreview();
 		updateRoute(null);
+	}
+
+	@Override
+	protected void paintComponent(Graphics graphics)
+	{
+		super.paintComponent(graphics);
+		int w = getWidth(), h = getHeight();
+		graphics.drawImage(RogueScapePaper.sheet(w, h), 0, 0, w, h, 0, 0, w, h, null);
+	}
+
+	/**
+	 * Lets the paper texture show through: plain paper-toned panels become transparent;
+	 * cards, inputs, and buttons keep their own surfaces. Re-applied after each render
+	 * because sections rebuild their rows.
+	 */
+	private void paperize(Component c)
+	{
+		if (c instanceof JPanel && RogueScapeTheme.PAPER.equals(c.getBackground()))
+		{
+			((JPanel) c).setOpaque(false);
+		}
+		if (c instanceof Container)
+		{
+			for (Component child : ((Container) c).getComponents())
+			{
+				paperize(child);
+			}
+		}
 	}
 
 	public void render(SidePanelViewModel model)
 	{
+		boolean lobby = model == null || model.isLobby();
+		if (runBuilderSection != null && lobby != wasLobby)
+		{
+			runBuilderSection.setCollapsed(!lobby);
+			wasLobby = lobby;
+		}
 		this.lastModel = model;
+		// Chapters only exist during a run; hide the section in the lobby.
+		boolean hasChapters = model != null && !model.chapters().isEmpty();
+		if (chaptersSection != null)
+		{
+			chaptersSection.setVisible(hasChapters);
+			if (hasChapters)
+			{
+				chapterList.setChapters(model.chapters());
+			}
+		}
 		updateRunControl(model);
 		updateRoute(model);
 		updateLiveRun(model);
@@ -185,6 +243,7 @@ public class RogueScapePanel extends PluginPanel
 		updateModifiers(model);
 		updateProgression(model);
 		updateDevTools(model);
+		paperize(column);
 		column.revalidate();
 		column.repaint();
 	}
@@ -196,24 +255,16 @@ public class RogueScapePanel extends PluginPanel
 			case 0: return RunMode.FRESH_SOURCE;
 			case 1: return RunMode.BANK_DRAFT;
 			case 2: return RunMode.CUSTOM_CREATOR;
+			case 3: return RunMode.SEEDED_RACE;
+			case 4: return RunMode.REGION_CRAWL;
 			default: return RunMode.UNSPECIFIED;
 		}
 	}
 
 	public RunPreset selectedPreset()
 	{
-		switch (presetCombo.getSelectedIndex())
-		{
-			case 1: return RunPreset.GOBLIN_RAT;
-			case 2: return RunPreset.IRON_SCRAPPER;
-			case 3: return RunPreset.MAGE_SPARK;
-			case 4: return RunPreset.ARCHERS_GAMBLE;
-			case 5: return RunPreset.MONK_MODE;
-			case 6: return RunPreset.WILDERNESS_RAT;
-			case 7: return RunPreset.CLUE_GREMLIN;
-			case 8: return RunPreset.MAX_MAIN_DRAFT;
-			default: return RunPreset.UNSPECIFIED;
-		}
+		// Named presets were removed; runs always auto-generate until authored campaigns land.
+		return RunPreset.UNSPECIFIED;
 	}
 
 	public String selectedGoal()
@@ -231,29 +282,30 @@ public class RogueScapePanel extends PluginPanel
 	{
 		if ("scavenger".equals(actionId))
 		{
-			selectRunBuilderState(0, 0, "");
+			// No curated presets yet — Scavenger auto-generates a route from the room/boss libraries.
+			selectRunBuilderState(0, "");
 		}
 		else if ("rewarded".equals(actionId))
 		{
-			selectRunBuilderState(1, 0, "");
+			selectRunBuilderState(1, "");
 		}
 		else if ("goal".equals(actionId))
 		{
-			selectRunBuilderState(0, 0, "");
+			selectRunBuilderState(0, "");
 		}
 		else if ("weekly".equals(actionId))
 		{
-			selectRunBuilderState(0, 0, "");
+			selectRunBuilderState(0, "");
 		}
 		else if ("custom".equals(actionId))
 		{
-			selectRunBuilderState(2, 0, "");
+			selectRunBuilderState(2, "");
 		}
 	}
 
 	private CollapsibleSection buildRunBuilderSection()
 	{
-		CollapsibleSection section = new CollapsibleSection("Run Builder");
+		CollapsibleSection section = new CollapsibleSection("Contracts");
 		JPanel shell = new JPanel();
 		shell.setLayout(new BoxLayout(shell, BoxLayout.Y_AXIS));
 		shell.setBackground(RogueScapeTheme.SECTION_BG);
@@ -269,32 +321,54 @@ public class RogueScapePanel extends PluginPanel
 		content.add(buildZoneBuilderTab(), "Zone");
 		content.add(buildCursesTab(), "Mods");
 
-		JPanel tabRow = new JPanel(new java.awt.GridLayout(1, 4, 3, 0));
+		JPanel tabRow = new JPanel(new java.awt.GridLayout(1, 4, 2, 0));
 		tabRow.setBackground(RogueScapeTheme.SECTION_BG);
-		tabRow.setMaximumSize(new Dimension(Integer.MAX_VALUE, 25));
+		tabRow.setMaximumSize(new Dimension(Integer.MAX_VALUE, 24));
 		tabRow.setAlignmentX(Component.LEFT_ALIGNMENT);
 		tabRow.add(builderTabButton("Run", "Type", cards, content));
-		tabRow.add(builderTabButton("Map", "Route", cards, content));
+		tabRow.add(builderTabButton("Route", "Route", cards, content));
 		tabRow.add(builderTabButton("Zone", "Zone", cards, content));
-		tabRow.add(builderTabButton("Cur", "Mods", cards, content));
+		tabRow.add(builderTabButton("Curses", "Mods", cards, content));
 
 		shell.add(tabRow);
 		shell.add(content);
 		section.content().add(shell);
+		restyleBuilderTabs("Type");
 		return section;
 	}
+
+	private final java.util.Map<JButton, String> builderTabButtons = new java.util.LinkedHashMap<>();
 
 	private JButton builderTabButton(String label, String cardName, CardLayout cards, JPanel content)
 	{
 		JButton button = new JButton(label);
-		styleButton(button, RogueScapeTheme.ButtonRole.NEUTRAL);
-		button.setMargin(new java.awt.Insets(2, 2, 2, 2));
+		button.setFocusPainted(false);
+		button.setContentAreaFilled(false);
+		button.setOpaque(true);
+		button.setFont(RogueScapeTheme.small(button.getFont()).deriveFont(Font.BOLD, 10f));
+		button.setMargin(new java.awt.Insets(0, 0, 0, 0));
+		builderTabButtons.put(button, cardName);
 		button.addActionListener(e ->
 		{
 			cards.show(content, cardName);
 			content.putClientProperty("roguescape.builderCard", cardName);
+			restyleBuilderTabs(cardName);
 		});
 		return button;
+	}
+
+	/** Flat tab look: the active tab gets gold text over a bright underline. */
+	private void restyleBuilderTabs(String activeCard)
+	{
+		for (java.util.Map.Entry<JButton, String> entry : builderTabButtons.entrySet())
+		{
+			JButton tab = entry.getKey();
+			boolean active = entry.getValue().equals(activeCard);
+			tab.setBackground(active ? RogueScapeTheme.SURFACE : RogueScapeTheme.SECTION_BG);
+			tab.setForeground(active ? RogueScapeTheme.GOLD : RogueScapeTheme.TEXT_MUTED);
+			tab.setBorder(BorderFactory.createMatteBorder(0, 0, 2, 0,
+				active ? RogueScapeTheme.BORDER_BRIGHT : RogueScapeTheme.BORDER));
+		}
 	}
 
 	private JPanel builderTab()
@@ -309,52 +383,28 @@ public class RogueScapePanel extends PluginPanel
 
 	private JPanel buildPluginHeader()
 	{
-		JPanel header = new JPanel()
-		{
-			@Override
-			protected void paintComponent(Graphics graphics)
-			{
-				Graphics2D g = (Graphics2D) graphics;
-				g.setPaint(new GradientPaint(0, 0, RogueScapeTheme.SECTION_HEADER_BG,
-					0, getHeight(), RogueScapeTheme.PANEL_BG));
-				g.fillRect(0, 0, getWidth(), getHeight());
-				g.setColor(RogueScapeTheme.BORDER);
-				g.drawRect(0, 0, getWidth() - 1, getHeight() - 1);
-				g.setColor(RogueScapeTheme.BORDER_BRIGHT);
-				g.drawLine(1, 1, getWidth() - 2, 1);
-			}
-		};
-		header.setLayout(new BorderLayout(8, 0));
+		JPanel header = new JPanel(new BorderLayout(8, 0));
 		header.setOpaque(false);
-		header.setBorder(BorderFactory.createEmptyBorder(8, 10, 8, 10));
+		header.setBorder(BorderFactory.createEmptyBorder(8, 10, 4, 10));
 		header.setMaximumSize(new Dimension(Integer.MAX_VALUE, 58));
-		header.setPreferredSize(new Dimension(PluginPanel.PANEL_WIDTH, 58));
 		header.setAlignmentX(Component.LEFT_ALIGNMENT);
-
-		JLabel crest = new JLabel("*");
-		crest.setHorizontalAlignment(JLabel.CENTER);
-		crest.setForeground(RogueScapeTheme.ACCENT);
-		crest.setFont(RogueScapeTheme.header(crest.getFont()).deriveFont(24f));
-		crest.setPreferredSize(new Dimension(24, 32));
-		header.add(crest, BorderLayout.WEST);
 
 		JPanel text = new JPanel();
 		text.setOpaque(false);
 		text.setLayout(new BoxLayout(text, BoxLayout.Y_AXIS));
 		JLabel title = new JLabel("RogueScape");
-		title.setForeground(RogueScapeTheme.GOLD);
-		title.setFont(RogueScapeTheme.header(title.getFont()));
-		JLabel sub = new JLabel("Rooms, relics, rewards");
-		sub.setForeground(RogueScapeTheme.TEXT_MUTED);
+		title.setForeground(RogueScapeTheme.INK);
+		title.setFont(RogueScapeTheme.header(title.getFont()).deriveFont(22f));
+		JLabel sub = new JLabel("an adventurer's journal");
+		sub.setForeground(RogueScapeTheme.INK_FADED);
 		sub.setFont(RogueScapeTheme.small(sub.getFont()));
 		text.add(title);
 		text.add(sub);
 		header.add(text, BorderLayout.CENTER);
 
-		JLabel status = new JLabel("ON");
-		status.setForeground(RogueScapeTheme.POSITIVE);
-		status.setFont(RogueScapeTheme.value(status.getFont()));
-		header.add(status, BorderLayout.EAST);
+		JLabel seal = new JLabel(new javax.swing.ImageIcon(
+			RogueScapePaper.waxSealImage(34, RogueScapeTheme.WAX_RED)));
+		header.add(seal, BorderLayout.EAST);
 		return header;
 	}
 
@@ -421,11 +471,6 @@ public class RogueScapePanel extends PluginPanel
 		}
 	}
 
-	public String customStrictness()
-	{
-		return customStrictness;
-	}
-
 	public boolean customBankUnlocks()
 	{
 		return customBankUnlocks;
@@ -441,21 +486,6 @@ public class RogueScapePanel extends PluginPanel
 		return customBossLimit;
 	}
 
-	public void cycleCustomStrictness()
-	{
-		if ("Balanced".equals(customStrictness))
-		{
-			customStrictness = "Trust";
-		}
-		else if ("Trust".equals(customStrictness))
-		{
-			customStrictness = "Strict";
-		}
-		else
-		{
-			customStrictness = "Balanced";
-		}
-	}
 
 	public void toggleCustomBankUnlocks()
 	{
@@ -815,7 +845,6 @@ public class RogueScapePanel extends PluginPanel
 			sb.append(i < selectedRoomAllowances.size() ? selectedRoomAllowances.get(i) : "All");
 		}
 		sb.append(";mods=").append(String.join(",", selectedModifierIds));
-		sb.append(";strictness=").append(customStrictness);
 		sb.append(";bank=").append(customBankUnlocks ? "on" : "off");
 		sb.append(";time=").append(customTimeLimitMinutes == 0 ? "none" : customTimeLimitMinutes + "m");
 		sb.append(";bosscap=").append(customBossLimit == 0 ? "none" : customBossLimit);
@@ -871,10 +900,6 @@ public class RogueScapePanel extends PluginPanel
 				}
 			}
 		}
-		String strictness = fields.get("strictness");
-		if ("Trust".equalsIgnoreCase(strictness)) customStrictness = "Trust";
-		else if ("Strict".equalsIgnoreCase(strictness)) customStrictness = "Strict";
-		else if ("Balanced".equalsIgnoreCase(strictness)) customStrictness = "Balanced";
 		String bank = fields.get("bank");
 		if (bank != null)
 		{
@@ -1186,100 +1211,52 @@ public class RogueScapePanel extends PluginPanel
 	private JPanel buildRunControlTab()
 	{
 		JPanel c = builderTab();
-		c.add(fieldLabel("Choose Mode"));
-		c.add(vGap(3));
-		modeTilesPanel.setLayout(new java.awt.GridLayout(1, 3, 4, 4));
-		modeTilesPanel.setBackground(RogueScapeTheme.SECTION_BG);
-		modeTilesPanel.setMaximumSize(new Dimension(Integer.MAX_VALUE, 64));
-		modeTilesPanel.setAlignmentX(Component.LEFT_ALIGNMENT);
-		modeTilesPanel.add(modeTile("Scavenge", "earn gear", 0, 0, ""));
-		modeTilesPanel.add(modeTile("Reward", "boss loot", 1, 0, ""));
-		modeTilesPanel.add(modeTile("Custom", "build route", 2, 0, ""));
-		c.add(modeTilesPanel);
-		c.add(vGap(8));
 
-		c.add(fieldLabel("Mode"));
-		c.add(vGap(3));
+		// The hidden combo stays the single source of truth for selectedMode(); the
+		// full-width cards below are its visible face.
 		modeCombo.removeAllItems();
 		modeCombo.addItem("Scavenger");
 		modeCombo.addItem("Rewarded");
 		modeCombo.addItem("Custom Creator");
-		modeCombo.setBackground(RogueScapeTheme.SECTION_HEADER_BG);
-		modeCombo.setForeground(RogueScapeTheme.TEXT_PRIMARY);
-		modeCombo.setMaximumSize(new Dimension(Integer.MAX_VALUE, 24));
-		modeCombo.addActionListener(e -> updateCampaignPreview());
-		c.add(modeCombo);
-		c.add(vGap(6));
+		modeCombo.addItem("Seeded Race");
+		modeCombo.addItem("Region Crawl");
+		modeCombo.addActionListener(e -> restyleModeCards());
 
-		c.add(fieldLabel("Preset"));
-		c.add(vGap(3));
-		presetCombo.removeAllItems();
-		presetCombo.addItem("Auto / None");
-		presetCombo.addItem("Goblin Rat");
-		presetCombo.addItem("Iron Scrapper");
-		presetCombo.addItem("Mage Spark");
-		presetCombo.addItem("Archer's Gamble");
-		presetCombo.addItem("Monk Mode");
-		presetCombo.addItem("Wilderness Rat");
-		presetCombo.addItem("Clue Gremlin");
-		presetCombo.addItem("Max Main Draft");
-		styleCombo(presetCombo);
-		presetCombo.addActionListener(e -> updateCampaignPreview());
-		c.add(presetCombo);
-		c.add(vGap(6));
-
-		c.add(fieldLabel("Featured Campaigns"));
-		c.add(vGap(3));
-		presetCardsPanel.setLayout(new java.awt.GridLayout(2, 2, 4, 4));
-		presetCardsPanel.setBackground(RogueScapeTheme.SECTION_BG);
-		presetCardsPanel.setMaximumSize(new Dimension(Integer.MAX_VALUE, 92));
-		presetCardsPanel.setAlignmentX(Component.LEFT_ALIGNMENT);
-		presetCardsPanel.add(presetCard("Goblin Rat", "starter hunt", 1));
-		presetCardsPanel.add(presetCard("Iron Scrapper", "ore to claws", 2));
-		presetCardsPanel.add(presetCard("Clue Gremlin", "odd path", 7));
-		presetCardsPanel.add(presetCard("Max Draft", "big route", 8));
-		c.add(presetCardsPanel);
-		c.add(vGap(6));
-
-		campaignPreviewPanel.setLayout(new BoxLayout(campaignPreviewPanel, BoxLayout.Y_AXIS));
-		campaignPreviewPanel.setBackground(RogueScapeTheme.SECTION_BG);
-		campaignPreviewPanel.setAlignmentX(Component.LEFT_ALIGNMENT);
-		c.add(campaignPreviewPanel);
-		c.add(vGap(6));
+		modeTilesPanel.setLayout(new java.awt.GridLayout(5, 1, 0, 4));
+		modeTilesPanel.setOpaque(false);
+		modeTilesPanel.setMaximumSize(new Dimension(Integer.MAX_VALUE, 5 * 54 + 16));
+		modeTilesPanel.setAlignmentX(Component.LEFT_ALIGNMENT);
+		modeTilesPanel.add(modeCard("scavenge", "Scavenger", "earn power, room by room", 0, RogueScapeTheme.WAX_GREEN));
+		modeTilesPanel.add(modeCard("reward", "Rewarded", "short prep, boss loot", 1, RogueScapeTheme.WAX_GOLD));
+		modeTilesPanel.add(modeCard("custom", "Custom", "draw your own route", 2, RogueScapeTheme.WAX_BLUE));
+		modeTilesPanel.add(modeCard("seeded-race", "Seeded Race", "same seed, same fate", 3, RogueScapeTheme.WAX_RED));
+		modeTilesPanel.add(modeCard("region-crawl", "Region Crawl", "one region at a time", 4, RogueScapeTheme.WAX_GREEN));
+		c.add(modeTilesPanel);
+		c.add(vGap(10));
 
 		c.add(fieldLabel("Seed"));
-		c.add(vGap(3));
+		c.add(vGap(4));
 		seedField.setName("roguescape.seedField");
-		seedField.setToolTipText("Optional: identical seeds produce the same generated route.");
-		seedField.setBackground(RogueScapeTheme.SECTION_HEADER_BG);
-		seedField.setForeground(RogueScapeTheme.TEXT_PRIMARY);
-		seedField.setCaretColor(RogueScapeTheme.TEXT_PRIMARY);
-		seedField.setMaximumSize(new Dimension(Integer.MAX_VALUE, 24));
+		seedField.setToolTipText("Optional: identical seeds produce the same generated route. Required for Seeded Race.");
+		// Handwriting on a ruled line: transparent field, ink underline only.
+		seedField.setOpaque(false);
+		seedField.setBackground(new Color(0, 0, 0, 0));
+		seedField.setForeground(RogueScapeTheme.INK);
+		seedField.setCaretColor(RogueScapeTheme.INK);
+		seedField.setFont(new Font(Font.SERIF, Font.ITALIC, 14));
+		seedField.setBorder(BorderFactory.createCompoundBorder(
+			BorderFactory.createMatteBorder(0, 0, 1, 0, RogueScapeTheme.INK_FADED),
+			BorderFactory.createEmptyBorder(2, 4, 2, 4)));
+		seedField.setMaximumSize(new Dimension(Integer.MAX_VALUE, 26));
 		c.add(seedField);
-		c.add(vGap(8));
+		c.add(vGap(10));
 
-		runControlActions.setLayout(new BoxLayout(runControlActions, BoxLayout.Y_AXIS));
-		runControlActions.setBackground(RogueScapeTheme.SECTION_BG);
-		c.add(runControlActions);
-
-		c.add(vGap(6));
-		c.add(hintBox(new String[]{
-			"Tiles choose the run fantasy:",
-			"Scavenger: start constrained, earn power",
-			"Rewarded: short prep, boss reward pressure",
-			"Custom: build route, rooms, bosses, constraints",
-			"Goal and Weekly are parked for tester builds"
-		}));
+		restyleModeCards();
 		return c;
 	}
 
 	private String selectedRunTitle()
 	{
-		RunPreset preset = selectedPreset();
-		if (preset != RunPreset.UNSPECIFIED)
-		{
-			return presetLabel(preset);
-		}
 		switch (selectedMode())
 		{
 			case BANK_DRAFT: return "Rewarded Run";
@@ -1290,88 +1267,42 @@ public class RogueScapePanel extends PluginPanel
 		}
 	}
 
-	private static String presetLabel(RunPreset preset)
+	private final java.util.Map<ContractCard, Integer> modeCards = new java.util.LinkedHashMap<>();
+
+	/** A run mode rendered as a signable contract card (see {@link ContractCard}). */
+	private ContractCard modeCard(String nameKey, String title, String sub, int modeIndex, Color seal)
 	{
-		switch (preset)
+		double tilt = (modeIndex % 2 == 0) ? -0.8 : 0.7;
+		ContractCard card = new ContractCard(title, sub, seal, tilt);
+		card.setName("roguescape.modeTile." + nameKey);
+		modeCards.put(card, modeIndex);
+		card.addActionListener(e -> selectRunBuilderState(modeIndex, null));
+		return card;
+	}
+
+	/** Signs the selected contract (ring + CHOSEN stamp) and un-signs the rest. */
+	private void restyleModeCards()
+	{
+		int selected = modeCombo.getSelectedIndex();
+		for (java.util.Map.Entry<ContractCard, Integer> entry : modeCards.entrySet())
 		{
-			case GOBLIN_RAT: return "Goblin Rat";
-			case IRON_SCRAPPER: return "Iron Scrapper";
-			case MAGE_SPARK: return "Mage Spark";
-			case ARCHERS_GAMBLE: return "Archer's Gamble";
-			case MONK_MODE: return "Monk Mode";
-			case WILDERNESS_RAT: return "Wilderness Rat";
-			case CLUE_GREMLIN: return "Clue Gremlin";
-			case MAX_MAIN_DRAFT: return "Max Main Draft";
-			case UNSPECIFIED:
-			default: return "Scavenger Run";
+			entry.getKey().setSigned(entry.getValue() == selected);
 		}
 	}
 
-	private JButton modeTile(String title, String sub, int modeIndex, int presetIndex, String seed)
-	{
-		JButton button = new JButton("<html><body style='text-align:center'>"
-			+ escape(title) + "<br><span style='font-size:8px'>" + escape(sub) + "</span></body></html>");
-		button.setName("roguescape.modeTile." + title.toLowerCase().replace(" ", "-"));
-		styleButton(button, RogueScapeTheme.ButtonRole.NEUTRAL);
-		button.setMargin(new java.awt.Insets(4, 2, 4, 2));
-		button.addActionListener(e ->
-			selectRunBuilderState(modeIndex, presetIndex, seed));
-		return button;
-	}
-
-	private void selectRunBuilderState(int modeIndex, int presetIndex, String seed)
+	private void selectRunBuilderState(int modeIndex, String seed)
 	{
 		modeCombo.setSelectedIndex(modeIndex);
-		presetCombo.setSelectedIndex(presetIndex);
 		if (seed != null)
 		{
 			seedField.setText(seed);
 		}
-		updateCampaignPreview();
 		updateRunControl(lastModel);
 	}
 
 	private static String weeklySeed()
 	{
 		return "weekly-2026-06-01";
-	}
-
-	private void updateCampaignPreview()
-	{
-		if (campaignPreviewPanel == null)
-		{
-			return;
-		}
-		campaignPreviewPanel.removeAll();
-		RunPreset preset = selectedPreset();
-		RunMode mode = selectedMode();
-		List<String> rows = RunRouteBuilder.campaignPreviewRows(preset);
-		if (preset == RunPreset.UNSPECIFIED)
-		{
-			campaignPreviewPanel.add(featureBox("Balanced Route", new String[]{
-				"Auto-builds a run from region, supply, gear, and boss stages.",
-				"Pick a preset for an authored campaign path."
-			}));
-		}
-		else if (mode == RunMode.SEEDED_RACE)
-		{
-			campaignPreviewPanel.add(featureBox("Seeded Race", new String[]{
-				"Preset controls length and difficulty.",
-				"Seed controls the balanced randomized route."
-			}));
-		}
-		else if (!rows.isEmpty())
-		{
-			List<String> lines = new ArrayList<>();
-			int limit = Math.min(rows.size(), 7);
-			for (int i = 0; i < limit; i++)
-			{
-				lines.add(rows.get(i));
-			}
-			campaignPreviewPanel.add(featureBox("Campaign Path", lines.toArray(new String[0])));
-		}
-		campaignPreviewPanel.revalidate();
-		campaignPreviewPanel.repaint();
 	}
 
 	private void updateRunControl(SidePanelViewModel model)
@@ -1383,6 +1314,7 @@ public class RogueScapePanel extends PluginPanel
 		{
 			JButton start = actionButton(PanelAction.START_RUN, true);
 			start.setText(startRunLabel());
+			start.setMaximumSize(new Dimension(Integer.MAX_VALUE, 42));
 			start.setEnabled(model == null || model.isActionEnabled(PanelAction.START_RUN));
 			runControlActions.add(start);
 		}
@@ -1395,7 +1327,8 @@ public class RogueScapePanel extends PluginPanel
 				PanelAction.CHOOSE_REWARD_2,
 				PanelAction.CHOOSE_REWARD_3,
 				PanelAction.SKIP_REWARD,
-				PanelAction.NEXT_STAGE
+				PanelAction.NEXT_STAGE,
+				PanelAction.EXPORT_RECAP
 			};
 			for (PanelAction action : order)
 			{
@@ -1417,49 +1350,17 @@ public class RogueScapePanel extends PluginPanel
 		runControlActions.repaint();
 	}
 
-	private JButton presetCard(String title, String sub, int presetIndex)
-	{
-		JButton button = new JButton("<html><body style='text-align:center'>"
-			+ escape(title) + "<br><span style='font-size:8px'>" + escape(sub) + "</span></body></html>");
-		button.setName("roguescape.presetCard." + presetIndex);
-		styleButton(button, RogueScapeTheme.ButtonRole.NEUTRAL);
-		button.setMargin(new java.awt.Insets(3, 2, 3, 2));
-		button.addActionListener(e ->
-		{
-			presetCombo.setSelectedIndex(presetIndex);
-			updateCampaignPreview();
-		});
-		return button;
-	}
-
 	private String startRunLabel()
 	{
-		RunMode mode = selectedMode();
-		RunPreset preset = selectedPreset();
-		if (mode == RunMode.CUSTOM_CREATOR)
-		{
-			return "Begin Custom Run";
-		}
-		if (mode == RunMode.BANK_DRAFT)
-		{
-			return "Start Rewarded";
-		}
-		if (mode == RunMode.FRESH_SOURCE)
-		{
-			return "Start Scavenge";
-		}
-		if (preset != RunPreset.UNSPECIFIED)
-		{
-			return "Begin Campaign";
-		}
-		return "Begin Run";
+		// One stamp for every contract — the signed card already names the run.
+		return "Begin the Run";
 	}
 
 	// ------------------------------------------------------------ ROUTE
 
 	private CollapsibleSection buildRouteSection()
 	{
-		CollapsibleSection section = new CollapsibleSection("Route");
+		CollapsibleSection section = new CollapsibleSection("The Route");
 		section.content().add(buildRouteTab());
 		return section;
 	}
@@ -1823,7 +1724,7 @@ public class RogueScapePanel extends PluginPanel
 
 	private void styleCombo(JComboBox<String> combo)
 	{
-		combo.setBackground(RogueScapeTheme.SECTION_HEADER_BG);
+		combo.setBackground(RogueScapeTheme.SURFACE);
 		combo.setForeground(RogueScapeTheme.TEXT_PRIMARY);
 		combo.setMaximumSize(new Dimension(Integer.MAX_VALUE, 24));
 		combo.setAlignmentX(Component.LEFT_ALIGNMENT);
@@ -1831,10 +1732,18 @@ public class RogueScapePanel extends PluginPanel
 
 	// ------------------------------------------------------------ LIVE RUN
 
+	private CollapsibleSection buildChaptersSection()
+	{
+		chaptersSection = new CollapsibleSection("Chapters");
+		chaptersSection.content().add(chapterList);
+		return chaptersSection;
+	}
+
 	private CollapsibleSection buildLiveRunSection()
 	{
-		CollapsibleSection section = new CollapsibleSection("Live Run");
+		CollapsibleSection section = new CollapsibleSection("The Ledger");
 		liveRunContent.setLayout(new BoxLayout(liveRunContent, BoxLayout.Y_AXIS));
+		liveRunContent.setAlignmentX(Component.LEFT_ALIGNMENT);
 		liveRunContent.setBackground(RogueScapeTheme.SECTION_BG);
 		section.content().add(liveRunContent);
 		return section;
@@ -1845,8 +1754,8 @@ public class RogueScapePanel extends PluginPanel
 		liveRunContent.removeAll();
 		if (model == null || model.isLobby())
 		{
-			liveRunContent.add(mutedRow("Run not started."));
-			liveRunContent.add(mutedRow("Pick a run, then START."));
+			liveRunContent.add(mutedRow("No run underway."));
+			liveRunContent.add(mutedRow("Sign a contract and stamp it."));
 			liveRunContent.revalidate();
 			liveRunContent.repaint();
 			return;
@@ -1856,7 +1765,7 @@ public class RogueScapePanel extends PluginPanel
 		{
 			String floorText = model.floorCurrent() + " / " + model.floorTotal();
 			StatBar floorBar = new StatBar(RogueScapeTheme.BAR_PROGRESS);
-			floorBar.setValue((double) model.floorCurrent() / model.floorTotal(), "Floor " + floorText);
+			floorBar.setValue((double) model.floorCurrent() / model.floorTotal(), "Chapter " + floorText);
 			liveRunContent.add(floorBar);
 			liveRunContent.add(vGap(4));
 		}
@@ -1874,10 +1783,8 @@ public class RogueScapePanel extends PluginPanel
 		{
 			liveRunContent.add(statRow("Region", model.regionId(), RogueScapeTheme.TEXT_MUTED));
 		}
-		liveRunContent.add(statRow("Score", Integer.toString(model.score()), RogueScapeTheme.TEXT_PRIMARY));
-		liveRunContent.add(statRow("Legal", Integer.toString(model.legalCount()), RogueScapeTheme.POSITIVE));
-		liveRunContent.add(statRow("Illegal", Integer.toString(model.illegalCount()),
-			model.illegalCount() > 0 ? RogueScapeTheme.NEGATIVE : RogueScapeTheme.TEXT_MUTED));
+		liveRunContent.add(tallyRow("Score", model.score(), RogueScapeTheme.GOLD));
+		liveRunContent.add(statRow("Items", Integer.toString(model.itemsCollected()), RogueScapeTheme.POSITIVE));
 
 		// Phase detail rows (You CAN / You CANNOT) carried as status strings.
 		boolean firstDetail = true;
@@ -1901,8 +1808,9 @@ public class RogueScapePanel extends PluginPanel
 
 	private CollapsibleSection buildBuildSection()
 	{
-		CollapsibleSection section = new CollapsibleSection("Build");
+		CollapsibleSection section = new CollapsibleSection("The Build");
 		buildContent.setLayout(new BoxLayout(buildContent, BoxLayout.Y_AXIS));
+		buildContent.setAlignmentX(Component.LEFT_ALIGNMENT);
 		buildContent.setBackground(RogueScapeTheme.SECTION_BG);
 		section.content().add(buildContent);
 		return section;
@@ -1954,8 +1862,9 @@ public class RogueScapePanel extends PluginPanel
 
 	private CollapsibleSection buildArtifactsSection()
 	{
-		CollapsibleSection section = new CollapsibleSection("Artifacts");
+		CollapsibleSection section = new CollapsibleSection("Relic Pockets");
 		artifactsContent.setLayout(new BoxLayout(artifactsContent, BoxLayout.Y_AXIS));
+		artifactsContent.setAlignmentX(Component.LEFT_ALIGNMENT);
 		artifactsContent.setBackground(RogueScapeTheme.SECTION_BG);
 		section.content().add(artifactsContent);
 		return section;
@@ -1974,6 +1883,13 @@ public class RogueScapePanel extends PluginPanel
 		}
 		else
 		{
+			int held = 0;
+			for (String row : model.relicRows())
+			{
+				if (!row.startsWith("~ ")) held++;
+			}
+			artifactsContent.add(new PocketStrip(held));
+			artifactsContent.add(vGap(6));
 			for (String row : model.relicRows())
 			{
 				if (row.startsWith("~ "))
@@ -1990,10 +1906,47 @@ public class RogueScapePanel extends PluginPanel
 		artifactsContent.repaint();
 	}
 
+	/** A row of stitched relic pockets: one sealed pocket per held relic, padded with empties. */
+	private static final class PocketStrip extends JPanel
+	{
+		private static final int COLS = 3;
+		private static final int SIZE = 54;
+		private static final int GAP = 6;
+		private final int filled;
+
+		PocketStrip(int filled)
+		{
+			this.filled = Math.max(0, filled);
+			setOpaque(false);
+			setAlignmentX(LEFT_ALIGNMENT);
+			int rows = Math.max(1, (Math.max(filled, COLS) + COLS - 1) / COLS);
+			int h = rows * SIZE + (rows - 1) * GAP;
+			setMaximumSize(new Dimension(Integer.MAX_VALUE, h));
+			setPreferredSize(new Dimension(PluginPanel.PANEL_WIDTH - 40, h));
+		}
+
+		@Override
+		protected void paintComponent(Graphics graphics)
+		{
+			Graphics2D g = (Graphics2D) graphics.create();
+			g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+			Color[] seals = {RogueScapeTheme.WAX_BLUE, RogueScapeTheme.WAX_GREEN, RogueScapeTheme.WAX_GOLD, RogueScapeTheme.WAX_RED};
+			int slots = Math.max(COLS, ((filled + COLS - 1) / COLS) * COLS);
+			for (int i = 0; i < slots; i++)
+			{
+				int x = (i % COLS) * (SIZE + GAP);
+				int y = (i / COLS) * (SIZE + GAP);
+				RogueScapePaper.pocket(g, x, y, SIZE, SIZE, i < filled ? seals[i % seals.length] : null);
+			}
+			g.dispose();
+		}
+	}
+
 	private CollapsibleSection buildModifiersSection()
 	{
-		CollapsibleSection section = new CollapsibleSection("Modifiers");
+		CollapsibleSection section = new CollapsibleSection("Curses");
 		modifiersContent.setLayout(new BoxLayout(modifiersContent, BoxLayout.Y_AXIS));
+		modifiersContent.setAlignmentX(Component.LEFT_ALIGNMENT);
 		modifiersContent.setBackground(RogueScapeTheme.SECTION_BG);
 		section.content().add(modifiersContent);
 		return section;
@@ -2030,8 +1983,9 @@ public class RogueScapePanel extends PluginPanel
 
 	private CollapsibleSection buildProgressionSection()
 	{
-		CollapsibleSection section = new CollapsibleSection("Progression");
+		CollapsibleSection section = new CollapsibleSection("The Tally");
 		progressionContent.setLayout(new BoxLayout(progressionContent, BoxLayout.Y_AXIS));
+		progressionContent.setAlignmentX(Component.LEFT_ALIGNMENT);
 		progressionContent.setBackground(RogueScapeTheme.SECTION_BG);
 		section.content().add(progressionContent);
 		return section;
@@ -2108,7 +2062,7 @@ public class RogueScapePanel extends PluginPanel
 		JPanel c = builderTab();
 		c.add(fieldLabel("Zone Name"));
 		c.add(vGap(3));
-		zoneNameField.setBackground(RogueScapeTheme.SECTION_HEADER_BG);
+		zoneNameField.setBackground(RogueScapeTheme.SURFACE);
 		zoneNameField.setForeground(RogueScapeTheme.TEXT_PRIMARY);
 		zoneNameField.setCaretColor(RogueScapeTheme.TEXT_PRIMARY);
 		zoneNameField.setMaximumSize(new Dimension(Integer.MAX_VALUE, 24));
@@ -2234,7 +2188,7 @@ public class RogueScapePanel extends PluginPanel
 
 	private CollapsibleSection buildRelicsSection()
 	{
-		CollapsibleSection section = new CollapsibleSection("Relics", true);
+		CollapsibleSection section = new CollapsibleSection("The Catalogue", true);
 		JPanel c = section.content();
 		c.add(mutedRow("The relic & modifier catalog. Relics grant scoring bonuses; modifiers are curses that only restrict."));
 		c.add(vGap(6));
@@ -2321,8 +2275,9 @@ public class RogueScapePanel extends PluginPanel
 
 	private JButton actionButton(PanelAction action, boolean primary)
 	{
-		JButton btn = new JButton(actionLabel(action));
-		styleButton(btn, roleFor(action, primary));
+		RogueScapeTheme.ButtonRole role = roleFor(action, primary);
+		double tilt = role == RogueScapeTheme.ButtonRole.DANGER ? 1.4 : -1.4;
+		StampButton btn = new StampButton(actionLabel(action), RogueScapeTheme.buttonText(role), tilt);
 		btn.addActionListener(e -> dispatch(action));
 		return btn;
 	}
@@ -2360,15 +2315,21 @@ public class RogueScapePanel extends PluginPanel
 	{
 		Color base = RogueScapeTheme.buttonBg(role);
 		Color hover = RogueScapeTheme.buttonHoverBg(role);
+		Color ink = RogueScapeTheme.buttonText(role);
 		btn.setFocusPainted(false);
 		btn.setFont(RogueScapeTheme.button(btn.getFont()));
 		btn.setAlignmentX(Component.LEFT_ALIGNMENT);
 		btn.setMaximumSize(new Dimension(Integer.MAX_VALUE, 26));
 		btn.setBackground(base);
-		btn.setForeground(RogueScapeTheme.buttonText(role));
+		btn.setForeground(ink);
+		// Rubber-stamp frame: rough double line in the stamp ink.
 		btn.setBorder(BorderFactory.createCompoundBorder(
-			BorderFactory.createLineBorder(RogueScapeTheme.BORDER),
-			BorderFactory.createEmptyBorder(3, 8, 3, 8)));
+			BorderFactory.createLineBorder(ink, 2),
+			BorderFactory.createCompoundBorder(
+				BorderFactory.createLineBorder(base, 1),
+				BorderFactory.createCompoundBorder(
+					BorderFactory.createLineBorder(ink, 1),
+					BorderFactory.createEmptyBorder(1, 6, 1, 6)))));
 		btn.addMouseListener(new java.awt.event.MouseAdapter()
 		{
 			@Override
@@ -2388,29 +2349,79 @@ public class RogueScapePanel extends PluginPanel
 	/** A label-left / value-right stat row for the LIVE RUN section. */
 	private JPanel statRow(String label, String value, Color valueColor)
 	{
-		JPanel row = new JPanel(new BorderLayout());
-		row.setBackground(RogueScapeTheme.SECTION_BG);
-		row.setBorder(BorderFactory.createEmptyBorder(1, 0, 1, 0));
-		row.setMaximumSize(new Dimension(Integer.MAX_VALUE, 18));
+		return new LedgerRow(label, value, valueColor, -1);
+	}
 
-		JLabel l = new JLabel(label);
-		l.setForeground(RogueScapeTheme.TEXT_MUTED);
-		l.setFont(RogueScapeTheme.label(l.getFont()));
-		row.add(l, BorderLayout.WEST);
+	/** Ledger row with a tally-mark value instead of a number (used for Score). */
+	private JPanel tallyRow(String label, int count, Color valueColor)
+	{
+		return new LedgerRow(label, "", valueColor, Math.max(0, count));
+	}
 
-		JLabel v = new JLabel(value);
-		v.setForeground(valueColor);
-		v.setFont(RogueScapeTheme.value(v.getFont()));
-		row.add(v, BorderLayout.EAST);
-		return row;
+	/**
+	 * One ledger line: ink label on the left, a dotted leader, then the value (or tally marks)
+	 * right-aligned — the handwritten-ledger look from the journal mockup.
+	 */
+	private static final class LedgerRow extends JPanel
+	{
+		private final String label;
+		private final String value;
+		private final Color valueColor;
+		private final int tallyCount;
+
+		LedgerRow(String label, String value, Color valueColor, int tallyCount)
+		{
+			this.label = label == null ? "" : label;
+			this.value = value == null ? "" : value;
+			this.valueColor = valueColor;
+			this.tallyCount = tallyCount;
+			setOpaque(false);
+			setAlignmentX(LEFT_ALIGNMENT);
+			setMaximumSize(new Dimension(Integer.MAX_VALUE, 19));
+			setPreferredSize(new Dimension(PluginPanel.PANEL_WIDTH - 40, 19));
+		}
+
+		@Override
+		protected void paintComponent(Graphics graphics)
+		{
+			Graphics2D g = (Graphics2D) graphics.create();
+			g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+			g.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
+			int w = getWidth();
+			int baseline = 14;
+			g.setFont(new Font(Font.SERIF, Font.PLAIN, 13));
+			g.setColor(RogueScapeTheme.INK);
+			g.drawString(label, 0, baseline);
+			FontMetrics fm = g.getFontMetrics();
+			int labelEnd = fm.stringWidth(label) + 6;
+
+			if (tallyCount >= 0)
+			{
+				int groups = tallyCount / 5;
+				int valW = groups * 28 + (tallyCount % 5) * 5 + 4;
+				int vx = w - valW;
+				RogueScapePaper.leader(g, labelEnd, baseline - 4, vx - 6);
+				RogueScapePaper.tally(g, vx, 2, tallyCount);
+			}
+			else
+			{
+				g.setFont(new Font(Font.SERIF, Font.BOLD, 13));
+				g.setColor(valueColor);
+				FontMetrics vfm = g.getFontMetrics();
+				int vx = w - vfm.stringWidth(value);
+				RogueScapePaper.leader(g, labelEnd, baseline - 4, vx - 6);
+				g.drawString(value, vx, baseline);
+			}
+			g.dispose();
+		}
 	}
 
 	/** A single detail line (e.g. "You CAN:", "  ✓ Fight monsters"). */
 	private JPanel detailRow(String text)
 	{
-		JLabel lbl = new JLabel(text);
+		JLabel lbl = new JLabel("<html><div style='width:160px'>" + escape(text) + "</div></html>");
 		lbl.setFont(RogueScapeTheme.label(lbl.getFont()));
-		if (text.startsWith("You CAN") || text.startsWith("You CANNOT"))
+		if (text.startsWith("Permitted here") || text.startsWith("Forbidden here"))
 		{
 			lbl.setFont(lbl.getFont().deriveFont(Font.BOLD, 11f));
 			lbl.setForeground(RogueScapeTheme.TEXT_PRIMARY);
@@ -2432,6 +2443,9 @@ public class RogueScapePanel extends PluginPanel
 		row.setBackground(RogueScapeTheme.SECTION_BG);
 		row.setBorder(BorderFactory.createEmptyBorder(1, 0, 1, 0));
 		row.add(lbl, BorderLayout.WEST);
+		row.setAlignmentX(Component.LEFT_ALIGNMENT);
+		// Cap the height so BoxLayout can't stretch rows apart when the section has spare room.
+		row.setMaximumSize(new Dimension(Integer.MAX_VALUE, row.getPreferredSize().height + 2));
 		return row;
 	}
 
@@ -2445,6 +2459,8 @@ public class RogueScapePanel extends PluginPanel
 		row.setBackground(RogueScapeTheme.SECTION_BG);
 		row.setBorder(BorderFactory.createEmptyBorder(1, 0, 1, 0));
 		row.add(lbl, BorderLayout.WEST);
+		row.setAlignmentX(Component.LEFT_ALIGNMENT);
+		row.setMaximumSize(new Dimension(Integer.MAX_VALUE, row.getPreferredSize().height + 2));
 		return row;
 	}
 
@@ -2462,7 +2478,7 @@ public class RogueScapePanel extends PluginPanel
 		area.setEditable(false);
 		area.setLineWrap(true);
 		area.setWrapStyleWord(true);
-		area.setBackground(RogueScapeTheme.SECTION_HEADER_BG);
+		area.setBackground(RogueScapeTheme.SURFACE);
 		area.setForeground(fg);
 		area.setFont(RogueScapeTheme.label(area.getFont()));
 		area.setBorder(BorderFactory.createEmptyBorder(4, 6, 4, 6));
@@ -2478,7 +2494,7 @@ public class RogueScapePanel extends PluginPanel
 	{
 		JPanel box = new JPanel();
 		box.setLayout(new BoxLayout(box, BoxLayout.Y_AXIS));
-		box.setBackground(RogueScapeTheme.SECTION_HEADER_BG);
+		box.setBackground(RogueScapeTheme.SURFACE);
 		box.setBorder(BorderFactory.createCompoundBorder(
 			BorderFactory.createLineBorder(RogueScapeTheme.BORDER),
 			BorderFactory.createEmptyBorder(5, 8, 5, 8)
@@ -2486,36 +2502,10 @@ public class RogueScapePanel extends PluginPanel
 		box.setAlignmentX(Component.LEFT_ALIGNMENT);
 		for (String line : lines)
 		{
-			JLabel hl = new JLabel(line);
+			JLabel hl = new JLabel("<html><div style='width:150px'>" + escape(line) + "</div></html>");
 			hl.setForeground(RogueScapeTheme.TEXT_MUTED);
 			hl.setFont(hl.getFont().deriveFont(Font.PLAIN, 10f));
 			box.add(hl);
-		}
-		return box;
-	}
-
-	private JPanel featureBox(String title, String[] lines)
-	{
-		JPanel box = new JPanel();
-		box.setLayout(new BoxLayout(box, BoxLayout.Y_AXIS));
-		box.setBackground(RogueScapeTheme.SECTION_HEADER_BG);
-		box.setBorder(BorderFactory.createCompoundBorder(
-			BorderFactory.createLineBorder(RogueScapeTheme.BORDER_BRIGHT),
-			BorderFactory.createEmptyBorder(6, 8, 6, 8)
-		));
-		box.setAlignmentX(Component.LEFT_ALIGNMENT);
-
-		JLabel head = new JLabel(title);
-		head.setForeground(RogueScapeTheme.GOLD);
-		head.setFont(RogueScapeTheme.value(head.getFont()).deriveFont(Font.BOLD));
-		box.add(head);
-		box.add(Box.createVerticalStrut(3));
-		for (String line : lines)
-		{
-			JLabel row = new JLabel("<html><body style='width:170px'>" + escape(line) + "</body></html>");
-			row.setForeground(line.contains("[BOSS]") ? RogueScapeTheme.NEGATIVE : RogueScapeTheme.TEXT_PRIMARY);
-			row.setFont(RogueScapeTheme.label(row.getFont()));
-			box.add(row);
 		}
 		return box;
 	}
@@ -2538,16 +2528,17 @@ public class RogueScapePanel extends PluginPanel
 	{
 		switch (action)
 		{
-			case START_RUN:      return "▶ START RUN";
-			case RESET_RUN:      return "↻ Reset Run";
-			case COMPLETE_STAGE: return "✓ Complete Stage";
+			case START_RUN:      return "Begin the Run";
+			case RESET_RUN:      return "Reset the Journal";
+			case EXPORT_RECAP:   return "Copy Recap";
+			case COMPLETE_STAGE: return "Stamp the Chapter";
 			case CHOOSE_REWARD:
-			case CHOOSE_REWARD_1: return "✦ Reward 1";
-			case CHOOSE_REWARD_2: return "✦ Reward 2";
-			case CHOOSE_REWARD_3: return "✦ Reward 3";
-			case SKIP_REWARD:    return "⟲ Skip Reward";
-			case NEXT_STAGE:     return "▶ Continue";
-			case FAIL_RUN:       return "✗ End Run";
+			case CHOOSE_REWARD_1: return "Take Reward 1";
+			case CHOOSE_REWARD_2: return "Take Reward 2";
+			case CHOOSE_REWARD_3: return "Take Reward 3";
+			case SKIP_REWARD:    return "Leave the Chest";
+			case NEXT_STAGE:     return "Turn the Page";
+			case FAIL_RUN:       return "Abandon Run";
 			default:             return action.name();
 		}
 	}

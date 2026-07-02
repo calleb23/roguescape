@@ -41,56 +41,11 @@ public class RunRouteBuilderTest
 	}
 
 	@Test
-	public void goblinRatPresetHasTwoRoomsAndOneBoss()
+	public void noCuratedCampaignsSoPreviewRowsAreEmpty()
 	{
-		RogueScapeRunSession session = freshSession();
-		RogueScapeRun run = RogueScapeRun.wrap(session);
-		RunRouteBuilder.buildRoute(RunMode.UNSPECIFIED, RunPreset.GOBLIN_RAT, "goblin", session, run);
-		assertEquals(3, session.route().size());
-		assertEquals(2, countOfType(session, RunStageType.ROOM));
-		assertEquals(1, countOfType(session, RunStageType.BOSS));
-	}
-
-	@Test
-	public void campaignPresetUsesCuratedRouteWhenNotSeededRace()
-	{
-		RogueScapeRunSession session = freshSession();
-		RogueScapeRun run = RogueScapeRun.wrap(session);
-
-		RunRouteBuilder.buildRoute(RunMode.FRESH_SOURCE, RunPreset.GOBLIN_RAT, "ignored-for-campaign", session, run);
-
-		assertEquals(Arrays.asList("lumbridge-swamp", "barbarian-village", "boss-giant-mole"), stageIds(session));
-		assertEquals(RoomKind.REGION, run.regionPolicy().ruleFor("lumbridge-swamp").roomKind());
-		assertEquals(RoomKind.WEAPON, run.regionPolicy().ruleFor("barbarian-village").roomKind());
-	}
-
-	@Test
-	public void campaignPreviewRowsExposeStageLabels()
-	{
-		List<String> rows = RunRouteBuilder.campaignPreviewRows(RunPreset.GOBLIN_RAT);
-
-		assertEquals(3, rows.size());
-		assertTrue(rows.get(0).contains("[REGION] Lumbridge Swamp"));
-		assertTrue(rows.get(1).contains("[WEAPON] Barbarian Village"));
-		assertTrue(rows.get(2).contains("[BOSS] Giant Mole"));
-	}
-
-	@Test
-	public void maxMainCampaignHasFiveRoomsAndTwoBossesInAuthoredOrder()
-	{
-		RogueScapeRunSession session = freshSession();
-		RogueScapeRun run = RogueScapeRun.wrap(session);
-
-		RunRouteBuilder.buildRoute(RunMode.BANK_DRAFT, RunPreset.MAX_MAIN_DRAFT, "ignored-for-campaign", session, run);
-
-		assertEquals(Arrays.asList(
-			"varrock-east",
-			"falador",
-			"catherby",
-			"dwarven-mine",
-			"slayer-tower",
-			"boss-general-graardor",
-			"boss-vorkath"), stageIds(session));
+		// Presets were removed; campaignPreviewRows resolves nothing until real runs are authored.
+		assertTrue(RunRouteBuilder.campaignPreviewRows(RunPreset.UNSPECIFIED).isEmpty());
+		assertTrue(RunRouteBuilder.campaignPreviewRows(null).isEmpty());
 	}
 
 	@Test
@@ -103,16 +58,16 @@ public class RunRouteBuilderTest
 		RunStage stage = session.route().stages().get(0);
 		assertTrue(stage.objectiveIsTrackable());
 		assertEquals(RunObjectiveKind.SUPPLY_ITEMS, stage.objectiveKind());
-		assertEquals(2, stage.requiredLegalItemGains());
+		assertEquals(2, stage.requiredItemGains());
 		assertTrue(stage.objectiveProgressLabel().contains("0 / 2"));
 
 		run.moveToRegion("12338");
-		run.applyItemDelta("Shark", 1, com.pluginideahub.roguescape.core.legality.ProvenanceHint.OBSERVED_LOOT);
-		assertEquals(1, stage.legalItemGains());
+		run.applyItemDelta("Shark", 1, com.pluginideahub.roguescape.core.item.ProvenanceHint.OBSERVED_LOOT);
+		assertEquals(1, stage.itemGains());
 		assertFalse(stage.objectiveComplete());
 
-		run.applyItemDelta("Lobster", 1, com.pluginideahub.roguescape.core.legality.ProvenanceHint.OBSERVED_LOOT);
-		assertEquals(2, stage.legalItemGains());
+		run.applyItemDelta("Lobster", 1, com.pluginideahub.roguescape.core.item.ProvenanceHint.OBSERVED_LOOT);
+		assertEquals(2, stage.itemGains());
 		assertTrue(stage.objectiveComplete());
 	}
 
@@ -126,10 +81,10 @@ public class RunRouteBuilderTest
 
 		assertEquals(RunObjectiveKind.SHOP_PURCHASE, stage.objectiveKind());
 		run.moveToRegion("12342");
-		run.applyItemDelta("Tinderbox", 1, com.pluginideahub.roguescape.core.legality.ProvenanceHint.OBSERVED_LOOT);
-		assertEquals(0, stage.legalItemGains());
+		run.applyItemDelta("Tinderbox", 1, com.pluginideahub.roguescape.core.item.ProvenanceHint.OBSERVED_LOOT);
+		assertEquals(0, stage.itemGains());
 
-		run.applyItemDelta("Tinderbox", 1, com.pluginideahub.roguescape.core.legality.ProvenanceHint.OBSERVED_SHOP_PURCHASE);
+		run.applyItemDelta("Tinderbox", 1, com.pluginideahub.roguescape.core.item.ProvenanceHint.OBSERVED_SHOP_PURCHASE);
 		assertTrue(stage.objectiveComplete());
 	}
 
@@ -143,11 +98,11 @@ public class RunRouteBuilderTest
 
 		assertEquals(RunObjectiveKind.SKILLING_RESOURCE, stage.objectiveKind());
 		run.moveToRegion("12441");
-		run.applyItemDelta("Rune scimitar", 1, com.pluginideahub.roguescape.core.legality.ProvenanceHint.OBSERVED_LOOT);
-		assertEquals(0, stage.legalItemGains());
+		run.applyItemDelta("Rune scimitar", 1, com.pluginideahub.roguescape.core.item.ProvenanceHint.OBSERVED_LOOT);
+		assertEquals(0, stage.itemGains());
 
-		run.applyItemDelta("Iron ore", 1, com.pluginideahub.roguescape.core.legality.ProvenanceHint.OBSERVED_GATHERED);
-		assertEquals(1, stage.legalItemGains());
+		run.applyItemDelta("Iron ore", 1, com.pluginideahub.roguescape.core.item.ProvenanceHint.OBSERVED_GATHERED);
+		assertEquals(1, stage.itemGains());
 	}
 
 	@Test
@@ -160,10 +115,10 @@ public class RunRouteBuilderTest
 
 		assertEquals(RunObjectiveKind.COMBAT_DROP, stage.objectiveKind());
 		run.moveToRegion("12442");
-		run.applyItemDelta("Bones", 1, com.pluginideahub.roguescape.core.legality.ProvenanceHint.OBSERVED_GATHERED);
-		assertEquals(0, stage.legalItemGains());
+		run.applyItemDelta("Bones", 1, com.pluginideahub.roguescape.core.item.ProvenanceHint.OBSERVED_GATHERED);
+		assertEquals(0, stage.itemGains());
 
-		run.applyItemDelta("Bones", 1, com.pluginideahub.roguescape.core.legality.ProvenanceHint.OBSERVED_LOOT);
+		run.applyItemDelta("Bones", 1, com.pluginideahub.roguescape.core.item.ProvenanceHint.OBSERVED_LOOT);
 		assertTrue(stage.objectiveComplete());
 	}
 
@@ -177,10 +132,10 @@ public class RunRouteBuilderTest
 
 		assertEquals(RunObjectiveKind.WEAPON_UPGRADE, stage.objectiveKind());
 		run.moveToRegion("12341");
-		run.applyItemDelta("Shark", 1, com.pluginideahub.roguescape.core.legality.ProvenanceHint.OBSERVED_LOOT);
-		assertEquals(0, stage.legalItemGains());
+		run.applyItemDelta("Shark", 1, com.pluginideahub.roguescape.core.item.ProvenanceHint.OBSERVED_LOOT);
+		assertEquals(0, stage.itemGains());
 
-		run.applyItemDelta("Iron scimitar", 1, com.pluginideahub.roguescape.core.legality.ProvenanceHint.OBSERVED_LOOT);
+		run.applyItemDelta("Iron scimitar", 1, com.pluginideahub.roguescape.core.item.ProvenanceHint.OBSERVED_LOOT);
 		assertTrue(stage.objectiveComplete());
 	}
 
@@ -194,10 +149,10 @@ public class RunRouteBuilderTest
 
 		assertEquals(RunObjectiveKind.ARMOUR_UPGRADE, stage.objectiveKind());
 		run.moveToRegion("12853");
-		run.applyItemDelta("Iron scimitar", 1, com.pluginideahub.roguescape.core.legality.ProvenanceHint.OBSERVED_LOOT);
-		assertEquals(0, stage.legalItemGains());
+		run.applyItemDelta("Iron scimitar", 1, com.pluginideahub.roguescape.core.item.ProvenanceHint.OBSERVED_LOOT);
+		assertEquals(0, stage.itemGains());
 
-		run.applyItemDelta("Iron platebody", 1, com.pluginideahub.roguescape.core.legality.ProvenanceHint.OBSERVED_LOOT);
+		run.applyItemDelta("Iron platebody", 1, com.pluginideahub.roguescape.core.item.ProvenanceHint.OBSERVED_LOOT);
 		assertTrue(stage.objectiveComplete());
 	}
 
@@ -250,13 +205,11 @@ public class RunRouteBuilderTest
 		RogueScapeRunSession session = freshSession();
 		RogueScapeRun run = RogueScapeRun.wrap(session);
 
-		RunRouteBuilder.buildRoute(RunMode.SEEDED_RACE, RunPreset.MAX_MAIN_DRAFT, "balanced", session, run);
+		RunRouteBuilder.buildRoute(RunMode.SEEDED_RACE, RunPreset.UNSPECIFIED, "balanced", session, run);
 
 		assertHasRoomKind(run, session, RoomKind.REGION);
 		assertHasRoomKind(run, session, RoomKind.SUPPLY);
 		assertHasRoomKind(run, session, RoomKind.COMBAT);
-		assertHasRoomKind(run, session, RoomKind.ARMOUR);
-		assertHasRoomKind(run, session, RoomKind.SKILLING);
 	}
 
 	@Test
@@ -264,11 +217,11 @@ public class RunRouteBuilderTest
 	{
 		RogueScapeRunSession sessionA = freshSession();
 		RogueScapeRun runA = RogueScapeRun.wrap(sessionA);
-		RunRouteBuilder.buildRoute(RunMode.SEEDED_RACE, RunPreset.GOBLIN_RAT, "race-seed-1", sessionA, runA);
+		RunRouteBuilder.buildRoute(RunMode.SEEDED_RACE, RunPreset.UNSPECIFIED, "race-seed-1", sessionA, runA);
 
 		RogueScapeRunSession sessionB = freshSession();
 		RogueScapeRun runB = RogueScapeRun.wrap(sessionB);
-		RunRouteBuilder.buildRoute(RunMode.SEEDED_RACE, RunPreset.GOBLIN_RAT, "race-seed-1", sessionB, runB);
+		RunRouteBuilder.buildRoute(RunMode.SEEDED_RACE, RunPreset.UNSPECIFIED, "race-seed-1", sessionB, runB);
 
 		assertEquals(stageIds(sessionA), stageIds(sessionB));
 	}
@@ -278,11 +231,11 @@ public class RunRouteBuilderTest
 	{
 		RogueScapeRunSession sessionA = freshSession();
 		RogueScapeRun runA = RogueScapeRun.wrap(sessionA);
-		RunRouteBuilder.buildRoute(RunMode.SEEDED_RACE, RunPreset.MAX_MAIN_DRAFT, "seed-alpha", sessionA, runA);
+		RunRouteBuilder.buildRoute(RunMode.SEEDED_RACE, RunPreset.UNSPECIFIED, "seed-alpha", sessionA, runA);
 
 		RogueScapeRunSession sessionB = freshSession();
 		RogueScapeRun runB = RogueScapeRun.wrap(sessionB);
-		RunRouteBuilder.buildRoute(RunMode.SEEDED_RACE, RunPreset.MAX_MAIN_DRAFT, "seed-omega", sessionB, runB);
+		RunRouteBuilder.buildRoute(RunMode.SEEDED_RACE, RunPreset.UNSPECIFIED, "seed-omega", sessionB, runB);
 
 		assertFalse("expected distinct routes for distinct seeds", stageIds(sessionA).equals(stageIds(sessionB)));
 	}
@@ -292,7 +245,7 @@ public class RunRouteBuilderTest
 	{
 		RogueScapeRunSession session = freshSession();
 		RogueScapeRun run = RogueScapeRun.wrap(session);
-		RunRouteBuilder.buildRoute(RunMode.UNSPECIFIED, RunPreset.GOBLIN_RAT, "rules", session, run);
+		RunRouteBuilder.buildRoute(RunMode.UNSPECIFIED, RunPreset.UNSPECIFIED, "rules", session, run);
 		assertFalse(session.route().stages().isEmpty());
 		for (RunStage s : session.route().stages())
 		{
@@ -305,7 +258,7 @@ public class RunRouteBuilderTest
 	{
 		RogueScapeRunSession session = freshSession();
 		RogueScapeRun run = RogueScapeRun.wrap(session);
-		RunRouteBuilder.buildRoute(RunMode.UNSPECIFIED, RunPreset.GOBLIN_RAT, "boss-rule", session, run);
+		RunRouteBuilder.buildRoute(RunMode.UNSPECIFIED, RunPreset.UNSPECIFIED, "boss-rule", session, run);
 
 		RunStage boss = null;
 		for (RunStage s : session.route().stages())
@@ -323,7 +276,7 @@ public class RunRouteBuilderTest
 	{
 		RogueScapeRunSession session = freshSession();
 		RogueScapeRun run = RogueScapeRun.wrap(session);
-		RunRouteBuilder.buildRoute(RunMode.UNSPECIFIED, RunPreset.GOBLIN_RAT, "room-rule", session, run);
+		RunRouteBuilder.buildRoute(RunMode.UNSPECIFIED, RunPreset.UNSPECIFIED, "room-rule", session, run);
 
 		RunStage room = null;
 		for (RunStage s : session.route().stages())
@@ -340,7 +293,7 @@ public class RunRouteBuilderTest
 	{
 		RogueScapeRunSession session = freshSession();
 		RogueScapeRun run = RogueScapeRun.wrap(session);
-		RunRouteBuilder.buildRoute(RunMode.UNSPECIFIED, RunPreset.GOBLIN_RAT, "enter-first", session, run);
+		RunRouteBuilder.buildRoute(RunMode.UNSPECIFIED, RunPreset.UNSPECIFIED, "enter-first", session, run);
 		assertFalse(session.route().stages().isEmpty());
 		assertTrue(session.route().stages().get(0).isEntered());
 	}
@@ -350,10 +303,10 @@ public class RunRouteBuilderTest
 	{
 		RogueScapeRunSession session = freshSession();
 		RogueScapeRun run = RogueScapeRun.wrap(session);
-		RunRouteBuilder.buildRoute(RunMode.UNSPECIFIED, RunPreset.GOBLIN_RAT, "first", session, run);
+		RunRouteBuilder.buildRoute(RunMode.UNSPECIFIED, RunPreset.UNSPECIFIED, "first", session, run);
 		try
 		{
-			RunRouteBuilder.buildRoute(RunMode.UNSPECIFIED, RunPreset.GOBLIN_RAT, "second", session, run);
+			RunRouteBuilder.buildRoute(RunMode.UNSPECIFIED, RunPreset.UNSPECIFIED, "second", session, run);
 			fail("expected IllegalStateException on double build");
 		}
 		catch (IllegalStateException expected)
@@ -369,23 +322,13 @@ public class RunRouteBuilderTest
 		RogueScapeRun run = RogueScapeRun.wrap(session);
 		try
 		{
-			RunRouteBuilder.buildRoute(RunMode.UNSPECIFIED, RunPreset.GOBLIN_RAT, "x", null, run);
+			RunRouteBuilder.buildRoute(RunMode.UNSPECIFIED, RunPreset.UNSPECIFIED, "x", null, run);
 			fail("expected IllegalArgumentException for null session");
 		}
 		catch (IllegalArgumentException expected)
 		{
 			// pass
 		}
-	}
-
-	@Test
-	public void maxMainDraftHasFiveRoomsAndTwoBosses()
-	{
-		RogueScapeRunSession session = freshSession();
-		RogueScapeRun run = RogueScapeRun.wrap(session);
-		RunRouteBuilder.buildRoute(RunMode.UNSPECIFIED, RunPreset.MAX_MAIN_DRAFT, "max", session, run);
-		assertEquals(5, countOfType(session, RunStageType.ROOM));
-		assertEquals(2, countOfType(session, RunStageType.BOSS));
 	}
 
 	private static List<RoomDefinition> nonBossRooms()
@@ -441,7 +384,7 @@ public class RunRouteBuilderTest
 		RunStage stage = session.route().stages().get(index);
 		assertEquals(expectedKind, run.regionPolicy().ruleFor(stage.id()).roomKind());
 		assertEquals(expectedObjective, stage.objectiveKind());
-		assertEquals(expectedRequiredGains, stage.requiredLegalItemGains());
+		assertEquals(expectedRequiredGains, stage.requiredItemGains());
 	}
 
 	@Test
@@ -481,11 +424,11 @@ public class RunRouteBuilderTest
 
 		assertEquals(RoomKind.WEAPON, run.regionPolicy().ruleFor(weapons.id()).roomKind());
 		assertEquals(RunObjectiveKind.WEAPON_UPGRADE, weapons.objectiveKind());
-		assertEquals("Find a legal weapon upgrade in Lumbridge Swamp", weapons.objectiveLabel());
+		assertEquals("Find a weapon upgrade in Lumbridge Swamp", weapons.objectiveLabel());
 
 		assertEquals(RoomKind.SUPPLY, run.regionPolicy().ruleFor(supply.id()).roomKind());
 		assertEquals(RunObjectiveKind.SUPPLY_ITEMS, supply.objectiveKind());
-		assertEquals(2, supply.requiredLegalItemGains());
+		assertEquals(2, supply.requiredItemGains());
 
 		assertEquals(RoomKind.SHOP, run.regionPolicy().ruleFor(shopping.id()).roomKind());
 		assertEquals(RunObjectiveKind.SHOP_PURCHASE, shopping.objectiveKind());
@@ -505,7 +448,7 @@ public class RunRouteBuilderTest
 			session,
 			run);
 
-		assertCustomAllowance(session, run, 0, RoomKind.REGION, RunObjectiveKind.LEGAL_ITEM, 1);
+		assertCustomAllowance(session, run, 0, RoomKind.REGION, RunObjectiveKind.ANY_ITEM, 1);
 		assertCustomAllowance(session, run, 1, RoomKind.SUPPLY, RunObjectiveKind.SUPPLY_ITEMS, 2);
 		assertCustomAllowance(session, run, 2, RoomKind.WEAPON, RunObjectiveKind.WEAPON_UPGRADE, 1);
 		assertCustomAllowance(session, run, 3, RoomKind.SHOP, RunObjectiveKind.SHOP_PURCHASE, 1);
@@ -558,7 +501,7 @@ public class RunRouteBuilderTest
 	{
 		RogueScapeRunSession session = freshSession();
 		RogueScapeRun run = RogueScapeRun.wrap(session);
-		RunRouteBuilder.buildRoute(RunMode.UNSPECIFIED, RunPreset.MAX_MAIN_DRAFT, "order", session, run);
+		RunRouteBuilder.buildRoute(RunMode.UNSPECIFIED, RunPreset.UNSPECIFIED, "order", session, run);
 
 		boolean seenBoss = false;
 		for (RunStage s : session.route().stages())

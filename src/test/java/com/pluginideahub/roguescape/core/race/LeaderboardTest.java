@@ -11,7 +11,7 @@ import static org.junit.Assert.*;
 
 public class LeaderboardTest
 {
-	private static RunRecap recap(String seed, RunState state, int score, long ms, int legal, int illegal)
+	private static RunRecap recap(String seed, RunState state, int score, long ms, int itemsCollected)
 	{
 		return RunRecap.builder()
 			.goal("Weekly race")
@@ -19,8 +19,7 @@ public class LeaderboardTest
 			.state(state)
 			.score(score)
 			.durationMillis(ms)
-			.legalCount(legal)
-			.illegalCount(illegal)
+			.itemsCollected(itemsCollected)
 			.build();
 	}
 
@@ -28,9 +27,9 @@ public class LeaderboardTest
 	public void sortsCompletedRunsAheadAndByScoreThenTime()
 	{
 		Leaderboard board = new Leaderboard("evt-1", "seed-1");
-		board.add(Leaderboard.fromRecap("Caleb", "evt-1", recap("seed-1", RunState.COMPLETE, 20, 120_000L, 12, 0), 1L));
-		board.add(Leaderboard.fromRecap("Friend", "evt-1", recap("seed-1", RunState.COMPLETE, 30, 200_000L, 14, 0), 2L));
-		board.add(Leaderboard.fromRecap("FailGuy", "evt-1", recap("seed-1", RunState.FAILED, 99, 1_000L, 0, 1), 3L));
+		board.add(Leaderboard.fromRecap("Caleb", "evt-1", recap("seed-1", RunState.COMPLETE, 20, 120_000L, 12), 1L));
+		board.add(Leaderboard.fromRecap("Friend", "evt-1", recap("seed-1", RunState.COMPLETE, 30, 200_000L, 14), 2L));
+		board.add(Leaderboard.fromRecap("FailGuy", "evt-1", recap("seed-1", RunState.FAILED, 99, 1_000L, 0), 3L));
 
 		List<LeaderboardEntry> ranked = board.ranked();
 		assertEquals("Friend", ranked.get(0).playerName());
@@ -43,7 +42,7 @@ public class LeaderboardTest
 	{
 		// Simulate a peer that exported recap fields and shipped them across.
 		RunRecap peer = RunRecap.builder().goal("Race").seed("seed-2").state(RunState.COMPLETE)
-			.score(50).durationMillis(60_000L).legalCount(20).illegalCount(0).build();
+			.score(50).durationMillis(60_000L).itemsCollected(20).build();
 		LeaderboardEntry peerEntry = Leaderboard.fromRecap("Remote", "evt-2", peer, 100L);
 		assertEquals(50, peerEntry.score());
 		assertEquals("seed-2", peerEntry.seed());

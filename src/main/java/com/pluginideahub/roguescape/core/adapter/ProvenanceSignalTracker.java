@@ -1,6 +1,6 @@
 package com.pluginideahub.roguescape.core.adapter;
 
-import com.pluginideahub.roguescape.core.legality.ProvenanceHint;
+import com.pluginideahub.roguescape.core.item.ProvenanceHint;
 import java.util.Locale;
 
 /**

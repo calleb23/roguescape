@@ -19,7 +19,6 @@ public class RogueScapeCustomBuilderWidgetPreviewTest
 			"Scavenger",
 			"Naked",
 			Arrays.asList("No starter items"),
-			"Balanced",
 			false,
 			0,
 			2,

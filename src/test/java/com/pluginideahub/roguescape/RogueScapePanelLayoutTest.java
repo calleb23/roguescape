@@ -16,7 +16,6 @@ import java.util.Arrays;
 import java.util.List;
 import javax.imageio.ImageIO;
 import javax.swing.JButton;
-import javax.swing.JComboBox;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.ScrollPaneConstants;
@@ -83,13 +82,13 @@ public class RogueScapePanelLayoutTest
 	public void runBuilderSelectionsMapToRunSystemEnums()
 	{
 		RogueScapePanel panel = newPanel();
-		List<JComboBox> combos = collectComponents(panel, JComboBox.class);
 
-		combos.get(0).setSelectedIndex(2);
-		combos.get(1).setSelectedIndex(8);
+		// Mode is selected through the full-width cards; presets were removed, so the
+		// preset selection is always UNSPECIFIED.
+		clickNamedButton(panel, "roguescape.modeTile.custom");
 
 		assertEquals(RunMode.CUSTOM_CREATOR, panel.selectedMode());
-		assertEquals(RunPreset.MAX_MAIN_DRAFT, panel.selectedPreset());
+		assertEquals(RunPreset.UNSPECIFIED, panel.selectedPreset());
 	}
 
 	@Test
@@ -111,28 +110,14 @@ public class RogueScapePanelLayoutTest
 	{
 		RogueScapePanel panel = newPanel();
 
-		clickButton(panel, "Map");
+		clickButton(panel, "Route");
 		assertEquals("Route", activeBuilderCard(panel));
 
 		clickButton(panel, "Zone");
 		assertEquals("Zone", activeBuilderCard(panel));
 
-		clickButton(panel, "Cur");
+		clickButton(panel, "Curses");
 		assertEquals("Mods", activeBuilderCard(panel));
-	}
-
-	@Test
-	public void featuredCampaignCardsSelectPresets()
-	{
-		RogueScapePanel panel = newPanel();
-		JButton maxDraft = collectComponents(panel, JButton.class).stream()
-			.filter(button -> "roguescape.presetCard.8".equals(button.getName()))
-			.findFirst()
-			.orElseThrow(() -> new AssertionError("max draft preset card not found"));
-
-		maxDraft.doClick();
-
-		assertEquals(RunPreset.MAX_MAIN_DRAFT, panel.selectedPreset());
 	}
 
 	@Test
@@ -294,16 +279,13 @@ public class RogueScapePanelLayoutTest
 	{
 		RogueScapePanel panel = newPanel();
 
-		panel.cycleCustomStrictness();
 		panel.toggleCustomBankUnlocks();
 		panel.cycleCustomTimeLimit();
 		panel.cycleCustomBossLimit();
 
-		assertEquals("Trust", panel.customStrictness());
 		assertTrue(panel.customBankUnlocks());
 		assertEquals(30, panel.customTimeLimitMinutes());
 		assertEquals(1, panel.customBossLimit());
-		assertTrue(panel.customSeedPreview().contains("strictness=Trust"));
 		assertTrue(panel.customSeedPreview().contains("bank=on"));
 		assertTrue(panel.customSeedPreview().contains("time=30m"));
 		assertTrue(panel.customSeedPreview().contains("bosscap=1"));
@@ -345,7 +327,7 @@ public class RogueScapePanelLayoutTest
 		RogueScapePanel panel = newPanel();
 
 		panel.applyCustomSeed("mode=Rewarded;loadout=Mid Gear;rooms=lumbridge-swamp:Weapons,boss-king-black-dragon:Boss,edgeville:Shopping;"
-			+ "mods=mod-no-food,mod-no-teleports;strictness=Strict;bank=on;time=60m;bosscap=2");
+			+ "mods=mod-no-food,mod-no-teleports;bank=on;time=60m;bosscap=2");
 
 		assertEquals("Rewarded", panel.customBuilderGameMode());
 		assertEquals("Mid Gear", panel.customBuilderLoadout());
@@ -356,7 +338,6 @@ public class RogueScapePanelLayoutTest
 		assertEquals("boss-king-black-dragon", panel.selectedBossId());
 		assertTrue(panel.selectedModifierIds().contains("mod-no-food"));
 		assertTrue(panel.selectedModifierIds().contains("mod-no-teleports"));
-		assertEquals("Strict", panel.customStrictness());
 		assertTrue(panel.customBankUnlocks());
 		assertEquals(60, panel.customTimeLimitMinutes());
 		assertEquals(2, panel.customBossLimit());

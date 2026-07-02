@@ -43,15 +43,13 @@ public class RunModePresetParsingTest
 	}
 
 	@Test
-	public void parsePresetAcceptsExactName()
+	public void parsePresetMapsLegacyPresetNamesToUnspecified()
 	{
-		assertEquals(RunPreset.MAX_MAIN_DRAFT, ModePresetParser.parsePreset("MAX_MAIN_DRAFT"));
-	}
-
-	@Test
-	public void parsePresetAcceptsLowerCase()
-	{
-		assertEquals(RunPreset.GOBLIN_RAT, ModePresetParser.parsePreset("goblin_rat"));
+		// Named presets were removed; saved configs with the old strings still parse safely.
+		assertEquals(RunPreset.UNSPECIFIED, ModePresetParser.parsePreset("GOBLIN_RAT"));
+		assertEquals(RunPreset.UNSPECIFIED, ModePresetParser.parsePreset("Goblin Rat"));
+		assertEquals(RunPreset.UNSPECIFIED, ModePresetParser.parsePreset("MAX_MAIN_DRAFT"));
+		assertEquals(RunPreset.UNSPECIFIED, ModePresetParser.parsePreset("goblin_rat"));
 	}
 
 	@Test

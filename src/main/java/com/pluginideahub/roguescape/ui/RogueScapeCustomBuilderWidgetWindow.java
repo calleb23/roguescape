@@ -391,9 +391,7 @@ public final class RogueScapeCustomBuilderWidgetWindow implements MouseListener
 	private void drawRules(View view)
 	{
 		heading("Constraints", 0);
-		button(24, 112, 260, 70, "Strictness", view.strictness + " suspicious-item handling",
-			"custom:cycle-strictness", COL_GOLD);
-		button(306, 112, 260, 70, "Bank Unlocks", view.bankUnlocks ? "Unlocked bank items may be legal." : "Bank withdrawals are illegal.",
+		button(24, 112, 260, 70, "Bank Unlocks", view.bankUnlocks ? "Bank withdrawals allowed." : "Bank is blocked during the run.",
 			"custom:toggle-bank", view.bankUnlocks ? COL_GREEN : COL_RED);
 		button(24, 206, 260, 70, "Time Limit", view.timeLimitMinutes <= 0 ? "No timer limit." : view.timeLimitMinutes + " minute target.",
 			"custom:cycle-time", COL_PURPLE);
@@ -417,8 +415,8 @@ public final class RogueScapeCustomBuilderWidgetWindow implements MouseListener
 			COL_TEXT, FontID.PLAIN_12, true);
 		text(contentLayer, 38, 326, 348, view.routeRows.isEmpty()
 			? "No custom route selected: start will auto-build a fallback route."
-			: "Route " + view.routeRows.size() + " steps | Curses " + view.selectedModifierLabels.size()
-				+ " | " + view.strictness, COL_MUTED, FontID.PLAIN_12, false);
+			: "Route " + view.routeRows.size() + " steps | Curses " + view.selectedModifierLabels.size(),
+				COL_MUTED, FontID.PLAIN_12, false);
 		smallButton(424, 292, 150, 32, "Start Custom Run", "custom:start-run", COL_GREEN);
 		smallButton(424, 326, 70, 32, "Load Seed", "custom:load-seed", COL_PURPLE);
 		smallButton(504, 326, 70, 32, "Clear", "custom:clear-route", COL_RED);
@@ -892,7 +890,6 @@ public final class RogueScapeCustomBuilderWidgetWindow implements MouseListener
 		public final String gameMode;
 		public final String loadout;
 		public final List<String> loadoutKitLines;
-		public final String strictness;
 		public final boolean bankUnlocks;
 		public final int timeLimitMinutes;
 		public final int bossLimit;
@@ -916,13 +913,13 @@ public final class RogueScapeCustomBuilderWidgetWindow implements MouseListener
 		public View(String gameMode, String loadout, String roomLabel, String allowanceLabel, String bossLabel,
 			List<String> routeRows, int selectedRouteIndex, String seedPreview)
 		{
-			this(gameMode, loadout, Collections.emptyList(), "Balanced", false, 0, 0, roomLabel, allowanceLabel, bossLabel, Collections.emptyList(),
+			this(gameMode, loadout, Collections.emptyList(), false, 0, 0, roomLabel, allowanceLabel, bossLabel, Collections.emptyList(),
 				Collections.emptyList(), Collections.emptyList(), Collections.emptyList(), Collections.emptyList(),
 				Collections.emptyList(), 0, 0, 0, 0, routeRows, selectedRouteIndex, seedPreview);
 		}
 
 		public View(String gameMode, String loadout, List<String> loadoutKitLines,
-			String strictness, boolean bankUnlocks, int timeLimitMinutes, int bossLimit,
+			boolean bankUnlocks, int timeLimitMinutes, int bossLimit,
 			String roomLabel, String allowanceLabel, String bossLabel,
 			List<String> roomOptions, List<String> allowanceOptions, List<String> bossOptions,
 			List<String> modifierOptions, List<String> selectedModifierLabels, List<Integer> selectedModifierIndexes,
@@ -932,7 +929,6 @@ public final class RogueScapeCustomBuilderWidgetWindow implements MouseListener
 			this.gameMode = gameMode == null ? "Scavenger" : gameMode;
 			this.loadout = loadout == null ? "Naked" : loadout;
 			this.loadoutKitLines = loadoutKitLines == null ? Collections.emptyList() : Collections.unmodifiableList(new ArrayList<>(loadoutKitLines));
-			this.strictness = strictness == null ? "Balanced" : strictness;
 			this.bankUnlocks = bankUnlocks;
 			this.timeLimitMinutes = Math.max(0, timeLimitMinutes);
 			this.bossLimit = Math.max(0, bossLimit);
@@ -957,7 +953,7 @@ public final class RogueScapeCustomBuilderWidgetWindow implements MouseListener
 		public static View empty()
 		{
 			return new View("Scavenger", "Naked", Collections.singletonList("No starter items"),
-				"Balanced", false, 0, 0, "Lumbridge Swamp", "Supply", "Bryophyta",
+				false, 0, 0, "Lumbridge Swamp", "Supply", "Bryophyta",
 				Collections.emptyList(), Collections.emptyList(), Collections.emptyList(), Collections.emptyList(),
 				Collections.emptyList(), Collections.emptyList(), 0, 0, 0, 0,
 				Collections.emptyList(), -1, "mode=Scavenger;loadout=Naked");

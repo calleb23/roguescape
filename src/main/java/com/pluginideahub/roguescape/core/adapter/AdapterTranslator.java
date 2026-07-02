@@ -1,7 +1,7 @@
 package com.pluginideahub.roguescape.core.adapter;
 
-import com.pluginideahub.roguescape.core.legality.ItemDelta;
-import com.pluginideahub.roguescape.core.legality.ProvenanceHint;
+import com.pluginideahub.roguescape.core.item.ItemDelta;
+import com.pluginideahub.roguescape.core.item.ProvenanceHint;
 
 /**
  * Stage 6 — converts an {@link ObservedEvent} (adapter signal) into an {@link ItemDelta}

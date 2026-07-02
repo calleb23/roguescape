@@ -1,6 +1,5 @@
 package com.pluginideahub.roguescape;
 
-import com.pluginideahub.roguescape.core.legality.StrictnessMode;
 import net.runelite.client.config.Config;
 import net.runelite.client.config.ConfigGroup;
 import net.runelite.client.config.ConfigItem;
@@ -43,45 +42,12 @@ public interface RogueScapeConfig extends Config
 	}
 
 	@ConfigItem(
-		keyName = "runPreset",
-		name = "Run Preset",
-		description = "Optional preset name (GOBLIN_RAT, IRON_SCRAPPER, MAGE_SPARK, ARCHERS_GAMBLE, MONK_MODE, WILDERNESS_RAT, CLUE_GREMLIN, MAX_MAIN_DRAFT). Leave blank for none.",
-		position = 3
-	)
-	default String runPreset()
-	{
-		return "";
-	}
-
-	@ConfigItem(
-		keyName = "strictnessMode",
-		name = "Strictness",
-		description = "How hard RogueScape should treat suspicious/illegal observations",
-		position = 4
-	)
-	default StrictnessMode strictnessMode()
-	{
-		return StrictnessMode.BALANCED;
-	}
-
-	@ConfigItem(
 		keyName = "bankAccessAllowed",
 		name = "Allow Bank Unlocks",
-		description = "Treat configured/unlocked bank withdrawals as potentially legal instead of always illegal",
-		position = 5
+		description = "Allow bank withdrawals during a run instead of blocking the bank entirely",
+		position = 4
 	)
 	default boolean bankAccessAllowed()
-	{
-		return false;
-	}
-
-	@ConfigItem(
-		keyName = "preRunSupplyExpected",
-		name = "Flag Pre-run Supplies",
-		description = "Flag non-starter-kit inventory items as illegal pre-run supplies when the run begins",
-		position = 6
-	)
-	default boolean preRunSupplyExpected()
 	{
 		return false;
 	}
@@ -164,6 +130,28 @@ public interface RogueScapeConfig extends Config
 	)
 	default boolean developerMode()
 	{
+		return false;
+	}
+
+	@ConfigItem(
+		keyName = "customBuilderWindow",
+		name = "Custom builder window",
+		description = "Show the in-game custom route builder window (beta). The side panel's Custom tab works without it.",
+		position = 14
+	)
+	default boolean customBuilderWindow()
+	{
 		return true;
+	}
+
+	@ConfigItem(
+		keyName = "enforcementBlocking",
+		name = "Block forbidden actions",
+		description = "Hard enforcement: remove forbidden menu actions (bank/trade/GE/etc.) during a run. When off, RogueScape only warns and records violations.",
+		position = 15
+	)
+	default boolean enforcementBlocking()
+	{
+		return false;
 	}
 }

@@ -1,5 +1,6 @@
 package com.pluginideahub.roguescape.core;
 
+import com.pluginideahub.roguescape.core.reward.DeterministicRng;
 import com.pluginideahub.roguescape.core.reward.RelicDraftGenerator;
 import com.pluginideahub.roguescape.core.reward.RewardDraft;
 import com.pluginideahub.roguescape.core.reward.RewardOption;
@@ -313,8 +314,8 @@ public final class RogueScapeRunLoop
 	/** Deterministic per-stage draft seed so seeded races present identical relic choices. */
 	private static long draftSeed(String runSeed, String stageId, int index)
 	{
-		long base = runSeed == null ? 0L : runSeed.hashCode();
-		long stage = stageId == null ? 0L : stageId.hashCode();
+		long base = DeterministicRng.hash(runSeed);
+		long stage = DeterministicRng.hash(stageId);
 		return (base * 1000003L) ^ (stage * 31L) ^ (index * 2654435761L);
 	}
 

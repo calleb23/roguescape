@@ -2,7 +2,7 @@ package com.pluginideahub.roguescape.core;
 
 public enum RunObjectiveKind
 {
-	LEGAL_ITEM,
+	ANY_ITEM,
 	COMBAT_DROP,
 	SUPPLY_ITEMS,
 	SHOP_PURCHASE,

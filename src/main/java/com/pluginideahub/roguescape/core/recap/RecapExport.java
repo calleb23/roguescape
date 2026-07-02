@@ -21,9 +21,7 @@ public final class RecapExport
 		sb.append("- Result: ").append(recap.completionNote()).append('\n');
 		sb.append("- Score: ").append(recap.score()).append('\n');
 		sb.append("- Duration (ms): ").append(recap.durationMillis()).append('\n');
-		sb.append("- Items legal/suspicious/illegal: ")
-			.append(recap.legalCount()).append('/').append(recap.suspiciousCount()).append('/').append(recap.illegalCount())
-			.append('\n');
+		sb.append("- Items collected: ").append(recap.itemsCollected()).append('\n');
 
 		appendList(sb, "Stages", recap.stageRows());
 		appendList(sb, "Items", recap.itemRows());
@@ -49,9 +47,7 @@ public final class RecapExport
 		field(sb, "completionNote", recap.completionNote(), false);
 		fieldNum(sb, "score", recap.score());
 		fieldNum(sb, "durationMillis", recap.durationMillis());
-		fieldNum(sb, "legalCount", recap.legalCount());
-		fieldNum(sb, "suspiciousCount", recap.suspiciousCount());
-		fieldNum(sb, "illegalCount", recap.illegalCount());
+		fieldNum(sb, "itemsCollected", recap.itemsCollected());
 		arrayField(sb, "stages", recap.stageRows());
 		arrayField(sb, "items", recap.itemRows());
 		arrayField(sb, "relics", recap.relicRows());

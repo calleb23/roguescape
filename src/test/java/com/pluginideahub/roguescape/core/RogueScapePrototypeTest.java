@@ -55,13 +55,12 @@ public class RogueScapePrototypeTest
 		assertEquals("COMPLETE", session.state());
 		assertEquals(2, session.roomCount());
 		assertEquals(2, session.rewardCount());
-		assertEquals(2, session.legalRewardCount());
-		assertEquals(0, session.illegalRewardCount());
+		assertEquals(2, session.itemsCollected());
 		assertEquals(1, session.relicCount());
 		assertEquals(3, session.runScore());
 		assertEquals("Barbarian Village", session.currentRoomName());
 		assertTrue(session.overlaySummary().contains("Rooms: 2"));
-		assertTrue(session.overlaySummary().contains("Legal: 2"));
+		assertTrue(session.overlaySummary().contains("Items: 2"));
 		assertTrue(session.recapMarkdown().contains("Bronze dagger [STARTER_KIT] — starter weapon (+1)"));
 		assertTrue(session.recapMarkdown().contains("Crate Goblin: First supply found in every new room is doubled"));
 	}
@@ -73,30 +72,13 @@ public class RogueScapePrototypeTest
 		session.enterRoom("Grand Exchange", "buying supplies");
 		session.observeItemGain("Shark", 5, RogueScapeRunSession.ItemSource.BOUGHT_DURING_RUN, "Grand Exchange", "healing", 3);
 		session.observeItemGain("Oak logs", 10, RogueScapeRunSession.ItemSource.GATHERED_OR_CRAFTED, "Draynor Village", "fuel", 1);
-		session.observeItemGain("Lobster", 1, RogueScapeRunSession.ItemSource.MANUALLY_APPROVED, "Fishing Guild", "bonus food", 2);
+		session.observeItemGain("Lobster", 1, RogueScapeRunSession.ItemSource.FOUND_DURING_RUN, "Fishing Guild", "bonus food", 2);
 
-		assertEquals(3, session.legalRewardCount());
-		assertEquals(0, session.illegalRewardCount());
+		assertEquals(3, session.itemsCollected());
 		assertEquals(6, session.runScore());
 		assertTrue(session.recapMarkdown().contains("Shark x5 [BOUGHT_DURING_RUN]"));
 		assertTrue(session.recapMarkdown().contains("Oak logs x10 [GATHERED_OR_CRAFTED]"));
-		assertTrue(session.recapMarkdown().contains("Lobster [MANUALLY_APPROVED]"));
-	}
-
-	@Test
-	public void unknownItemSourceSurfacesAndCanFailRun()
-	{
-		RogueScapeRunSession session = RogueScapeRunSession.start("Source integrity check");
-		session.enterRoom("Wilderness", "high-risk zone");
-		session.observeItemGain("Dragon bones", 1, RogueScapeRunSession.ItemSource.UNKNOWN_OR_ILLEGAL, "Wilderness", "suspicious drop", 10);
-
-		assertEquals("FAILED", session.state());
-		assertEquals(1, session.illegalRewardCount());
-		assertEquals(0, session.legalRewardCount());
-		assertEquals(1, session.violationCount());
-		assertTrue(session.overlaySummary().contains("Failed: UNKNOWN_ITEM_SOURCE"));
-		assertTrue(session.recapMarkdown().contains("Dragon bones [UNKNOWN_OR_ILLEGAL]"));
-		assertTrue(session.recapMarkdown().contains("UNKNOWN_ITEM_SOURCE"));
+		assertTrue(session.recapMarkdown().contains("Lobster [FOUND_DURING_RUN]"));
 	}
 
 	@Test
@@ -178,13 +160,13 @@ public class RogueScapePrototypeTest
 			"Defeat Obor",
 			"seed-42",
 			RunMode.FRESH_SOURCE,
-			RunPreset.GOBLIN_RAT);
+			RunPreset.UNSPECIFIED);
 
 		assertEquals(RunState.ACTIVE, session.runState());
 		assertEquals("Defeat Obor", session.goal());
 		assertEquals("seed-42", session.seed());
 		assertEquals(RunMode.FRESH_SOURCE, session.mode());
-		assertEquals(RunPreset.GOBLIN_RAT, session.preset());
+		assertEquals(RunPreset.UNSPECIFIED, session.preset());
 	}
 
 	@Test
@@ -192,7 +174,7 @@ public class RogueScapePrototypeTest
 	{
 		RogueScapeRunSession session = RogueScapeRunSession.start(
 			"Defeat Obor", "seed-42",
-			RunMode.FRESH_SOURCE, RunPreset.GOBLIN_RAT);
+			RunMode.FRESH_SOURCE, RunPreset.UNSPECIFIED);
 
 		session.addStage("R1", RunStageType.ROOM, "Lumbridge", "starter zone");
 		session.addStage("R2", RunStageType.ROOM, "Barbarian Village", "food check");
@@ -215,7 +197,7 @@ public class RogueScapePrototypeTest
 	{
 		RogueScapeRunSession session = RogueScapeRunSession.start(
 			"Defeat Obor", "seed-42",
-			RunMode.FRESH_SOURCE, RunPreset.GOBLIN_RAT);
+			RunMode.FRESH_SOURCE, RunPreset.UNSPECIFIED);
 
 		session.addStage("R1", RunStageType.ROOM, "Lumbridge", "starter zone");
 		session.addStage("R2", RunStageType.ROOM, "Barbarian Village", "food check");
@@ -259,7 +241,7 @@ public class RogueScapePrototypeTest
 	{
 		RogueScapeRunSession session = RogueScapeRunSession.start(
 			"Defeat Obor", "seed-42",
-			RunMode.FRESH_SOURCE, RunPreset.GOBLIN_RAT);
+			RunMode.FRESH_SOURCE, RunPreset.UNSPECIFIED);
 
 		session.addStage("R1", RunStageType.ROOM, "Lumbridge", "starter zone");
 		session.addStage("R2", RunStageType.ROOM, "Barbarian Village", "food check");
@@ -282,7 +264,7 @@ public class RogueScapePrototypeTest
 	{
 		RogueScapeRunSession session = RogueScapeRunSession.start(
 			"Defeat Obor", "seed-42",
-			RunMode.FRESH_SOURCE, RunPreset.GOBLIN_RAT);
+			RunMode.FRESH_SOURCE, RunPreset.UNSPECIFIED);
 
 		session.addStage("R1", RunStageType.ROOM, "Lumbridge", "starter zone");
 		session.addStage("B1", RunStageType.BOSS, "Obor", "first boss");
@@ -297,7 +279,7 @@ public class RogueScapePrototypeTest
 		assertTrue("recap should mention RogueScape", recap.contains("RogueScape"));
 		assertTrue("recap should mention mode", recap.contains("FRESH_SOURCE"));
 		assertTrue("recap should mention seed", recap.contains("seed-42"));
-		assertTrue("recap should mention preset", recap.contains("GOBLIN_RAT"));
+		assertFalse("recap should omit the preset line when unspecified", recap.contains("**Preset:**"));
 		assertTrue("recap should list R1", recap.contains("R1"));
 		assertTrue("recap should list B1", recap.contains("B1"));
 		assertTrue("recap should show score", recap.contains("Score"));
@@ -309,7 +291,7 @@ public class RogueScapePrototypeTest
 	{
 		RogueScapeRunSession session = RogueScapeRunSession.start(
 			"Survive Wilderness", "seed-x",
-			RunMode.REGION_CRAWL, RunPreset.WILDERNESS_RAT);
+			RunMode.REGION_CRAWL, RunPreset.UNSPECIFIED);
 
 		session.addStage("R1", RunStageType.ROOM, "Edgeville", "gateway");
 		session.enterStage("R1");
@@ -327,7 +309,7 @@ public class RogueScapePrototypeTest
 	{
 		RogueScapeRunSession session = RogueScapeRunSession.start(
 			"Defeat Obor", "stage1-seed",
-			RunMode.FRESH_SOURCE, RunPreset.GOBLIN_RAT);
+			RunMode.FRESH_SOURCE, RunPreset.UNSPECIFIED);
 
 		session.addStage("R1", RunStageType.ROOM, "Lumbridge", "starter zone");
 		session.addStage("R2", RunStageType.ROOM, "Barbarian Village", "food check");
@@ -369,7 +351,7 @@ public class RogueScapePrototypeTest
 	{
 		RogueScapeRunSession session = RogueScapeRunSession.start(
 			"Quick run", "seed-z",
-			RunMode.FRESH_SOURCE, RunPreset.GOBLIN_RAT);
+			RunMode.FRESH_SOURCE, RunPreset.UNSPECIFIED);
 
 		session.addStage("R1", RunStageType.ROOM, "Lumbridge", "starter");
 		session.addStage("B1", RunStageType.BOSS, "Obor", "boss");

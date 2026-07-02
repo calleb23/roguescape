@@ -16,12 +16,11 @@ public final class LeaderboardEntry
 	private final RunState state;
 	private final int score;
 	private final long durationMillis;
-	private final int legalCount;
-	private final int illegalCount;
+	private final int itemsCollected;
 	private final long submittedAtEpochMillis;
 
 	public LeaderboardEntry(String playerName, String eventId, String seed, RunState state,
-		int score, long durationMillis, int legalCount, int illegalCount, long submittedAtEpochMillis)
+		int score, long durationMillis, int itemsCollected, long submittedAtEpochMillis)
 	{
 		if (playerName == null || playerName.isEmpty()) throw new IllegalArgumentException("playerName required");
 		this.playerName = playerName;
@@ -30,8 +29,7 @@ public final class LeaderboardEntry
 		this.state = state == null ? RunState.ACTIVE : state;
 		this.score = score;
 		this.durationMillis = Math.max(0, durationMillis);
-		this.legalCount = legalCount;
-		this.illegalCount = illegalCount;
+		this.itemsCollected = itemsCollected;
 		this.submittedAtEpochMillis = submittedAtEpochMillis;
 	}
 
@@ -41,7 +39,6 @@ public final class LeaderboardEntry
 	public RunState state() { return state; }
 	public int score() { return score; }
 	public long durationMillis() { return durationMillis; }
-	public int legalCount() { return legalCount; }
-	public int illegalCount() { return illegalCount; }
+	public int itemsCollected() { return itemsCollected; }
 	public long submittedAtEpochMillis() { return submittedAtEpochMillis; }
 }

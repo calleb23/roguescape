@@ -4,11 +4,9 @@ import java.awt.Color;
 import java.awt.Font;
 
 /**
- * Centralized colors and fonts for the RogueScape side panel.
- *
- * <p>Palette approximates the design asset sheet's purple/gold "dungeon" aesthetic in code
- * (no image assets yet). All values live here so they retune in one place — fine-tune the hex
- * after seeing it live. Ornate frames and icons from the sheet are deferred to PNG assets.
+ * Centralized colors and fonts for RogueScape's "adventurer's journal" look: aged paper
+ * surfaces, ink text, wax-seal accents, rubber-stamp reds. All values live here so the
+ * palette retunes in one place; {@link RogueScapePaper} holds the texture/stamp painters.
  */
 public final class RogueScapeTheme
 {
@@ -16,63 +14,83 @@ public final class RogueScapeTheme
 	{
 	}
 
-	// ---- Surfaces (charcoal dungeon stone) ----
-	public static final Color PANEL_BG = new Color(0x101113);
-	public static final Color SECTION_BG = new Color(0x181A1D);
-	public static final Color SECTION_HEADER_BG = new Color(0x22252A);
-	public static final Color BORDER = new Color(0x565A63);          // dark steel frame
-	public static final Color BORDER_BRIGHT = new Color(0xA78A4A);   // aged gold edge
+	// ---- Paper surfaces ----
+	public static final Color PAPER = new Color(0xC9B584);            // aged page
+	public static final Color PAPER_DARK = new Color(0xB8A271);      // pocket / track shading
+	public static final Color PAPER_CARD = new Color(0xD4C193);      // contracts, loot cards
+	public static final Color EDGE = new Color(0x5C4326);            // burnt page edge / wood
 
-	// ---- Brand ----
-	public static final Color GOLD = new Color(0xD0AA55);
-	public static final Color GOLD_DIM = new Color(0x8F7848);
-	public static final Color ACCENT = new Color(0xA972E0);          // purple
-	public static final Color ACCENT_DIM = new Color(0x6E4E9E);
+	// Legacy surface names kept so existing painters keep compiling; all paper now.
+	public static final Color PANEL_BG = PAPER;
+	public static final Color SECTION_BG = PAPER;
+	public static final Color SECTION_HEADER_BG = PAPER_DARK;
+	public static final Color BORDER = EDGE;
+	public static final Color BORDER_BRIGHT = new Color(0x8A744E);
+	public static final Color SURFACE = PAPER_CARD;
+
+	// ---- Ink ----
+	public static final Color INK = new Color(0x332414);              // primary handwriting
+	public static final Color INK_FADED = new Color(0x6E5A3E);        // margin notes
+	public static final Color STAMP = new Color(0xB03224);            // rubber-stamp red
+	public static final Color RIBBON = new Color(0x9E2B1F);           // bookmark ribbon
+
+	// ---- Wax seals ----
+	public static final Color WAX_RED = new Color(0xA42C1E);
+	public static final Color WAX_GREEN = new Color(0x4F7A2B);
+	public static final Color WAX_BLUE = new Color(0x2F5E8C);
+	public static final Color WAX_GOLD = new Color(0xB98A2C);
+
+	// ---- Brand / accents (ink-on-paper world) ----
+	public static final Color GOLD = new Color(0x8A6210);             // gilded ink for values
+	public static final Color GOLD_DIM = new Color(0x6E4A14);
+	public static final Color ACCENT = INK;                           // titles are ink
+	public static final Color BANNER = STAMP;                         // badge/banner fills
+	public static final Color ACCENT_DIM = INK_FADED;
 
 	// ---- Text ----
-	public static final Color TEXT_PRIMARY = new Color(0xE3E0D8);    // soft white
-	public static final Color TEXT_MUTED = new Color(0x9B9A94);      // stone grey
+	public static final Color TEXT_PRIMARY = INK;
+	public static final Color TEXT_MUTED = INK_FADED;
 	public static final Color TEXT_GOLD = GOLD;
 
-	// ---- Status colors ----
-	public static final Color POSITIVE = new Color(0x5BBE6A);
-	public static final Color NEGATIVE = new Color(0xC0504D);
-	public static final Color INFO = new Color(0x4FA9C9);
+	// ---- Status colors (deep enough to read on paper) ----
+	public static final Color POSITIVE = new Color(0x4F7A2B);
+	public static final Color NEGATIVE = new Color(0x9E2B1F);
+	public static final Color INFO = new Color(0x2F5E8C);
 
-	// ---- Rarity tiers (reward cards / artifacts) ----
-	public static final Color RARITY_COMMON = new Color(0x9AA0A6);
-	public static final Color RARITY_RARE = new Color(0x4A90D9);
-	public static final Color RARITY_EPIC = new Color(0x9B59B6);
-	public static final Color RARITY_LEGENDARY = new Color(0xD9A441);
+	// ---- Rarity tiers as wax colors ----
+	public static final Color RARITY_COMMON = new Color(0x6E5A3E);
+	public static final Color RARITY_RARE = WAX_BLUE;
+	public static final Color RARITY_EPIC = new Color(0x6B3E8C);
+	public static final Color RARITY_LEGENDARY = WAX_GOLD;
 
-	// ---- Bars ----
-	public static final Color BAR_TRACK = new Color(0x25272B);
-	public static final Color BAR_HP = new Color(0xB23A2E);
-	public static final Color BAR_PRAYER = new Color(0x3FA9C9);
-	public static final Color BAR_SYNERGY = new Color(0x9B59B6);
-	public static final Color BAR_PROGRESS = GOLD;
+	// ---- Bars (inked gauges) ----
+	public static final Color BAR_TRACK = PAPER_DARK;
+	public static final Color BAR_HP = new Color(0x9E2B1F);
+	public static final Color BAR_PRAYER = WAX_BLUE;
+	public static final Color BAR_SYNERGY = new Color(0x6B3E8C);
+	public static final Color BAR_PROGRESS = new Color(0xB03224);
 
-	// ---- Button role colors (base / hover) ----
-	public static final Color BTN_GREEN = new Color(0x2C4A30);
-	public static final Color BTN_GREEN_HOVER = new Color(0x39603E);
-	public static final Color BTN_RED = new Color(0x5A2626);
-	public static final Color BTN_RED_HOVER = new Color(0x723030);
-	public static final Color BTN_GOLD = new Color(0x2F2A20);
-	public static final Color BTN_GOLD_HOVER = new Color(0x453A25);
-	public static final Color BTN_NEUTRAL = new Color(0x23262A);
-	public static final Color BTN_NEUTRAL_HOVER = new Color(0x30343A);
-	public static final Color BTN_DISABLED = new Color(0x1C1E21);
+	// ---- Button faces (paper buttons; stamps carry the color) ----
+	public static final Color BTN_GREEN = new Color(0xC3BC8A);
+	public static final Color BTN_GREEN_HOVER = new Color(0xCEC795);
+	public static final Color BTN_RED = new Color(0xCDAE8C);
+	public static final Color BTN_RED_HOVER = new Color(0xD8B997);
+	public static final Color BTN_GOLD = new Color(0xCDBA86);
+	public static final Color BTN_GOLD_HOVER = new Color(0xD8C591);
+	public static final Color BTN_NEUTRAL = PAPER_CARD;
+	public static final Color BTN_NEUTRAL_HOVER = new Color(0xDECC9E);
+	public static final Color BTN_DISABLED = PAPER_DARK;
 
-	/** Semantic button roles matching the asset sheet's button states. */
+	/** Semantic button roles; in the journal they pick the stamp-ink color. */
 	public enum ButtonRole
 	{
-		/** Start Run — green. */
+		/** Start Run — green wax. */
 		GO,
-		/** Confirm / Continue / Reroll / primary actions — gold. */
+		/** Confirm / Continue / primary actions — gilded ink. */
 		PRIMARY,
-		/** End Run / Fail — red. */
+		/** End Run / Fail — stamp red. */
 		DANGER,
-		/** Secondary actions — neutral dark. */
+		/** Secondary actions — plain ink. */
 		NEUTRAL
 	}
 
@@ -100,15 +118,16 @@ public final class RogueScapeTheme
 		}
 	}
 
+	/** The stamp-ink color a button's border and label are drawn in. */
 	public static Color buttonText(ButtonRole role)
 	{
 		switch (role)
 		{
-			case GO: return POSITIVE;
+			case GO: return new Color(0x3E6122);
 			case PRIMARY: return GOLD;
-			case DANGER: return new Color(0xD98A8A);
+			case DANGER: return STAMP;
 			case NEUTRAL:
-			default: return TEXT_PRIMARY;
+			default: return INK;
 		}
 	}
 
@@ -121,35 +140,39 @@ public final class RogueScapeTheme
 			Math.min(255, c.getBlue() + amount));
 	}
 
-	// ---- Fonts (sizing derived from the component's base font) ----
-	// Bumped up a step for readability on the sidebar.
+	// ---- Fonts: serif for the handwriting feel ----
+	private static Font serif(int style, float size)
+	{
+		return new Font(Font.SERIF, style, Math.round(size));
+	}
+
 	public static Font header(Font base)
 	{
-		return base.deriveFont(Font.BOLD, 16f);
+		return serif(Font.BOLD, 18f);
 	}
 
 	public static Font sectionTitle(Font base)
 	{
-		return base.deriveFont(Font.BOLD, 13f);
+		return serif(Font.BOLD, 13f);
 	}
 
 	public static Font label(Font base)
 	{
-		return base.deriveFont(Font.PLAIN, 13f);
+		return serif(Font.PLAIN, 13f);
 	}
 
 	public static Font value(Font base)
 	{
-		return base.deriveFont(Font.BOLD, 13f);
+		return serif(Font.BOLD, 13f);
 	}
 
 	public static Font button(Font base)
 	{
-		return base.deriveFont(Font.BOLD, 13f);
+		return serif(Font.BOLD, 13f);
 	}
 
 	public static Font small(Font base)
 	{
-		return base.deriveFont(Font.PLAIN, 12f);
+		return serif(Font.ITALIC, 12f);
 	}
 }

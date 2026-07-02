@@ -7,7 +7,7 @@ import com.pluginideahub.roguescape.core.RunMode;
 import com.pluginideahub.roguescape.core.RunPreset;
 import com.pluginideahub.roguescape.core.RunStageType;
 import com.pluginideahub.roguescape.core.RunState;
-import com.pluginideahub.roguescape.core.legality.ProvenanceHint;
+import com.pluginideahub.roguescape.core.item.ProvenanceHint;
 import com.pluginideahub.roguescape.core.relic.RelicEngine;
 import com.pluginideahub.roguescape.core.relic.RelicLibrary;
 import org.junit.Test;
@@ -18,7 +18,7 @@ public class RecapAndHistoryTest
 {
 	private static RogueScapeRun simpleRun(String goal, String seed)
 	{
-		RogueScapeRunSession base = RogueScapeRunSession.start(goal, seed, RunMode.FRESH_SOURCE, RunPreset.GOBLIN_RAT);
+		RogueScapeRunSession base = RogueScapeRunSession.start(goal, seed, RunMode.FRESH_SOURCE, RunPreset.UNSPECIFIED);
 		base.addStage("R1", RunStageType.ROOM, "Lumbridge", "");
 		return RogueScapeRun.wrap(base);
 	}
@@ -35,7 +35,7 @@ public class RecapAndHistoryTest
 		RelicEngine engine = new RelicEngine().addRelic(RelicLibrary.fourFoodLimit());
 		RunRecap recap = RunRecap.snapshot(run, engine, 12_345L);
 		assertEquals(RunState.COMPLETE, recap.state());
-		assertEquals(1, recap.legalCount());
+		assertEquals(1, recap.itemsCollected());
 
 		String md = RecapExport.toMarkdown(recap);
 		assertTrue(md.contains("# RogueScape Recap"));

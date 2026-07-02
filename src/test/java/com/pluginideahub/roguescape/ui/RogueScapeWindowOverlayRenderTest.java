@@ -1,5 +1,12 @@
 package com.pluginideahub.roguescape.ui;
 
+import com.pluginideahub.roguescape.core.RogueScapeRun;
+import com.pluginideahub.roguescape.core.RogueScapeRunLoop;
+import com.pluginideahub.roguescape.core.RogueScapeRunSession;
+import com.pluginideahub.roguescape.core.RunStageType;
+import com.pluginideahub.roguescape.core.relic.ModifierLibrary;
+import com.pluginideahub.roguescape.core.ui.PanelTab;
+import com.pluginideahub.roguescape.core.ui.SidePanelViewModel;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Graphics2D;
@@ -7,6 +14,7 @@ import java.awt.image.BufferedImage;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import javax.imageio.ImageIO;
 import org.junit.Test;
@@ -45,11 +53,48 @@ public class RogueScapeWindowOverlayRenderTest
 		assertTrue(new File(dir, "window-custom-builder.png").exists());
 	}
 
+	/**
+	 * Renders the real {@link SidePanelViewModel#runSpread()} for a live run as a single two-page
+	 * spread (no tab strip), so the tracer output can be eyeballed at build/ui-preview/window-run-spread.png.
+	 */
+	@Test
+	public void rendersRunSpreadToPng() throws Exception
+	{
+		File dir = new File("build/ui-preview");
+		dir.mkdirs();
+
+		RogueScapeRunSession base = RogueScapeRunSession.start("Preview run");
+		base.addStage("R1", RunStageType.ROOM, "Canifis", "", "Find a lawful weapon upgrade", 1);
+		base.addStage("R2", RunStageType.ROOM, "Dwarven Mine", "");
+		base.addStage("B1", RunStageType.BOSS, "Giant Mole", "");
+		base.enterStage("R1");
+		RogueScapeRun run = RogueScapeRun.wrap(base);
+		run.chooseRelic(ModifierLibrary.noFood());
+		RogueScapeRunLoop loop = new RogueScapeRunLoop(run, 1_000L);
+		loop.markNow(379_000L);
+		SidePanelViewModel vm = SidePanelViewModel.active(loop, PanelTab.RUN);
+
+		List<RogueScapeWindowOverlay.Tab> tabs = Collections.singletonList(
+			new RogueScapeWindowOverlay.Tab("THE RUN", JournalSpreadBlocks.render(vm.runSpread())));
+		writePng(tabs, 0, new File(dir, "window-run-spread.png"));
+		assertTrue(new File(dir, "window-run-spread.png").exists());
+
+		// The same spread painted as an open book (centre spine, no tabs).
+		writePng(tabs, 0, new File(dir, "window-run-book.png"), true);
+		assertTrue(new File(dir, "window-run-book.png").exists());
+	}
+
 	private static void writePng(List<RogueScapeWindowOverlay.Tab> tabs, int tab, File out) throws Exception
+	{
+		writePng(tabs, tab, out, false);
+	}
+
+	private static void writePng(List<RogueScapeWindowOverlay.Tab> tabs, int tab, File out, boolean book) throws Exception
 	{
 		RogueScapeWindowOverlay overlay = new RogueScapeWindowOverlay(() -> tabs);
 		overlay.setOpen(true);
 		overlay.setSelectedTab(tab);
+		overlay.setBookMode(book);
 
 		BufferedImage scratch = new BufferedImage(800, 600, BufferedImage.TYPE_INT_ARGB);
 		Graphics2D sg = scratch.createGraphics();

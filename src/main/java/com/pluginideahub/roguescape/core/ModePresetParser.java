@@ -26,16 +26,8 @@ public final class ModePresetParser
 
 	public static RunPreset parsePreset(String raw)
 	{
-		if (raw == null) return RunPreset.UNSPECIFIED;
-		String trimmed = raw.trim();
-		if (trimmed.isEmpty()) return RunPreset.UNSPECIFIED;
-		try
-		{
-			return RunPreset.valueOf(trimmed.toUpperCase());
-		}
-		catch (IllegalArgumentException ex)
-		{
-			return RunPreset.UNSPECIFIED;
-		}
+		// Named presets were removed; every value (including legacy saved strings) maps to
+		// UNSPECIFIED so old configs keep working.
+		return RunPreset.UNSPECIFIED;
 	}
 }

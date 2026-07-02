@@ -1,9 +1,9 @@
-package com.pluginideahub.roguescape.core.legality;
+package com.pluginideahub.roguescape.core.item;
 
 /**
- * Stage 2 — hint about how an item was observed entering inventory. Adapters set this from
- * RuneLite events; the legality classifier turns the hint into an {@link ItemLegality}
- * in the current run context (region, room kind, mode, unlocks).
+ * Hint about how an item was observed entering inventory. Adapters set this from RuneLite
+ * events; the run uses it to decide which room objectives an item gain counts toward
+ * (e.g. a combat drop vs. a shop purchase vs. a gathered resource).
  */
 public enum ProvenanceHint
 {

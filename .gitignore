@@ -4,3 +4,5 @@ out/
 *.class
 *.log
 .claude/settings.local.json
+# stray scratch files occasionally written to the repo root by tooling
+/scratchpad_*

@@ -1,6 +1,6 @@
 package com.pluginideahub.roguescape.core;
 
-import com.pluginideahub.roguescape.core.legality.ProvenanceHint;
+import com.pluginideahub.roguescape.core.item.ProvenanceHint;
 import com.pluginideahub.roguescape.core.reward.BankItemCategory;
 import com.pluginideahub.roguescape.core.task.RoomTask;
 
@@ -12,26 +12,26 @@ public final class RunStage
 	private final String note;
 	private final String objectiveLabel;
 	private final RunObjectiveKind objectiveKind;
-	private final int requiredLegalItemGains;
+	private final int requiredItemGains;
 	private RoomTask roomTask;
 	private boolean entered;
 	private boolean cleared;
-	private int legalItemGains;
+	private int itemGains;
 	private boolean bossDefeated;
 
 	public RunStage(String id, String name, RunStageType type, String note)
 	{
-		this(id, name, type, note, defaultObjective(type), defaultRequiredLegalItemGains(type));
+		this(id, name, type, note, defaultObjective(type), defaultRequiredItemGains(type));
 	}
 
 	public RunStage(String id, String name, RunStageType type, String note,
-		String objectiveLabel, int requiredLegalItemGains)
+		String objectiveLabel, int requiredItemGains)
 	{
-		this(id, name, type, note, objectiveLabel, defaultObjectiveKind(type), requiredLegalItemGains);
+		this(id, name, type, note, objectiveLabel, defaultObjectiveKind(type), requiredItemGains);
 	}
 
 	public RunStage(String id, String name, RunStageType type, String note,
-		String objectiveLabel, RunObjectiveKind objectiveKind, int requiredLegalItemGains)
+		String objectiveLabel, RunObjectiveKind objectiveKind, int requiredItemGains)
 	{
 		this.id = id;
 		this.name = name;
@@ -41,7 +41,7 @@ public final class RunStage
 			? defaultObjective(type)
 			: objectiveLabel;
 		this.objectiveKind = objectiveKind != null ? objectiveKind : defaultObjectiveKind(type);
-		this.requiredLegalItemGains = Math.max(0, requiredLegalItemGains);
+		this.requiredItemGains = Math.max(0, requiredItemGains);
 	}
 
 	public String id() { return id; }
@@ -50,15 +50,15 @@ public final class RunStage
 	public String note() { return note; }
 	public String objectiveLabel() { return objectiveLabel; }
 	public RunObjectiveKind objectiveKind() { return objectiveKind; }
-	public int requiredLegalItemGains() { return requiredLegalItemGains; }
+	public int requiredItemGains() { return requiredItemGains; }
 	public RoomTask roomTask() { return roomTask; }
-	public int legalItemGains() { return legalItemGains; }
+	public int itemGains() { return itemGains; }
 	public boolean isEntered() { return entered; }
 	public boolean isCleared() { return cleared; }
 	public boolean bossDefeated() { return bossDefeated; }
 	public boolean objectiveIsTrackable()
 	{
-		return roomTask != null || requiredLegalItemGains > 0 || objectiveKind == RunObjectiveKind.BOSS_DEFEAT;
+		return roomTask != null || requiredItemGains > 0 || objectiveKind == RunObjectiveKind.BOSS_DEFEAT;
 	}
 	public boolean objectiveComplete()
 	{
@@ -70,7 +70,7 @@ public final class RunStage
 		{
 			return bossDefeated;
 		}
-		return requiredLegalItemGains > 0 && legalItemGains >= requiredLegalItemGains;
+		return requiredItemGains > 0 && itemGains >= requiredItemGains;
 	}
 	public String objectiveProgressLabel()
 	{
@@ -86,8 +86,8 @@ public final class RunStage
 		{
 			return roomTask.progressLabel();
 		}
-		return objectiveLabel + " (" + Math.min(legalItemGains, requiredLegalItemGains)
-			+ " / " + requiredLegalItemGains + ")";
+		return objectiveLabel + " (" + Math.min(itemGains, requiredItemGains)
+			+ " / " + requiredItemGains + ")";
 	}
 
 	public RunStage setRoomTask(RoomTask task)
@@ -105,18 +105,18 @@ public final class RunStage
 			bossDefeated = true;
 		}
 	}
-	void recordLegalItemGain()
+	void recordItemGain()
 	{
-		recordLegalItemGain(BankItemCategory.UNKNOWN, ProvenanceHint.UNKNOWN);
+		recordItemGain(BankItemCategory.UNKNOWN, ProvenanceHint.UNKNOWN);
 	}
 
-	void recordLegalItemGain(BankItemCategory category, ProvenanceHint hint)
+	void recordItemGain(BankItemCategory category, ProvenanceHint hint)
 	{
-		if (requiredLegalItemGains > 0 && legalItemGains < requiredLegalItemGains)
+		if (requiredItemGains > 0 && itemGains < requiredItemGains)
 		{
 			if (objectiveAccepts(category, hint))
 			{
-				legalItemGains++;
+				itemGains++;
 			}
 		}
 	}
@@ -162,7 +162,7 @@ public final class RunStage
 					|| c == BankItemCategory.AMMO
 					|| c == BankItemCategory.TELEPORT
 					|| c == BankItemCategory.SKILLING_SUPPLY;
-			case LEGAL_ITEM:
+			case ANY_ITEM:
 			default:
 				return true;
 		}
@@ -170,16 +170,16 @@ public final class RunStage
 
 	private static String defaultObjective(RunStageType type)
 	{
-		return type == RunStageType.BOSS ? "Defeat the boss" : "Find a legal upgrade in this room";
+		return type == RunStageType.BOSS ? "Defeat the boss" : "Find an upgrade in this room";
 	}
 
-	private static int defaultRequiredLegalItemGains(RunStageType type)
+	private static int defaultRequiredItemGains(RunStageType type)
 	{
 		return type == RunStageType.BOSS ? 0 : 1;
 	}
 
 	private static RunObjectiveKind defaultObjectiveKind(RunStageType type)
 	{
-		return type == RunStageType.BOSS ? RunObjectiveKind.BOSS_DEFEAT : RunObjectiveKind.LEGAL_ITEM;
+		return type == RunStageType.BOSS ? RunObjectiveKind.BOSS_DEFEAT : RunObjectiveKind.ANY_ITEM;
 	}
 }

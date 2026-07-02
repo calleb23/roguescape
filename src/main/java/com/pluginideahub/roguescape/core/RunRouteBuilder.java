@@ -7,13 +7,13 @@ import com.pluginideahub.roguescape.core.region.RoomDefinition;
 import com.pluginideahub.roguescape.core.region.RoomKind;
 import com.pluginideahub.roguescape.core.region.RoomLibrary;
 import com.pluginideahub.roguescape.core.region.StageRegionRule;
+import com.pluginideahub.roguescape.core.reward.DeterministicRng;
 import com.pluginideahub.roguescape.core.task.RoomTask;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Random;
 
 /**
  * Stage 5 — populates a {@link RogueScapeRunSession}/{@link RogueScapeRun} pair with a
@@ -47,13 +47,13 @@ public final class RunRouteBuilder
 		int roomCount = roomCount(mode, preset);
 		int bossCount = bossCount(mode, preset);
 
-		long seed = (seedText != null && !seedText.isEmpty()) ? seedText.hashCode() : System.nanoTime();
-		Random random = new Random(seed);
+		long seed = (seedText != null && !seedText.isEmpty()) ? DeterministicRng.hash(seedText) : System.nanoTime();
+		DeterministicRng random = new DeterministicRng(seed);
 
 		List<RoomDefinition> roomPool = selectRoomsForMode(mode, roomCount, random);
 
 		List<RoomDefinition> bossPool = new ArrayList<>(BossLibrary.all());
-		Collections.shuffle(bossPool, random);
+		random.shuffle(bossPool);
 
 		for (RoomDefinition room : roomPool)
 		{
@@ -189,7 +189,7 @@ public final class RunRouteBuilder
 		return session.route().size() > 0;
 	}
 
-	private static List<RoomDefinition> selectBalancedRooms(int roomCount, Random random)
+	private static List<RoomDefinition> selectBalancedRooms(int roomCount, DeterministicRng random)
 	{
 		List<RoomDefinition> selected = new ArrayList<>();
 		List<RoomKind> desired = desiredRoomKinds(roomCount);
@@ -213,7 +213,7 @@ public final class RunRouteBuilder
 		return selected;
 	}
 
-	private static List<RoomDefinition> selectRoomsForMode(RunMode mode, int roomCount, Random random)
+	private static List<RoomDefinition> selectRoomsForMode(RunMode mode, int roomCount, DeterministicRng random)
 	{
 		if (mode != RunMode.BANK_DRAFT)
 		{
@@ -262,7 +262,7 @@ public final class RunRouteBuilder
 		return order;
 	}
 
-	private static RoomDefinition pickRoom(RoomKind kind, List<RoomDefinition> selected, Random random)
+	private static RoomDefinition pickRoom(RoomKind kind, List<RoomDefinition> selected, DeterministicRng random)
 	{
 		List<RoomDefinition> candidates = new ArrayList<>();
 		for (RoomDefinition def : RoomLibrary.all())
@@ -300,7 +300,7 @@ public final class RunRouteBuilder
 		String stageId = room.id();
 		RoomKind kind = roomKind != null ? roomKind : room.kind();
 		RunStage stage = session.addStage(stageId, RunStageType.ROOM, room.name(), "Room: " + room.name(),
-			objectiveLabel(room, kind), objectiveKind(kind), requiredLegalItemGains(kind));
+			objectiveLabel(room, kind), objectiveKind(kind), requiredItemGains(kind));
 		if (kind == RoomKind.SKILLING)
 		{
 			stage.setRoomTask(new RoomTask("Gain skilling XP in " + room.name(), "", 1));
@@ -338,33 +338,14 @@ public final class RunRouteBuilder
 	private static int roomCount(RunMode mode, RunPreset preset)
 	{
 		if (mode == RunMode.CUSTOM_CREATOR) return 3;
-		if (mode == RunMode.BANK_DRAFT && (preset == null || preset == RunPreset.UNSPECIFIED)) return 1;
-		if (preset == null) return 3;
-		switch (preset)
-		{
-			case GOBLIN_RAT:
-			case IRON_SCRAPPER:
-			case MONK_MODE:
-				return 2;
-			case MAGE_SPARK:
-			case ARCHERS_GAMBLE:
-			case CLUE_GREMLIN:
-				return 3;
-			case WILDERNESS_RAT:
-				return 4;
-			case MAX_MAIN_DRAFT:
-				return 5;
-			case UNSPECIFIED:
-			default:
-				return 3;
-		}
+		if (mode == RunMode.BANK_DRAFT) return 1;
+		return 3;
 	}
 
 	private static int bossCount(RunMode mode, RunPreset preset)
 	{
 		if (mode == RunMode.CUSTOM_CREATOR) return 1;
-		if (mode == RunMode.BANK_DRAFT && (preset == null || preset == RunPreset.UNSPECIFIED)) return 2;
-		if (preset == RunPreset.MAX_MAIN_DRAFT) return 2;
+		if (mode == RunMode.BANK_DRAFT) return 2;
 		return 1;
 	}
 
@@ -379,29 +360,29 @@ public final class RunRouteBuilder
 		switch (k)
 		{
 			case SHOP:
-				return "Buy or obtain one legal item in " + room.name();
+				return "Buy or obtain one item in " + room.name();
 			case COMBAT:
-				return "Win one legal combat drop in " + room.name();
+				return "Win one combat drop in " + room.name();
 			case SUPPLY:
-				return "Collect two legal supplies in " + room.name();
+				return "Collect two supplies in " + room.name();
 			case SKILLING:
-				return "Gather two legal resources in " + room.name();
+				return "Gather two resources in " + room.name();
 			case WEAPON:
-				return "Find a legal weapon upgrade in " + room.name();
+				return "Find a weapon upgrade in " + room.name();
 			case ARMOUR:
-				return "Find a legal armour upgrade in " + room.name();
+				return "Find an armour upgrade in " + room.name();
 			case REGION:
 			default:
-				return "Find one legal upgrade in " + room.name();
+				return "Find one upgrade in " + room.name();
 		}
 	}
 
-	private static int requiredLegalItemGains(RoomDefinition room)
+	private static int requiredItemGains(RoomDefinition room)
 	{
-		return requiredLegalItemGains(room.kind());
+		return requiredItemGains(room.kind());
 	}
 
-	private static int requiredLegalItemGains(RoomKind kind)
+	private static int requiredItemGains(RoomKind kind)
 	{
 		switch (kind != null ? kind : RoomKind.REGION)
 		{
@@ -445,7 +426,7 @@ public final class RunRouteBuilder
 				return RunObjectiveKind.BOSS_DEFEAT;
 			case REGION:
 			default:
-				return RunObjectiveKind.LEGAL_ITEM;
+				return RunObjectiveKind.ANY_ITEM;
 		}
 	}
 

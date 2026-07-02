@@ -1,11 +1,7 @@
 package com.pluginideahub.roguescape.core;
 
-import com.pluginideahub.roguescape.core.legality.InventorySnapshot;
-import com.pluginideahub.roguescape.core.legality.ItemEvent;
-import com.pluginideahub.roguescape.core.legality.ItemLegality;
-import com.pluginideahub.roguescape.core.legality.ProvenanceHint;
-import com.pluginideahub.roguescape.core.legality.StarterKit;
-import com.pluginideahub.roguescape.core.legality.StrictnessMode;
+import com.pluginideahub.roguescape.core.item.ProvenanceHint;
+import com.pluginideahub.roguescape.core.item.StarterKit;
 import com.pluginideahub.roguescape.core.region.RoomKind;
 import com.pluginideahub.roguescape.core.region.StageRegionRule;
 import java.util.LinkedHashMap;
@@ -16,6 +12,11 @@ import org.junit.Test;
 
 import static org.junit.Assert.*;
 
+/**
+ * The plugin no longer classifies item provenance as legal/illegal — disallowed actions are
+ * blocked at the menu instead. These tests cover what the run actually tracks now: items collected,
+ * objective/boss completion, and region awareness.
+ */
 public class RogueScapeRunTest
 {
 	private static StarterKit kitOf(String... names)
@@ -33,10 +34,10 @@ public class RogueScapeRunTest
 	}
 
 	@Test
-	public void r1ToR2ToB1RunIsLegalInsideAllowedRegions()
+	public void runCollectsItemsAcrossRoomsAndBossThenCompletes()
 	{
 		RogueScapeRunSession base = RogueScapeRunSession.start(
-			"Defeat Obor", "seed-2-3", RunMode.FRESH_SOURCE, RunPreset.GOBLIN_RAT);
+			"Defeat Obor", "seed-2-3", RunMode.FRESH_SOURCE, RunPreset.UNSPECIFIED);
 		base.addStage("R1", RunStageType.ROOM, "Lumbridge", "starter zone");
 		base.addStage("R2", RunStageType.ROOM, "Barbarian Village", "food check");
 		base.addStage("B1", RunStageType.BOSS, "Obor", "first boss");
@@ -49,114 +50,49 @@ public class RogueScapeRunTest
 
 		base.enterStage("R1");
 		run.moveToRegion("lumbridge");
-		ItemEvent kitEvent = run.applyItemDelta("Bronze dagger", 1, ProvenanceHint.UNKNOWN);
-		assertEquals(ItemLegality.LEGAL_STARTER_KIT, kitEvent.legality());
-
-		ItemEvent r1Loot = run.applyItemDelta("Rat tail", 1, ProvenanceHint.OBSERVED_LOOT);
-		assertEquals(ItemLegality.LEGAL_REGION_GAIN, r1Loot.legality());
+		run.applyItemDelta("Rat tail", 1, ProvenanceHint.OBSERVED_LOOT);
 		base.clearStage("R1");
 
 		base.enterStage("R2");
 		run.moveToRegion("barbarian_village");
-		ItemEvent r2Catch = run.applyItemDelta("Trout", 2, ProvenanceHint.OBSERVED_GATHERED);
-		assertEquals(ItemLegality.LEGAL_GATHERED_OR_CRAFTED, r2Catch.legality());
+		run.applyItemDelta("Trout", 2, ProvenanceHint.OBSERVED_GATHERED);
 		base.clearStage("R2");
 
 		base.enterStage("B1");
 		run.moveToRegion("obor_lair");
-		ItemEvent bossDrop = run.applyItemDelta("Obor key", 1, ProvenanceHint.OBSERVED_LOOT);
-		assertEquals(ItemLegality.LEGAL_REGION_GAIN, bossDrop.legality());
-		assertTrue(base.currentOpenStage().objectiveComplete());
+		run.applyItemDelta("Obor key", 1, ProvenanceHint.OBSERVED_LOOT);
+		assertTrue("boss loot should complete the boss objective", base.currentOpenStage().objectiveComplete());
 		base.clearStage("B1");
 		base.completeRun("Obor down", RunCompletionReason.GOAL_COMPLETE);
 
 		assertEquals(RunState.COMPLETE, base.runState());
-		assertEquals(4, run.legalCount());
-		assertEquals(0, run.suspiciousCount());
-		assertEquals(0, run.illegalCount());
+		assertEquals(3, run.itemsCollected());
 	}
 
 	@Test
-	public void leavingLegalRegionInStrictModeFailsRun()
+	public void regionTrackingReflectsCurrentRegionWithoutFailingTheRun()
 	{
 		RogueScapeRunSession base = RogueScapeRunSession.start(
-			"Stay in Lumbridge", "seed-strict",
-			RunMode.REGION_CRAWL, RunPreset.GOBLIN_RAT);
+			"Stay in Lumbridge", "seed-region", RunMode.REGION_CRAWL, RunPreset.UNSPECIFIED);
 		base.addStage("R1", RunStageType.ROOM, "Lumbridge", "starter zone");
 
 		RogueScapeRun run = RogueScapeRun.wrap(base)
-			.setStrictness(StrictnessMode.STRICT)
 			.setRegionRule("R1", new StageRegionRule(RoomKind.REGION, regions("lumbridge"), true));
 
 		base.enterStage("R1");
-		run.moveToRegion("karamja");
+		run.moveToRegion("lumbridge");
+		assertTrue(run.currentRegionLegal());
 
-		assertEquals(RunState.FAILED, base.runState());
+		// Leaving the room's region is surfaced for the UI/enforcement but never fails the run.
+		run.moveToRegion("karamja");
 		assertFalse(run.currentRegionLegal());
+		assertEquals(RunState.ACTIVE, base.runState());
 	}
 
 	@Test
-	public void itemGainedOutsideAllowedRegionIsIllegal()
+	public void itemsCountTowardTheCurrentStageAndAreRecorded()
 	{
-		RogueScapeRunSession base = RogueScapeRunSession.start("Region test");
-		base.addStage("R1", RunStageType.ROOM, "Lumbridge", "");
-		RogueScapeRun run = RogueScapeRun.wrap(base)
-			.setStrictness(StrictnessMode.BALANCED)
-			.setRegionRule("R1", new StageRegionRule(RoomKind.REGION, regions("lumbridge"), true));
-
-		base.enterStage("R1");
-		run.moveToRegion("karamja");
-		// Balanced mode does not fail just on region change, but item gain should be illegal.
-		ItemEvent e = run.applyItemDelta("Banana", 1, ProvenanceHint.OBSERVED_LOOT);
-		assertEquals(ItemLegality.ILLEGAL_OUT_OF_REGION, e.legality());
-		assertEquals(1, run.illegalCount());
-		assertEquals(RunState.FAILED, base.runState());
-	}
-
-	@Test
-	public void preRunSupplyDetectedWhenSnapshotShowsExtraItemsAtStart()
-	{
-		RogueScapeRunSession base = RogueScapeRunSession.start("Pre-run supply test");
-		base.addStage("R1", RunStageType.ROOM, "Lumbridge", "");
-		Map<String, Integer> startQs = new LinkedHashMap<>();
-		startQs.put("bronze dagger", 1);
-		startQs.put("shark", 5);
-
-		RogueScapeRun run = RogueScapeRun.wrap(base)
-			.declareStarterKit(kitOf("Bronze dagger"))
-			.setStartSnapshot(new InventorySnapshot(startQs))
-			.setPreRunSupplyExpected(true);
-
-		base.enterStage("R1");
-		// Simulate the adapter feeding "Shark" delta in run-start phase.
-		ItemEvent e = run.applyItemDelta("Shark", 5, ProvenanceHint.UNKNOWN);
-		assertEquals(ItemLegality.ILLEGAL_PRE_RUN_SUPPLY, e.legality());
-		assertEquals(1, run.illegalCount());
-	}
-
-	@Test
-	public void suspiciousItemFailsInStrictModeButFlagsInBalanced()
-	{
-		RogueScapeRunSession base = RogueScapeRunSession.start("Suspicious strict test");
-		base.addStage("R1", RunStageType.ROOM, "Lumbridge", "");
-		RogueScapeRun strict = RogueScapeRun.wrap(base).setStrictness(StrictnessMode.STRICT);
-		base.enterStage("R1");
-		strict.applyItemDelta("Mystery coin", 1, ProvenanceHint.OBSERVED_GROUND_PICKUP);
-		assertEquals(RunState.FAILED, base.runState());
-
-		RogueScapeRunSession base2 = RogueScapeRunSession.start("Suspicious balanced test");
-		base2.addStage("R1", RunStageType.ROOM, "Lumbridge", "");
-		RogueScapeRun balanced = RogueScapeRun.wrap(base2).setStrictness(StrictnessMode.BALANCED);
-		base2.enterStage("R1");
-		balanced.applyItemDelta("Mystery coin", 1, ProvenanceHint.OBSERVED_GROUND_PICKUP);
-		assertEquals(RunState.ACTIVE, base2.runState());
-		assertEquals(1, balanced.suspiciousCount());
-	}
-
-	@Test
-	public void shopPurchaseLootGatheredAllScoreAsLegal()
-	{
-		RogueScapeRunSession base = RogueScapeRunSession.start("Mixed legal sources");
+		RogueScapeRunSession base = RogueScapeRunSession.start("Mixed sources");
 		base.addStage("R1", RunStageType.ROOM, "Lumbridge", "");
 		RogueScapeRun run = RogueScapeRun.wrap(base);
 		base.enterStage("R1");
@@ -165,27 +101,8 @@ public class RogueScapeRunTest
 		run.applyItemDelta("Oak logs", 5, ProvenanceHint.OBSERVED_GATHERED);
 		run.applyItemDelta("Bones", 3, ProvenanceHint.OBSERVED_LOOT);
 
-		assertEquals(3, run.legalCount());
-		assertEquals(0, run.suspiciousCount());
-		assertEquals(0, run.illegalCount());
-	}
-
-	@Test
-	public void clearedStageBeforeAdvancingStillReportsLegality()
-	{
-		RogueScapeRunSession base = RogueScapeRunSession.start("Cleared but not advanced");
-		base.addStage("R1", RunStageType.ROOM, "Lumbridge", "");
-		base.addStage("R2", RunStageType.ROOM, "Karamja", "");
-		RogueScapeRun run = RogueScapeRun.wrap(base)
-			.setRegionRule("R1", new StageRegionRule(RoomKind.REGION, regions("lumbridge"), true))
-			.setRegionRule("R2", new StageRegionRule(RoomKind.REGION, regions("karamja"), true));
-
-		base.enterStage("R1");
-		base.clearStage("R1");
-		run.moveToRegion("lumbridge");
-		// After clearing R1 and before entering R2, the most-recent entered stage is R1.
-		ItemEvent e = run.applyItemDelta("Bronze pickaxe", 1, ProvenanceHint.OBSERVED_LOOT);
-		assertEquals(ItemLegality.LEGAL_REGION_GAIN, e.legality());
-		assertEquals("R1", e.stageId());
+		assertEquals(3, run.itemsCollected());
+		assertEquals(3, run.collectedItems().size());
+		assertEquals("Tinderbox", run.collectedItems().get(0).itemName());
 	}
 }

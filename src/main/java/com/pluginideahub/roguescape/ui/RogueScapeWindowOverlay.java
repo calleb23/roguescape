@@ -47,7 +47,7 @@ public class RogueScapeWindowOverlay extends Overlay implements MouseListener
 	/** A content element inside a tab. One struct, kind-tagged, built via the static factories. */
 	public static final class Block
 	{
-		enum Kind { HEADING, TEXT, STATBAR, ITEMGRID, BADGE, CARDS, MODE_TILES, GAP }
+		enum Kind { HEADING, TEXT, NOTE, STATBAR, ITEMGRID, BADGE, CARDS, MODE_TILES, CHAPTERS, PAGE_TITLE, COLUMNS, HOURGLASS, GAP }
 
 		final Kind kind;
 		String text = "";
@@ -60,6 +60,9 @@ public class RogueScapeWindowOverlay extends Overlay implements MouseListener
 		int iconItemId;
 		List<RogueScapeRewardOverlay.Card> cards;
 		List<ModeTile> modeTiles;
+		List<com.pluginideahub.roguescape.core.ui.SidePanelViewModel.Chapter> chapters;
+		List<Block> left;
+		List<Block> right;
 
 		private Block(Kind kind)
 		{
@@ -78,6 +81,15 @@ public class RogueScapeWindowOverlay extends Overlay implements MouseListener
 			Block b = new Block(Kind.TEXT);
 			b.text = text;
 			b.color = color == null ? RogueScapeTheme.TEXT_PRIMARY : color;
+			return b;
+		}
+
+		/** Margin-note text: smaller serif, tighter leading (rule lists, asides). */
+		public static Block note(String text, Color color)
+		{
+			Block b = new Block(Kind.NOTE);
+			b.text = text;
+			b.color = color == null ? RogueScapeTheme.TEXT_MUTED : color;
 			return b;
 		}
 
@@ -121,6 +133,40 @@ public class RogueScapeWindowOverlay extends Overlay implements MouseListener
 		{
 			Block b = new Block(Kind.MODE_TILES);
 			b.modeTiles = tiles == null ? new ArrayList<>() : tiles;
+			return b;
+		}
+
+		public static Block chapters(List<com.pluginideahub.roguescape.core.ui.SidePanelViewModel.Chapter> chapters)
+		{
+			Block b = new Block(Kind.CHAPTERS);
+			b.chapters = chapters == null ? new ArrayList<>() : chapters;
+			return b;
+		}
+
+		/** Diary-page masthead: ribbon bookmark, big serif title, italic subtitle, ink rule. */
+		public static Block pageTitle(String title, String sub)
+		{
+			Block b = new Block(Kind.PAGE_TITLE);
+			b.text = title;
+			b.sub = sub == null ? "" : sub;
+			return b;
+		}
+
+		/** Two side-by-side columns of blocks (entry/rules left, record/hourglass right). */
+		public static Block columns(List<Block> left, List<Block> right)
+		{
+			Block b = new Block(Kind.COLUMNS);
+			b.left = left == null ? new ArrayList<>() : left;
+			b.right = right == null ? new ArrayList<>() : right;
+			return b;
+		}
+
+		/** Hourglass doodle with the elapsed time beside it. */
+		public static Block hourglass(String label, String time)
+		{
+			Block b = new Block(Kind.HOURGLASS);
+			b.text = label;
+			b.value = time == null ? "" : time;
 			return b;
 		}
 
@@ -245,6 +291,21 @@ public class RogueScapeWindowOverlay extends Overlay implements MouseListener
 		this.selected = Math.max(0, index);
 	}
 
+	private boolean bookMode;
+	private java.util.function.BooleanSupplier bookModeSupplier;
+
+	/** When true the window paints as an open-book two-page spread (centre spine, no tab strip). */
+	public void setBookMode(boolean v)
+	{
+		this.bookMode = v;
+	}
+
+	/** Dynamic book-mode signal, evaluated each frame (e.g. "a run is active"). */
+	public void setBookMode(java.util.function.BooleanSupplier s)
+	{
+		this.bookModeSupplier = s;
+	}
+
 	@Override
 	public Dimension render(Graphics2D g)
 	{
@@ -264,6 +325,11 @@ public class RogueScapeWindowOverlay extends Overlay implements MouseListener
 		}
 		centerOnAppear();
 
+		if (bookModeSupplier != null)
+		{
+			bookMode = bookModeSupplier.getAsBoolean();
+		}
+
 		g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 
 		RogueScapeFrame.background(g, 0, 0, WIDTH, HEIGHT);
@@ -272,7 +338,14 @@ public class RogueScapeWindowOverlay extends Overlay implements MouseListener
 		modeTileRects.clear();
 		modeTileActions.clear();
 		drawTitle(g, art);
-		drawTabs(g, tabs);
+		if (bookMode)
+		{
+			drawBookChrome(g);
+		}
+		else
+		{
+			drawTabs(g, tabs);
+		}
 		drawContent(g, tabs.isEmpty() ? null : tabs.get(selected));
 		drawFooter(g);
 
@@ -410,10 +483,54 @@ public class RogueScapeWindowOverlay extends Overlay implements MouseListener
 		}
 	}
 
+	/**
+	 * Open-book chrome over the content region: a centre spine gutter with page-curl shading and
+	 * binding stitches, plus stacked outer page edges, so the parchment reads as a two-page spread
+	 * rather than a flat panel.
+	 */
+	private void drawBookChrome(Graphics2D g)
+	{
+		int top = 3 + TITLE_H + 2;
+		int bottom = HEIGHT - FOOTER_H - 6;
+		int cx = WIDTH / 2;
+
+		// Page-curl: both pages dip toward the gutter — shadow deepens toward the crease.
+		for (int i = 22; i >= 1; i--)
+		{
+			int a = (int) (44 * (1 - (i - 1) / 22.0));
+			g.setColor(new Color(0x24, 0x18, 0x0C, Math.max(0, a)));
+			g.drawLine(cx - i, top, cx - i, bottom);
+			g.drawLine(cx + i, top, cx + i, bottom);
+		}
+		// The crease, with a thin paper highlight to either side.
+		g.setColor(new Color(0x22, 0x16, 0x0A));
+		g.drawLine(cx, top, cx, bottom);
+		g.setColor(new Color(255, 255, 255, 70));
+		g.drawLine(cx - 2, top, cx - 2, bottom);
+		g.drawLine(cx + 2, top, cx + 2, bottom);
+
+		// Binding stitches down the spine.
+		g.setStroke(new java.awt.BasicStroke(1.5f));
+		g.setColor(new Color(0x6E, 0x5A, 0x3E, 150));
+		for (int sy = top + 16; sy < bottom - 10; sy += 24)
+		{
+			g.drawLine(cx - 3, sy, cx + 3, sy);
+		}
+		g.setStroke(new java.awt.BasicStroke(1f));
+
+		// Outer page-stack edges — the book's thickness seen from the side.
+		for (int i = 0; i < 4; i++)
+		{
+			g.setColor(new Color(0x24, 0x18, 0x0C, Math.max(8, 38 - i * 8)));
+			g.drawLine(5 + i, top + 4, 5 + i, bottom - 4);
+			g.drawLine(WIDTH - 6 - i, top + 4, WIDTH - 6 - i, bottom - 4);
+		}
+	}
+
 	private void drawContent(Graphics2D g, Tab tab)
 	{
 		int x = 3 + PAD;
-		int top = 3 + TITLE_H + TAB_H + PAD;
+		int top = 3 + TITLE_H + (bookMode ? 0 : TAB_H) + PAD;
 		int w = WIDTH - 6 - PAD * 2;
 		int bottom = HEIGHT - FOOTER_H - 6;
 		if (tab == null)
@@ -444,29 +561,24 @@ public class RogueScapeWindowOverlay extends Overlay implements MouseListener
 				return y + 8;
 			case HEADING:
 			{
-				g.setFont(FontManager.getRunescapeBoldFont());
-				// Gold diamond bullet.
-				drawDiamond(g, x + 4, y + 6, 4, RogueScapeTheme.GOLD_DIM, RogueScapeTheme.GOLD);
-				String head = ascii(b.text);
-				g.setColor(RogueScapeFrame.SHADOW);
-				g.drawString(head, x + 14, y + 11);
-				g.setColor(RogueScapeTheme.GOLD);
-				g.drawString(head, x + 13, y + 10);
-				// Two-tone decorative underline with an end diamond accent.
-				int uy = y + 16;
-				g.setColor(RogueScapeFrame.SHADOW);
-				g.drawLine(x, uy + 1, x + w, uy + 1);
-				g.setColor(RogueScapeTheme.GOLD_DIM);
-				g.drawLine(x, uy, x + w - 6, uy);
-				drawDiamond(g, x + w - 2, uy, 3, RogueScapeTheme.GOLD_DIM, RogueScapeTheme.GOLD);
-				return y + 24;
+				// Journal style: small-caps serif ink over a faint rule.
+				g.setFont(new java.awt.Font(java.awt.Font.SERIF, java.awt.Font.BOLD, 13));
+				String head = b.text == null ? "" : b.text.toUpperCase();
+				g.setColor(RogueScapeTheme.INK);
+				g.drawString(head, x, y + 12);
+				RogueScapePaper.leader(g, x + g.getFontMetrics().stringWidth(head) + 8, y + 8, x + w);
+				return y + 20;
 			}
+			case NOTE:
 			case TEXT:
 			{
-				g.setFont(FontManager.getRunescapeFont());
+				// Serif handwriting; Swing fonts carry the check/cross glyphs (the panel
+				// already renders them raw), so no ascii() munging here.
+				boolean note = b.kind == Block.Kind.NOTE;
+				g.setFont(new java.awt.Font(java.awt.Font.SERIF, java.awt.Font.PLAIN, note ? 12 : 13));
 				FontMetrics fm = g.getFontMetrics();
 				int yy = y;
-				for (String line : wrap(ascii(b.text), fm, w))
+				for (String line : wrap(b.text == null ? "" : b.text, fm, w))
 				{
 					if (yy >= bottom)
 					{
@@ -474,7 +586,7 @@ public class RogueScapeWindowOverlay extends Overlay implements MouseListener
 					}
 					g.setColor(b.color);
 					g.drawString(line, x, yy + 11);
-					yy += LINE_H;
+					yy += note ? 13 : LINE_H;
 				}
 				return yy;
 			}
@@ -488,6 +600,14 @@ public class RogueScapeWindowOverlay extends Overlay implements MouseListener
 				return drawCards(g, b, x, y, w, bottom);
 			case MODE_TILES:
 				return drawModeTiles(g, b, x, y, w, bottom);
+			case CHAPTERS:
+				return drawChapters(g, b, x, y, w);
+			case PAGE_TITLE:
+				return drawPageTitle(g, b, x, y, w);
+			case COLUMNS:
+				return drawColumns(g, b, x, y, w, bottom);
+			case HOURGLASS:
+				return drawHourglass(g, b, x, y);
 			default:
 				return y;
 		}
@@ -571,19 +691,22 @@ public class RogueScapeWindowOverlay extends Overlay implements MouseListener
 	private int drawBadge(Graphics2D g, Block b, int x, int y, int w)
 	{
 		int h = 30;
-		g.setColor(RogueScapeFrame.darken(b.color, 70));
+		// Paper note with a wax-colored spine on the left.
+		g.setColor(RogueScapeTheme.PAPER_CARD);
 		g.fillRoundRect(x, y, w, h, 7, 7);
 		g.setColor(b.color);
+		g.fillRoundRect(x, y, 5, h, 7, 7);
+		g.setColor(RogueScapeFrame.darken(b.color, 30));
 		g.drawRoundRect(x, y, w, h, 7, 7);
 
-		int textX = x + 8;
+		int textX = x + 12;
 		if (icons != null && b.iconItemId > 0)
 		{
 			RogueScapeIcons.draw(g, icons.item(b.iconItemId), x + 5, y + 5, h - 10);
 			textX = x + h;
 		}
 		g.setFont(FontManager.getRunescapeBoldFont());
-		g.setColor(RogueScapeTheme.lighten(b.color, 60));
+		g.setColor(RogueScapeFrame.darken(b.color, 60));
 		g.drawString(ascii(b.text), textX, y + 13);
 		if (!b.sub.isEmpty())
 		{
@@ -642,6 +765,168 @@ public class RogueScapeWindowOverlay extends Overlay implements MouseListener
 		}
 		int rows = (n + cols - 1) / cols;
 		return y + rows * tileH + Math.max(0, rows - 1) * gap + 8;
+	}
+
+	/** THE RECORD: the run's chapters as a table of contents (windowed for long runs). */
+	private int drawChapters(Graphics2D g, Block b, int x, int y, int w)
+	{
+		List<com.pluginideahub.roguescape.core.ui.SidePanelViewModel.Chapter> chapters =
+			b.chapters == null ? new ArrayList<>() : b.chapters;
+		int lineH = 26;
+		if (chapters.isEmpty())
+		{
+			g.setFont(new java.awt.Font(java.awt.Font.SERIF, java.awt.Font.ITALIC, 13));
+			g.setColor(RogueScapeTheme.INK_FADED);
+			g.drawString("No chapters yet.", x, y + 13);
+			return y + lineH;
+		}
+		int cur = 0;
+		for (int i = 0; i < chapters.size(); i++)
+		{
+			if (chapters.get(i).isCurrent())
+			{
+				cur = i;
+				break;
+			}
+		}
+		int from = 0;
+		int to = chapters.size();
+		if (chapters.size() > 10)
+		{
+			from = Math.max(0, cur - 2);
+			to = Math.min(chapters.size(), from + 6);
+			from = Math.max(0, to - 6);
+			if (from > 0)
+			{
+				g.setFont(new java.awt.Font(java.awt.Font.SERIF, java.awt.Font.ITALIC, 12));
+				g.setColor(RogueScapeTheme.INK_FADED);
+				g.drawString("… " + from + " chapters stamped …", x + 12, y + 12);
+			}
+			y += 18;
+		}
+		for (int i = from; i < to; i++)
+		{
+			drawChapterLine(g, x, y, w, chapters.get(i));
+			y += lineH;
+		}
+		if (to < chapters.size())
+		{
+			g.setFont(new java.awt.Font(java.awt.Font.SERIF, java.awt.Font.ITALIC, 12));
+			g.setColor(RogueScapeTheme.INK_FADED);
+			g.drawString("… " + (chapters.size() - to) + " chapters unwritten …", x + 12, y + 12);
+			y += 18;
+		}
+		return y + 4;
+	}
+
+	private void drawChapterLine(Graphics2D g, int x, int y, int w,
+		com.pluginideahub.roguescape.core.ui.SidePanelViewModel.Chapter c)
+	{
+		boolean done = c.isDone();
+		boolean boss = c.isBoss();
+		g.setFont(new java.awt.Font(java.awt.Font.SERIF, java.awt.Font.BOLD, 13));
+		g.setColor(boss ? RogueScapeTheme.STAMP : RogueScapeTheme.INK);
+		g.drawString(c.numeral() + ".", x, y + 12);
+		g.setFont(new java.awt.Font(java.awt.Font.SERIF, boss ? java.awt.Font.BOLD : java.awt.Font.PLAIN, 13));
+		g.setColor(done ? RogueScapeTheme.INK_FADED : boss ? RogueScapeTheme.STAMP : RogueScapeTheme.INK);
+		int nameX = x + 52;
+		java.awt.FontMetrics fm = g.getFontMetrics();
+		String name = c.name();
+		int maxName = w - 52 - 36;
+		while (fm.stringWidth(name) > maxName && name.length() > 4)
+		{
+			name = name.substring(0, name.length() - 2);
+		}
+		if (!name.equals(c.name()))
+		{
+			name = name + "…";
+		}
+		g.drawString(name, nameX, y + 12);
+		int nameEnd = nameX + fm.stringWidth(name);
+		if (done)
+		{
+			g.setStroke(new java.awt.BasicStroke(1.4f));
+			g.drawLine(x + 50, y + 8, nameEnd + 2, y + 8);
+		}
+		RogueScapePaper.leader(g, nameEnd + 6, y + 9, x + w - 28);
+		int sx = x + w - 13;
+		int sy = y + 7;
+		if (done)
+		{
+			RogueScapePaper.clearStamp(g, sx, sy, 11, "CLEAR");
+		}
+		else if (c.isCurrent())
+		{
+			RogueScapePaper.ribbon(g, sx, y - 2, 13, 20);
+		}
+		else
+		{
+			RogueScapePaper.stampSlot(g, sx, sy, 10, boss);
+		}
+	}
+
+	/** Diary masthead: ribbon hanging from the page top, serif title, italic sub, ink rule. */
+	private int drawPageTitle(Graphics2D g, Block b, int x, int y, int w)
+	{
+		RogueScapePaper.ribbon(g, x + 10, y - 6, 16, 34);
+		g.setFont(new java.awt.Font(java.awt.Font.SERIF, java.awt.Font.BOLD, 19));
+		g.setColor(RogueScapeTheme.INK);
+		g.drawString(b.text == null ? "" : b.text, x + 30, y + 16);
+		if (!b.sub.isEmpty())
+		{
+			g.setFont(new java.awt.Font(java.awt.Font.SERIF, java.awt.Font.ITALIC, 12));
+			g.setColor(RogueScapeTheme.INK_FADED);
+			g.drawString(b.sub, x + 30, y + 31);
+		}
+		RogueScapePaper.inkRule(g, x, y + 38, w);
+		return y + 46;
+	}
+
+	/** Two block columns side by side; the cursor resumes below the taller one. */
+	private int drawColumns(Graphics2D g, Block b, int x, int y, int w, int bottom)
+	{
+		int leftW = bookMode ? w / 2 - 20 : (int) (w * 0.56) - 8;
+		int rightX = bookMode ? x + w / 2 + 20 : x + leftW + 16;
+		int rightW = w - (rightX - x);
+		int ly = y;
+		for (Block child : b.left)
+		{
+			if (ly >= bottom)
+			{
+				break;
+			}
+			ly = drawBlock(g, child, x, ly, leftW, bottom);
+		}
+		int ry = y;
+		for (Block child : b.right)
+		{
+			if (ry >= bottom)
+			{
+				break;
+			}
+			ry = drawBlock(g, child, rightX, ry, rightW, bottom);
+		}
+		return Math.max(ly, ry);
+	}
+
+	/** Hourglass doodle + elapsed time. */
+	private int drawHourglass(Graphics2D g, Block b, int x, int y)
+	{
+		g.setFont(new java.awt.Font(java.awt.Font.SERIF, java.awt.Font.BOLD, 12));
+		g.setColor(RogueScapeTheme.INK);
+		g.drawString(b.text == null ? "" : b.text.toUpperCase(), x, y + 11);
+		int gy = y + 18;
+		g.setStroke(new java.awt.BasicStroke(1.6f));
+		g.setColor(RogueScapeTheme.INK_FADED);
+		g.drawLine(x + 4, gy, x + 24, gy);
+		g.drawLine(x + 4, gy + 24, x + 24, gy + 24);
+		g.drawLine(x + 4, gy, x + 24, gy + 24);
+		g.drawLine(x + 24, gy, x + 4, gy + 24);
+		g.setStroke(new java.awt.BasicStroke(1f));
+		g.setFont(new java.awt.Font(java.awt.Font.SERIF, java.awt.Font.BOLD, 16));
+		g.setColor(RogueScapeTheme.INK);
+		g.drawString(b.value == null ? "" : b.value, x + 34, gy + 17);
+		return gy + 32;
 	}
 
 	private static void drawModeTile(Graphics2D g, ModeTile tile, Rectangle r, boolean hover)

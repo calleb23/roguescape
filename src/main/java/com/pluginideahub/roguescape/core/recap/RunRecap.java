@@ -4,7 +4,7 @@ import com.pluginideahub.roguescape.core.RogueScapeRunSession;
 import com.pluginideahub.roguescape.core.RogueScapeRun;
 import com.pluginideahub.roguescape.core.RunStage;
 import com.pluginideahub.roguescape.core.RunState;
-import com.pluginideahub.roguescape.core.legality.ItemEvent;
+import com.pluginideahub.roguescape.core.item.ItemDelta;
 import com.pluginideahub.roguescape.core.relic.Relic;
 import com.pluginideahub.roguescape.core.relic.RelicEngine;
 import com.pluginideahub.roguescape.core.reward.BankItem;
@@ -26,9 +26,7 @@ public final class RunRecap
 	private final RunState state;
 	private final String completionNote;
 	private final int score;
-	private final int legalCount;
-	private final int suspiciousCount;
-	private final int illegalCount;
+	private final int itemsCollected;
 	private final List<String> stageRows;
 	private final List<String> itemRows;
 	private final List<String> relicRows;
@@ -42,9 +40,7 @@ public final class RunRecap
 		this.state = b.state;
 		this.completionNote = b.completionNote;
 		this.score = b.score;
-		this.legalCount = b.legalCount;
-		this.suspiciousCount = b.suspiciousCount;
-		this.illegalCount = b.illegalCount;
+		this.itemsCollected = b.itemsCollected;
 		this.stageRows = Collections.unmodifiableList(new ArrayList<>(b.stageRows));
 		this.itemRows = Collections.unmodifiableList(new ArrayList<>(b.itemRows));
 		this.relicRows = Collections.unmodifiableList(new ArrayList<>(b.relicRows));
@@ -57,9 +53,7 @@ public final class RunRecap
 	public RunState state() { return state; }
 	public String completionNote() { return completionNote; }
 	public int score() { return score; }
-	public int legalCount() { return legalCount; }
-	public int suspiciousCount() { return suspiciousCount; }
-	public int illegalCount() { return illegalCount; }
+	public int itemsCollected() { return itemsCollected; }
 	public List<String> stageRows() { return stageRows; }
 	public List<String> itemRows() { return itemRows; }
 	public List<String> relicRows() { return relicRows; }
@@ -75,18 +69,16 @@ public final class RunRecap
 			.state(s.runState())
 			.completionNote(extractCompletionNote(s))
 			.score(s.runScore())
-			.legalCount(run.legalCount())
-			.suspiciousCount(run.suspiciousCount())
-			.illegalCount(run.illegalCount())
+			.itemsCollected(run.itemsCollected())
 			.durationMillis(durationMillis);
 		for (RunStage stage : s.route().stages())
 		{
 			String state = stage.isCleared() ? "cleared" : stage.isEntered() ? "entered" : "pending";
 			b.stageRow(stage.id() + " | " + stage.type() + " | " + stage.name() + " | " + state);
 		}
-		for (ItemEvent e : run.itemEvents())
+		for (ItemDelta d : run.collectedItems())
 		{
-			b.itemRow(e.delta().itemName() + " x" + e.delta().quantity() + " [" + e.legality() + "]");
+			b.itemRow(d.itemName() + " x" + d.quantity());
 		}
 		if (engine != null)
 		{
@@ -129,9 +121,7 @@ public final class RunRecap
 		private RunState state = RunState.ACTIVE;
 		private String completionNote = "";
 		private int score;
-		private int legalCount;
-		private int suspiciousCount;
-		private int illegalCount;
+		private int itemsCollected;
 		private final List<String> stageRows = new ArrayList<>();
 		private final List<String> itemRows = new ArrayList<>();
 		private final List<String> relicRows = new ArrayList<>();
@@ -143,9 +133,7 @@ public final class RunRecap
 		public Builder state(RunState v) { this.state = v == null ? RunState.ACTIVE : v; return this; }
 		public Builder completionNote(String v) { this.completionNote = v == null ? "" : v; return this; }
 		public Builder score(int v) { this.score = v; return this; }
-		public Builder legalCount(int v) { this.legalCount = v; return this; }
-		public Builder suspiciousCount(int v) { this.suspiciousCount = v; return this; }
-		public Builder illegalCount(int v) { this.illegalCount = v; return this; }
+		public Builder itemsCollected(int v) { this.itemsCollected = v; return this; }
 		public Builder durationMillis(long v) { this.durationMillis = Math.max(0, v); return this; }
 		public Builder stageRow(String s) { stageRows.add(s); return this; }
 		public Builder itemRow(String s) { itemRows.add(s); return this; }
