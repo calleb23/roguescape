@@ -233,6 +233,9 @@ public class RogueScapePlugin extends Plugin
 			windowContent::customBuilderWidgetView, windowContent::handleCustomBuilderAction);
 		mouseManager.registerMouseListener(customBuilderWidgetWindow);
 		// SPIKE: real widget-based window (proves the Collection-Log-style approach).
+		// Its journal skin (paper spread, wax seals) is generated at runtime and registered
+		// as sprite overrides so widget children can reference it by sprite id.
+		clientThread.invoke(() -> com.pluginideahub.roguescape.ui.RogueScapeWidgetSkin.register(client));
 		widgetWindow = new RogueScapeWidgetWindow(client, clientThread, config::experimentalJournalTab, windowContent::windowTabs);
 		mouseManager.registerMouseListener(widgetWindow);
 		rewardOverlay = new RogueScapeRewardOverlay(
@@ -331,6 +334,7 @@ public class RogueScapePlugin extends Plugin
 			mouseManager.unregisterMouseListener(widgetWindow);
 			widgetWindow.shutDown();
 			widgetWindow = null;
+			clientThread.invoke(() -> com.pluginideahub.roguescape.ui.RogueScapeWidgetSkin.unregister(client));
 		}
 		if (navigationButton != null)
 		{

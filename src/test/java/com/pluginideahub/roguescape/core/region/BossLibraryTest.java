@@ -25,6 +25,16 @@ public class BossLibraryTest
 	}
 
 	@Test
+	public void everyBossHasAChatheadNpcId()
+	{
+		for (RoomDefinition b : BossLibrary.all())
+		{
+			assertTrue("boss " + b.id() + " should have an NPC id for its chathead", b.npcId() > 0);
+			assertEquals(b.npcId(), BossLibrary.npcIdFor(b.name()));
+		}
+	}
+
+	@Test
 	public void giantMoleHasExpectedFields()
 	{
 		RoomDefinition r = BossLibrary.giantMole();

@@ -45,22 +45,23 @@ public final class BossLibrary
 
 	public static RoomDefinition venenatis()
 	{
-		return new RoomDefinition("boss-venenatis", "Venenatis", RoomKind.BOSS, regions("10296"));
+		return new RoomDefinition("boss-venenatis", "Venenatis", RoomKind.BOSS, regions("10296"), 6610);
 	}
 
 	public static RoomDefinition vetion()
 	{
-		return new RoomDefinition("boss-vetion", "Vet'ion", RoomKind.BOSS, regions("10038"));
+		return new RoomDefinition("boss-vetion", "Vet'ion", RoomKind.BOSS, regions("10038"), 6611);
 	}
 
 	public static RoomDefinition callisto()
 	{
-		return new RoomDefinition("boss-callisto", "Callisto", RoomKind.BOSS, regions("9772"));
+		return new RoomDefinition("boss-callisto", "Callisto", RoomKind.BOSS, regions("9772"), 6609);
 	}
 
 	public static RoomDefinition barrowsBrothers()
 	{
-		return new RoomDefinition("boss-barrows-brothers", "Barrows Brothers", RoomKind.BOSS, regions("14131"));
+		// Chathead stand-in for the set: Dharok (BARROWS_DHAROK).
+		return new RoomDefinition("boss-barrows-brothers", "Barrows Brothers", RoomKind.BOSS, regions("14131"), 1673);
 	}
 
 	public static RoomDefinition dagannothKings()
@@ -70,7 +71,7 @@ public final class BossLibrary
 
 	public static RoomDefinition sarachnis()
 	{
-		return new RoomDefinition("boss-sarachnis", "Sarachnis", RoomKind.BOSS, regions("7322"));
+		return new RoomDefinition("boss-sarachnis", "Sarachnis", RoomKind.BOSS, regions("7322"), 8713);
 	}
 
 	public static RoomDefinition cerberus()
@@ -100,7 +101,7 @@ public final class BossLibrary
 
 	public static RoomDefinition alchemicalHydra()
 	{
-		return new RoomDefinition("boss-alchemical-hydra", "Alchemical Hydra", RoomKind.BOSS, regions("5536"));
+		return new RoomDefinition("boss-alchemical-hydra", "Alchemical Hydra", RoomKind.BOSS, regions("5536"), 8615);
 	}
 
 	public static RoomDefinition corporealBeast()
