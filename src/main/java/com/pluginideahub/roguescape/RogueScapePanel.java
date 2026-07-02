@@ -1306,6 +1306,13 @@ public class RogueScapePanel extends PluginPanel
 		runControlActions.removeAll();
 		boolean lobby = model == null || model.isLobby();
 
+		// The Journal opener lives here permanently — the book window's front door.
+		JButton journal = actionButton(PanelAction.TOGGLE_WINDOW, false);
+		journal.setText("Open the Journal");
+		journal.setMaximumSize(new Dimension(Integer.MAX_VALUE, 34));
+		runControlActions.add(journal);
+		runControlActions.add(vGap(4));
+
 		if (lobby)
 		{
 			JButton start = actionButton(PanelAction.START_RUN, true);
@@ -2537,6 +2544,7 @@ public class RogueScapePanel extends PluginPanel
 			case SKIP_REWARD:    return "Leave the Chest";
 			case NEXT_STAGE:     return "Turn the Page";
 			case FAIL_RUN:       return "Abandon Run";
+			case TOGGLE_WINDOW:  return "Open the Journal";
 			default:             return action.name();
 		}
 	}

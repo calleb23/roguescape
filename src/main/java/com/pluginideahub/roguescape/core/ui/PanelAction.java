@@ -17,6 +17,8 @@ public enum PanelAction
 	FAIL_RUN,
 	/** Copy the finished run's recap (markdown) to the system clipboard. */
 	EXPORT_RECAP,
+	/** Open/close the in-game journal (book) window. */
+	TOGGLE_WINDOW,
 	/** Developer-only: complete the active stage even if objective tracking is unfinished. */
 	DEV_COMPLETE_STAGE,
 	/** Developer-only: force the run to a completed state for UI testing. */

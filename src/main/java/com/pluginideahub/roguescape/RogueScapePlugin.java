@@ -594,9 +594,8 @@ public class RogueScapePlugin extends Plugin
 	public void onMenuEntryAdded(MenuEntryAdded event)
 	{
 		// Add a "RogueScape" right-click on the in-game Collection Log button (detected by its
-		// "Collection log" menu option) that opens our custom window. Gated behind the flag.
+		// "Collection log" menu option) that opens the journal window. Always available.
 		if (event != null
-			&& config.experimentalJournalTab()
 			&& event.getOption() != null
 			&& event.getOption().toLowerCase().contains("collection log"))
 		{
@@ -1142,6 +1141,9 @@ public class RogueScapePlugin extends Plugin
 				break;
 			case RESET_RUN:
 				resetToLobby();
+				break;
+			case TOGGLE_WINDOW:
+				toggleWindow();
 				break;
 		}
 		refreshSidePanel();
