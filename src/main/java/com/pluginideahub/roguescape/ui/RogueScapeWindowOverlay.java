@@ -783,10 +783,11 @@ public class RogueScapeWindowOverlay extends Overlay implements MouseListener
 		{
 			return y;
 		}
-		int cols = Math.min(5, Math.max(1, n));
-		int gap = 10;
+		boolean mini = miniRows(b);
+		int cols = mini ? 1 : Math.min(5, Math.max(1, n));
+		int gap = mini ? 4 : 10;
 		int tileW = (w - gap * (cols - 1)) / cols;
-		int tileH = Math.min(bookMode ? 64 : (tallTiles(b) ? 116 : 56), bottom - y);
+		int tileH = Math.min(mini ? 22 : (bookMode ? 64 : (tallTiles(b) ? 116 : 56)), bottom - y);
 		g.setFont(FontManager.getRunescapeBoldFont());
 		for (int i = 0; i < n; i++)
 		{
@@ -995,9 +996,10 @@ public class RogueScapeWindowOverlay extends Overlay implements MouseListener
 				case MODE_TILES:
 				{
 					int n = b.modeTiles == null ? 0 : b.modeTiles.size();
-					int cols = Math.min(5, Math.max(1, n));
+					boolean mini = miniRows(b);
+					int cols = mini ? 1 : Math.min(5, Math.max(1, n));
 					int rows = n == 0 ? 0 : (n + cols - 1) / cols;
-					h += rows * ((bookMode ? 64 : (tallTiles(b) ? 116 : 56)) + 10) + 8;
+					h += rows * ((mini ? 22 : bookMode ? 64 : (tallTiles(b) ? 116 : 56)) + (mini ? 4 : 10)) + 8;
 					break;
 				}
 				default:
@@ -1146,11 +1148,52 @@ public class RogueScapeWindowOverlay extends Overlay implements MouseListener
 		return y + cardH + 8;
 	}
 
+	/** A long vertical list of bare names (the curse catalog): ink lines, no cards. */
+	private static boolean miniRows(Block b)
+	{
+		if (b.modeTiles == null || b.modeTiles.size() < 4)
+		{
+			return false;
+		}
+		for (ModeTile t : b.modeTiles)
+		{
+			if (!t.subtitle.isEmpty() || !t.detail.isEmpty())
+			{
+				return false;
+			}
+		}
+		return true;
+	}
+
 	/** Sidebar-style horizontal row: wax seal at the left, title + subtitle left-aligned,
 	 *  detail right-aligned — the journal's contract-row look. */
 	private static void drawModeRow(Graphics2D g, ModeTile tile, Rectangle r, boolean hover)
 	{
 		Color c = tile.color;
+		if (r.height <= 32)
+		{
+			// Mini list line: tiny seal + ink name; picking it draws the hand-drawn circle.
+			RogueScapePaper.waxSeal(g, r.x + 8, r.y + r.height / 2, 6, c);
+			g.setFont(new java.awt.Font(java.awt.Font.SERIF, hover ? java.awt.Font.BOLD : java.awt.Font.PLAIN, 13));
+			FontMetrics mfm = g.getFontMetrics();
+			String name = clipTo(ascii(tile.title), mfm, r.width - 26);
+			g.setColor(RogueScapeTheme.INK);
+			g.drawString(name, r.x + 20, r.y + r.height / 2 + 5);
+			if (tile.selected)
+			{
+				// The hand-drawn circle: two loose, slightly rotated ink ellipses.
+				int tw = mfm.stringWidth(name);
+				Graphics2D c2 = (Graphics2D) g.create();
+				c2.setStroke(new java.awt.BasicStroke(1.8f));
+				c2.setColor(new Color(0xB0, 0x32, 0x24, 170));
+				c2.rotate(Math.toRadians(-2), r.x + 20 + tw / 2, r.y + r.height / 2);
+				c2.drawOval(r.x + 14, r.y + 1, tw + 14, r.height - 3);
+				c2.rotate(Math.toRadians(3.5), r.x + 20 + tw / 2, r.y + r.height / 2);
+				c2.drawOval(r.x + 12, r.y + 2, tw + 17, r.height - 5);
+				c2.dispose();
+			}
+			return;
+		}
 		RogueScapePaper.card(g, r.x, r.y, r.width, r.height, tile.selected);
 		if (tile.selected || hover)
 		{

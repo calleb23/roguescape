@@ -188,7 +188,8 @@ public final class SidePanelViewModel
 	 */
 	public static JournalSpread contractSpread(RunMode mode, String runTitle, String seed,
 		RunBriefing briefing, String briefingError,
-		String routeName, int routeIndex, int routeTotal)
+		String routeName, int routeIndex, int routeTotal,
+		java.util.Set<com.pluginideahub.roguescape.core.restriction.Curse> selectedCurses)
 	{
 		List<JournalSpread.Block> left = new ArrayList<>();
 		left.add(JournalSpread.Block.heading("Pick Your Contract"));
@@ -225,33 +226,44 @@ public final class SidePanelViewModel
 			return new JournalSpread("The Contract", "choose, sign, and stamp", left, right);
 		}
 
-		// One route at a time, browsed with the arrows pinned at the page bottom.
-		right.add(JournalSpread.Block.heading((routeName == null || routeName.isEmpty() ? "The Route" : routeName)
-			+ "  — No. " + (routeIndex + 1) + " of " + Math.max(1, routeTotal)));
+		// Route | Curses side by side (the start-ui sketch): the route stays terse — one line per
+		// room, nothing else; the curse catalog is picked by clicking (hand-drawn circle marks it).
+		List<JournalSpread.Block> routeCol = new ArrayList<>();
+		routeCol.add(JournalSpread.Block.heading((routeName == null || routeName.isEmpty() ? "The Route" : routeName)));
+		routeCol.add(JournalSpread.Block.note("No. " + (routeIndex + 1) + " of " + Math.max(1, routeTotal),
+			JournalSpread.Tone.MUTED));
 		if (briefing == null)
 		{
-			right.add(JournalSpread.Block.text(
-				"Could not preview this route" + (briefingError == null || briefingError.isEmpty()
-					? "." : ": " + briefingError), JournalSpread.Tone.NEGATIVE));
+			routeCol.add(JournalSpread.Block.note(
+				"No preview" + (briefingError == null || briefingError.isEmpty() ? "." : ": " + briefingError),
+				JournalSpread.Tone.NEGATIVE));
 		}
 		else
 		{
 			for (RunBriefing.RoomLine room : briefing.rooms())
 			{
-				right.add(JournalSpread.Block.text(room.index() + ". " + room.name() + "  [" + room.kindLabel() + "]",
-					room.bossStage() ? JournalSpread.Tone.NEGATIVE : JournalSpread.Tone.GOLD));
-				right.add(JournalSpread.Block.note("   " + room.collectLabel() + " — clear by "
-					+ room.gatingLabel(), JournalSpread.Tone.MUTED));
-			}
-			right.add(JournalSpread.Block.gap());
-			right.add(JournalSpread.Block.note("Loadout: " + briefing.loadoutLabel() + "  ·  "
-				+ briefing.bankAccessLabel(), JournalSpread.Tone.INK));
-			right.add(JournalSpread.Block.note("WIN: " + briefing.winCondition(), JournalSpread.Tone.POSITIVE));
-			for (String lose : briefing.loseConditions())
-			{
-				right.add(JournalSpread.Block.note("LOSE: " + lose, JournalSpread.Tone.NEGATIVE));
+				routeCol.add(JournalSpread.Block.note(room.index() + ". " + room.name(),
+					room.bossStage() ? JournalSpread.Tone.NEGATIVE : JournalSpread.Tone.INK));
+				if (!room.bossStage())
+				{
+					routeCol.add(JournalSpread.Block.note("    " + room.kindLabel(), JournalSpread.Tone.MUTED));
+				}
 			}
 		}
+
+		List<JournalSpread.Block> curseCol = new ArrayList<>();
+		curseCol.add(JournalSpread.Block.heading("Curses"));
+		List<JournalSpread.Choice> curseRows = new ArrayList<>();
+		for (com.pluginideahub.roguescape.core.restriction.Curse curse
+			: com.pluginideahub.roguescape.core.restriction.Curse.values())
+		{
+			boolean picked = selectedCurses != null && selectedCurses.contains(curse);
+			curseRows.add(new JournalSpread.Choice(curse.displayName(), "", "",
+				JournalSpread.Tone.NEGATIVE, picked, "curse:" + curse.name()));
+		}
+		curseCol.add(JournalSpread.Block.choices(curseRows));
+
+		right.add(JournalSpread.Block.columns(routeCol, curseCol));
 		right.add(JournalSpread.Block.fill());
 		List<JournalSpread.Choice> arrows = new ArrayList<>();
 		arrows.add(new JournalSpread.Choice("< Prev", "", "", JournalSpread.Tone.MUTED, false, "routes-page:prev"));
@@ -582,6 +594,10 @@ public final class SidePanelViewModel
 		for (RunUnlock unlock : run.unlocks())
 		{
 			b.upgrade(unlock.displayRow());
+		}
+		for (com.pluginideahub.roguescape.core.restriction.Curse curse : run.curses())
+		{
+			b.curseName(curse.displayName());
 		}
 		for (Relic relic : run.heldRelics())
 		{

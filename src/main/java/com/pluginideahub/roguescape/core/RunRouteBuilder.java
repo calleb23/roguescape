@@ -233,12 +233,12 @@ public final class RunRouteBuilder
 		}
 		while (selected.size() < roomCount)
 		{
-			RoomDefinition combat = pickRoom(RoomKind.COMBAT, selected, random);
-			if (combat == null)
+			RoomDefinition weapon = pickRoom(RoomKind.WEAPON, selected, random);
+			if (weapon == null)
 			{
 				break;
 			}
-			selected.add(combat);
+			selected.add(weapon);
 		}
 		while (selected.size() < roomCount)
 		{
@@ -254,15 +254,11 @@ public final class RunRouteBuilder
 
 	private static List<RoomKind> desiredRoomKinds(int roomCount)
 	{
+		RoomKind[] cycle = {RoomKind.WEAPON, RoomKind.SUPPLY, RoomKind.ARMOUR, RoomKind.CRAFTING};
 		List<RoomKind> order = new ArrayList<>();
-		if (roomCount >= 1) order.add(RoomKind.REGION);
-		if (roomCount >= 2) order.add(RoomKind.SUPPLY);
-		if (roomCount >= 3) order.add(RoomKind.COMBAT);
-		if (roomCount >= 4) order.add(RoomKind.ARMOUR);
-		if (roomCount >= 5) order.add(RoomKind.SKILLING);
-		while (order.size() < roomCount)
+		for (int i = 0; i < roomCount; i++)
 		{
-			order.add(RoomKind.SHOP);
+			order.add(cycle[i % cycle.length]);
 		}
 		return order;
 	}
@@ -306,9 +302,9 @@ public final class RunRouteBuilder
 		RoomKind kind = roomKind != null ? roomKind : room.kind();
 		RunStage stage = session.addStage(stageId, RunStageType.ROOM, room.name(), "Room: " + room.name(),
 			objectiveLabel(room, kind), objectiveKind(kind), requiredItemGains(kind));
-		if (kind == RoomKind.SKILLING)
+		if (kind == RoomKind.CRAFTING)
 		{
-			stage.setRoomTask(new RoomTask("Gain skilling XP in " + room.name(), "", 1));
+			stage.setRoomTask(new RoomTask("Craft an item in " + room.name(), "", 1));
 		}
 		run.setRegionRule(stageId, new StageRegionRule(kind, room.regionIds(), true));
 	}
@@ -366,21 +362,15 @@ public final class RunRouteBuilder
 		RoomKind k = kind != null ? kind : room.kind();
 		switch (k)
 		{
-			case SHOP:
-				return "Buy or obtain one item in " + room.name();
-			case COMBAT:
-				return "Win one combat drop in " + room.name();
-			case SUPPLY:
-				return "Collect two supplies in " + room.name();
-			case SKILLING:
-				return "Gather two resources in " + room.name();
 			case WEAPON:
 				return "Find a weapon upgrade in " + room.name();
 			case ARMOUR:
 				return "Find an armour upgrade in " + room.name();
-			case REGION:
+			case CRAFTING:
+				return "Craft an upgrade in " + room.name();
+			case SUPPLY:
 			default:
-				return "Find one upgrade in " + room.name();
+				return "Collect supplies in " + room.name();
 		}
 	}
 
@@ -391,18 +381,12 @@ public final class RunRouteBuilder
 
 	private static int requiredItemGains(RoomKind kind)
 	{
-		switch (kind != null ? kind : RoomKind.REGION)
+		switch (kind != null ? kind : RoomKind.SUPPLY)
 		{
 			case SUPPLY:
-			case SKILLING:
 				return 2;
 			case BOSS:
 				return 0;
-			case REGION:
-			case COMBAT:
-			case SHOP:
-			case WEAPON:
-			case ARMOUR:
 			default:
 				return 1;
 		}
@@ -415,37 +399,29 @@ public final class RunRouteBuilder
 
 	private static RunObjectiveKind objectiveKind(RoomKind kind)
 	{
-		switch (kind != null ? kind : RoomKind.REGION)
+		switch (kind != null ? kind : RoomKind.SUPPLY)
 		{
-			case SHOP:
-				return RunObjectiveKind.SHOP_PURCHASE;
-			case COMBAT:
-				return RunObjectiveKind.COMBAT_DROP;
-			case SUPPLY:
-				return RunObjectiveKind.SUPPLY_ITEMS;
-			case SKILLING:
-				return RunObjectiveKind.SKILLING_RESOURCE;
 			case WEAPON:
 				return RunObjectiveKind.WEAPON_UPGRADE;
 			case ARMOUR:
 				return RunObjectiveKind.ARMOUR_UPGRADE;
+			case CRAFTING:
+				return RunObjectiveKind.SKILLING_RESOURCE;
 			case BOSS:
 				return RunObjectiveKind.BOSS_DEFEAT;
-			case REGION:
+			case SUPPLY:
 			default:
-				return RunObjectiveKind.ANY_ITEM;
+				return RunObjectiveKind.SUPPLY_ITEMS;
 		}
 	}
 
 	private static RoomKind explicitRoomKind(RoomDefinition def, String allowance)
 	{
 		String value = allowance == null ? "" : allowance.trim().toLowerCase();
-		if ("supply".equals(value)) return RoomKind.SUPPLY;
+		if ("supply".equals(value) || "shopping".equals(value) || "shop".equals(value)) return RoomKind.SUPPLY;
 		if ("armour".equals(value) || "armor".equals(value)) return RoomKind.ARMOUR;
 		if ("weapons".equals(value) || "weapon".equals(value)) return RoomKind.WEAPON;
-		if ("skilling".equals(value)) return RoomKind.SKILLING;
-		if ("shopping".equals(value) || "shop".equals(value)) return RoomKind.SHOP;
-		if ("all".equals(value)) return RoomKind.REGION;
-		return def == null ? RoomKind.REGION : def.kind();
+		if ("crafting".equals(value) || "skilling".equals(value)) return RoomKind.CRAFTING;
+		return def == null ? RoomKind.SUPPLY : def.kind();
 	}
 }

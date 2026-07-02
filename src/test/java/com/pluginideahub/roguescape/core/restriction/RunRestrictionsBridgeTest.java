@@ -23,7 +23,7 @@ public class RunRestrictionsBridgeTest
 		base.addStage("R1", RunStageType.ROOM, "Lumbridge", "");
 		base.enterStage("R1");
 		RogueScapeRun run = RogueScapeRun.wrap(base);
-		run.setRegionRule("R1", new StageRegionRule(RoomKind.REGION, Collections.singleton("lumbridge"), true));
+		run.setRegionRule("R1", new StageRegionRule(RoomKind.SUPPLY, Collections.singleton("lumbridge"), true));
 		return run;
 	}
 

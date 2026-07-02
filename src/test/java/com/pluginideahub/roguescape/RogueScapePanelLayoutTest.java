@@ -159,7 +159,7 @@ public class RogueScapePanelLayoutTest
 	{
 		RogueScapePanel panel = newPanel();
 
-		panel.addFirstRoomOfKind(com.pluginideahub.roguescape.core.region.RoomKind.REGION);
+		panel.addFirstRoomOfKind(com.pluginideahub.roguescape.core.region.RoomKind.WEAPON);
 		panel.addFirstRoomOfKind(com.pluginideahub.roguescape.core.region.RoomKind.SUPPLY);
 		assertEquals(2, panel.selectedRoomIds().size());
 		assertEquals(2, panel.selectedRoomLabels().size());
@@ -183,12 +183,12 @@ public class RogueScapePanelLayoutTest
 		assertEquals("Rewarded", panel.customBuilderGameMode());
 		assertEquals("Low Gear", panel.customBuilderLoadout());
 		assertTrue(panel.selectedRoomLabels().get(0).contains("[Supply]"));
-		assertTrue(panel.selectedRoomLabels().get(1).contains("[Weapons]"));
+		assertTrue(panel.selectedRoomLabels().get(1).contains("[Weapon]"));
 
 		panel.moveSelectedRouteUp();
-		assertTrue(panel.selectedRoomLabels().get(0).contains("[Weapons]"));
+		assertTrue(panel.selectedRoomLabels().get(0).contains("[Weapon]"));
 		assertTrue(panel.customSeedPreview().contains("loadout=Low Gear"));
-		assertTrue(panel.customSeedPreview().contains(":Weapons"));
+		assertTrue(panel.customSeedPreview().contains(":Weapon"));
 	}
 
 	@Test
@@ -197,7 +197,7 @@ public class RogueScapePanelLayoutTest
 		RogueScapePanel panel = newPanel();
 
 		assertEquals("Lumbridge Swamp", panel.customSelectedRoomLabel());
-		assertEquals("Supply", panel.customSelectedAllowanceLabel());
+		assertEquals("Weapon", panel.customSelectedAllowanceLabel());
 		panel.customNextRoom();
 		panel.customNextAllowance();
 		panel.addSelectedCustomRoom();
@@ -219,13 +219,13 @@ public class RogueScapePanelLayoutTest
 		RogueScapePanel panel = newPanel();
 
 		panel.selectCustomRoomIndex(4);
-		panel.selectCustomAllowanceIndex(2);
+		panel.selectCustomAllowanceIndex(0);
 		panel.addSelectedCustomRoom();
 
 		assertEquals("Varrock East", panel.customSelectedRoomLabel());
-		assertEquals("Weapons", panel.customSelectedAllowanceLabel());
+		assertEquals("Weapon", panel.customSelectedAllowanceLabel());
 		assertTrue(panel.selectedRoomLabels().get(0).contains("Varrock East"));
-		assertTrue(panel.selectedRoomLabels().get(0).contains("[Weapons]"));
+		assertTrue(panel.selectedRoomLabels().get(0).contains("[Weapon]"));
 
 		panel.selectCustomBossIndex(1);
 		panel.addSelectedCustomBoss();

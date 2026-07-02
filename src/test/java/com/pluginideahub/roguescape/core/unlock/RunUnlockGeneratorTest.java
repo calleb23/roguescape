@@ -34,12 +34,9 @@ public class RunUnlockGeneratorTest
 	public void roomKindMapsToUnlockType()
 	{
 		assertEquals(RunUnlockType.POTION, RunUnlockGenerator.forClearedStage(roomStage(), rule(RoomKind.SUPPLY)).type());
-		assertEquals(RunUnlockType.BANK, RunUnlockGenerator.forClearedStage(roomStage(), rule(RoomKind.SKILLING)).type());
-		assertEquals(RunUnlockType.TRADE, RunUnlockGenerator.forClearedStage(roomStage(), rule(RoomKind.SHOP)).type());
+		assertEquals(RunUnlockType.BANK, RunUnlockGenerator.forClearedStage(roomStage(), rule(RoomKind.CRAFTING)).type());
 		assertEquals(RunUnlockType.PRAYER, RunUnlockGenerator.forClearedStage(roomStage(), rule(RoomKind.WEAPON)).type());
-		assertEquals(RunUnlockType.PRAYER, RunUnlockGenerator.forClearedStage(roomStage(), rule(RoomKind.COMBAT)).type());
 		assertEquals(RunUnlockType.INVENTORY, RunUnlockGenerator.forClearedStage(roomStage(), rule(RoomKind.ARMOUR)).type());
-		assertEquals(RunUnlockType.INVENTORY, RunUnlockGenerator.forClearedStage(roomStage(), rule(RoomKind.REGION)).type());
 	}
 
 	@Test

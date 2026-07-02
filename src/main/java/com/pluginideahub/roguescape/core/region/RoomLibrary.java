@@ -28,7 +28,7 @@ public final class RoomLibrary
 
 	public static RoomDefinition lumbridgeSwamp()
 	{
-		return new RoomDefinition("lumbridge-swamp", "Lumbridge Swamp", RoomKind.REGION, regions("12851", "12850", "12849"));
+		return new RoomDefinition("lumbridge-swamp", "Lumbridge Swamp", RoomKind.SUPPLY, regions("12851", "12850", "12849"));
 	}
 
 	public static RoomDefinition draynorVillage()
@@ -43,7 +43,7 @@ public final class RoomLibrary
 
 	public static RoomDefinition edgeville()
 	{
-		return new RoomDefinition("edgeville", "Edgeville", RoomKind.SHOP, regions("12342"));
+		return new RoomDefinition("edgeville", "Edgeville", RoomKind.CRAFTING, regions("12342"));
 	}
 
 	public static RoomDefinition varrockEast()
@@ -53,12 +53,12 @@ public final class RoomLibrary
 
 	public static RoomDefinition varrockWest()
 	{
-		return new RoomDefinition("varrock-west", "Varrock West", RoomKind.ARMOUR, regions("12853"));
+		return new RoomDefinition("varrock-west", "Varrock West", RoomKind.CRAFTING, regions("12853"));
 	}
 
 	public static RoomDefinition grandExchange()
 	{
-		return new RoomDefinition("grand-exchange", "Grand Exchange", RoomKind.SHOP, regions("12598"));
+		return new RoomDefinition("grand-exchange", "Grand Exchange", RoomKind.SUPPLY, regions("12598"));
 	}
 
 	public static RoomDefinition falador()
@@ -73,7 +73,7 @@ public final class RoomLibrary
 
 	public static RoomDefinition rimmington()
 	{
-		return new RoomDefinition("rimmington", "Rimmington", RoomKind.SKILLING, regions("11564"));
+		return new RoomDefinition("rimmington", "Rimmington", RoomKind.CRAFTING, regions("11564"));
 	}
 
 	public static RoomDefinition karamjaJungle()
@@ -88,17 +88,17 @@ public final class RoomLibrary
 
 	public static RoomDefinition shantayPass()
 	{
-		return new RoomDefinition("shantay-pass", "Shantay Pass", RoomKind.SHOP, regions("13104"));
+		return new RoomDefinition("shantay-pass", "Shantay Pass", RoomKind.SUPPLY, regions("13104"));
 	}
 
 	public static RoomDefinition ardougneMarket()
 	{
-		return new RoomDefinition("ardougne-market", "Ardougne Market", RoomKind.SHOP, regions("10291"));
+		return new RoomDefinition("ardougne-market", "Ardougne Market", RoomKind.SUPPLY, regions("10291"));
 	}
 
 	public static RoomDefinition yanille()
 	{
-		return new RoomDefinition("yanille", "Yanille", RoomKind.SHOP, regions("10288"));
+		return new RoomDefinition("yanille", "Yanille", RoomKind.SUPPLY, regions("10288"));
 	}
 
 	public static RoomDefinition catherby()
@@ -108,12 +108,12 @@ public final class RoomLibrary
 
 	public static RoomDefinition seersVillage()
 	{
-		return new RoomDefinition("seers-village", "Seers Village", RoomKind.REGION, regions("10807"));
+		return new RoomDefinition("seers-village", "Seers Village", RoomKind.SUPPLY, regions("10807"));
 	}
 
 	public static RoomDefinition camelotCastle()
 	{
-		return new RoomDefinition("camelot-castle", "Camelot Castle", RoomKind.REGION, regions("11062"));
+		return new RoomDefinition("camelot-castle", "Camelot Castle", RoomKind.ARMOUR, regions("11062"));
 	}
 
 	public static RoomDefinition relekka()
@@ -123,17 +123,17 @@ public final class RoomLibrary
 
 	public static RoomDefinition piscatoris()
 	{
-		return new RoomDefinition("piscatoris", "Piscatoris", RoomKind.SKILLING, regions("9273"));
+		return new RoomDefinition("piscatoris", "Piscatoris", RoomKind.SUPPLY, regions("9273"));
 	}
 
 	public static RoomDefinition slayerTower()
 	{
-		return new RoomDefinition("slayer-tower", "Slayer Tower", RoomKind.COMBAT, regions("13623"));
+		return new RoomDefinition("slayer-tower", "Slayer Tower", RoomKind.WEAPON, regions("13623"));
 	}
 
 	public static RoomDefinition canifis()
 	{
-		return new RoomDefinition("canifis", "Canifis", RoomKind.REGION, regions("13878"));
+		return new RoomDefinition("canifis", "Canifis", RoomKind.ARMOUR, regions("13878"));
 	}
 
 	public static RoomDefinition mortMyreSwamp()
@@ -148,17 +148,17 @@ public final class RoomLibrary
 
 	public static RoomDefinition edgevilleDungeon()
 	{
-		return new RoomDefinition("edgeville-dungeon", "Edgeville Dungeon", RoomKind.COMBAT, regions("12442"));
+		return new RoomDefinition("edgeville-dungeon", "Edgeville Dungeon", RoomKind.WEAPON, regions("12442"));
 	}
 
 	public static RoomDefinition wildernessLevel1To10()
 	{
-		return new RoomDefinition("wilderness-level-1-10", "Wilderness Level 1-10", RoomKind.COMBAT, regions("12604", "12603"));
+		return new RoomDefinition("wilderness-level-1-10", "Wilderness Level 1-10", RoomKind.WEAPON, regions("12604", "12603"));
 	}
 
 	public static RoomDefinition dwarvenMine()
 	{
-		return new RoomDefinition("dwarven-mine", "Dwarven Mine", RoomKind.SKILLING, regions("12441"));
+		return new RoomDefinition("dwarven-mine", "Dwarven Mine", RoomKind.SUPPLY, regions("12441"));
 	}
 
 	public static RoomDefinition taverley()

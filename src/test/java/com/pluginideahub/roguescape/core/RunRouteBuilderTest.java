@@ -72,31 +72,35 @@ public class RunRouteBuilderTest
 	}
 
 	@Test
-	public void shopObjectivesRequireShopPurchaseSignal()
+	public void craftingObjectivesRequireCraftedOrGatheredSignal()
 	{
 		RogueScapeRunSession session = freshSession();
 		RogueScapeRun run = RogueScapeRun.wrap(session);
 		RunRouteBuilder.buildExplicitRoute(Arrays.asList("edgeville"), "", session, run);
 		RunStage stage = session.route().stages().get(0);
 
-		assertEquals(RunObjectiveKind.SHOP_PURCHASE, stage.objectiveKind());
+		assertEquals(RunObjectiveKind.SKILLING_RESOURCE, stage.objectiveKind());
 		run.moveToRegion("12342");
-		run.applyItemDelta("Tinderbox", 1, com.pluginideahub.roguescape.core.item.ProvenanceHint.OBSERVED_LOOT);
+		run.applyItemDelta("Rune scimitar", 1, com.pluginideahub.roguescape.core.item.ProvenanceHint.OBSERVED_LOOT);
 		assertEquals(0, stage.itemGains());
 
-		run.applyItemDelta("Tinderbox", 1, com.pluginideahub.roguescape.core.item.ProvenanceHint.OBSERVED_SHOP_PURCHASE);
+		run.applyItemDelta("Iron scimitar", 1, com.pluginideahub.roguescape.core.item.ProvenanceHint.OBSERVED_CRAFTED);
+		assertEquals(1, stage.itemGains());
+
+		// Crafting rooms carry a room task: crafting XP completes the objective.
+		assertTrue(run.recordStatChanged("Smithing", 10));
 		assertTrue(stage.objectiveComplete());
 	}
 
 	@Test
-	public void skillingObjectivesRequireGatheredOrSkillingItem()
+	public void supplyRoomsCountRawMaterialsAsSupplies()
 	{
 		RogueScapeRunSession session = freshSession();
 		RogueScapeRun run = RogueScapeRun.wrap(session);
 		RunRouteBuilder.buildExplicitRoute(Arrays.asList("dwarven-mine"), "", session, run);
 		RunStage stage = session.route().stages().get(0);
 
-		assertEquals(RunObjectiveKind.SKILLING_RESOURCE, stage.objectiveKind());
+		assertEquals(RunObjectiveKind.SUPPLY_ITEMS, stage.objectiveKind());
 		run.moveToRegion("12441");
 		run.applyItemDelta("Rune scimitar", 1, com.pluginideahub.roguescape.core.item.ProvenanceHint.OBSERVED_LOOT);
 		assertEquals(0, stage.itemGains());
@@ -106,19 +110,19 @@ public class RunRouteBuilderTest
 	}
 
 	@Test
-	public void combatObjectivesRequireLootSignal()
+	public void combatFlavouredRoomsAreWeaponRooms()
 	{
 		RogueScapeRunSession session = freshSession();
 		RogueScapeRun run = RogueScapeRun.wrap(session);
 		RunRouteBuilder.buildExplicitRoute(Arrays.asList("edgeville-dungeon"), "", session, run);
 		RunStage stage = session.route().stages().get(0);
 
-		assertEquals(RunObjectiveKind.COMBAT_DROP, stage.objectiveKind());
+		assertEquals(RunObjectiveKind.WEAPON_UPGRADE, stage.objectiveKind());
 		run.moveToRegion("12442");
-		run.applyItemDelta("Bones", 1, com.pluginideahub.roguescape.core.item.ProvenanceHint.OBSERVED_GATHERED);
+		run.applyItemDelta("Bones", 1, com.pluginideahub.roguescape.core.item.ProvenanceHint.OBSERVED_LOOT);
 		assertEquals(0, stage.itemGains());
 
-		run.applyItemDelta("Bones", 1, com.pluginideahub.roguescape.core.item.ProvenanceHint.OBSERVED_LOOT);
+		run.applyItemDelta("Rune scimitar", 1, com.pluginideahub.roguescape.core.item.ProvenanceHint.OBSERVED_LOOT);
 		assertTrue(stage.objectiveComplete());
 	}
 
@@ -144,11 +148,11 @@ public class RunRouteBuilderTest
 	{
 		RogueScapeRunSession session = freshSession();
 		RogueScapeRun run = RogueScapeRun.wrap(session);
-		RunRouteBuilder.buildExplicitRoute(Arrays.asList("varrock-west"), "", session, run);
+		RunRouteBuilder.buildExplicitRoute(Arrays.asList("falador"), "", session, run);
 		RunStage stage = session.route().stages().get(0);
 
 		assertEquals(RunObjectiveKind.ARMOUR_UPGRADE, stage.objectiveKind());
-		run.moveToRegion("12853");
+		run.moveToRegion("11828");
 		run.applyItemDelta("Iron scimitar", 1, com.pluginideahub.roguescape.core.item.ProvenanceHint.OBSERVED_LOOT);
 		assertEquals(0, stage.itemGains());
 
@@ -208,9 +212,9 @@ public class RunRouteBuilderTest
 
 		RunRouteBuilder.buildRoute(RunMode.SEEDED_RACE, RunPreset.UNSPECIFIED, "balanced", session, run);
 
-		assertHasRoomKind(run, session, RoomKind.REGION);
+		assertHasRoomKind(run, session, RoomKind.WEAPON);
 		assertHasRoomKind(run, session, RoomKind.SUPPLY);
-		assertHasRoomKind(run, session, RoomKind.COMBAT);
+		assertHasRoomKind(run, session, RoomKind.ARMOUR);
 	}
 
 	@Test
@@ -431,8 +435,9 @@ public class RunRouteBuilderTest
 		assertEquals(RunObjectiveKind.SUPPLY_ITEMS, supply.objectiveKind());
 		assertEquals(2, supply.requiredItemGains());
 
-		assertEquals(RoomKind.SHOP, run.regionPolicy().ruleFor(shopping.id()).roomKind());
-		assertEquals(RunObjectiveKind.SHOP_PURCHASE, shopping.objectiveKind());
+		// Legacy "Shopping" allowance collapses into SUPPLY.
+		assertEquals(RoomKind.SUPPLY, run.regionPolicy().ruleFor(shopping.id()).roomKind());
+		assertEquals(RunObjectiveKind.SUPPLY_ITEMS, shopping.objectiveKind());
 	}
 
 	@Test
@@ -444,17 +449,18 @@ public class RunRouteBuilderTest
 		RunRouteBuilder.buildExplicitRoute(
 			Arrays.asList("lumbridge-swamp", "draynor-village", "barbarian-village",
 				"edgeville", "varrock-west", "rimmington"),
-			Arrays.asList("All", "Supply", "Weapons", "Shopping", "Armour", "Skilling"),
+			Arrays.asList("All", "Supply", "Weapon", "Shopping", "Armour", "Crafting"),
 			"",
 			session,
 			run);
 
-		assertCustomAllowance(session, run, 0, RoomKind.REGION, RunObjectiveKind.ANY_ITEM, 1);
+		// "All" falls back to the room's own kind (lumbridge-swamp is a supply room).
+		assertCustomAllowance(session, run, 0, RoomKind.SUPPLY, RunObjectiveKind.SUPPLY_ITEMS, 2);
 		assertCustomAllowance(session, run, 1, RoomKind.SUPPLY, RunObjectiveKind.SUPPLY_ITEMS, 2);
 		assertCustomAllowance(session, run, 2, RoomKind.WEAPON, RunObjectiveKind.WEAPON_UPGRADE, 1);
-		assertCustomAllowance(session, run, 3, RoomKind.SHOP, RunObjectiveKind.SHOP_PURCHASE, 1);
+		assertCustomAllowance(session, run, 3, RoomKind.SUPPLY, RunObjectiveKind.SUPPLY_ITEMS, 2);
 		assertCustomAllowance(session, run, 4, RoomKind.ARMOUR, RunObjectiveKind.ARMOUR_UPGRADE, 1);
-		assertCustomAllowance(session, run, 5, RoomKind.SKILLING, RunObjectiveKind.SKILLING_RESOURCE, 2);
+		assertCustomAllowance(session, run, 5, RoomKind.CRAFTING, RunObjectiveKind.SKILLING_RESOURCE, 1);
 	}
 
 	@Test

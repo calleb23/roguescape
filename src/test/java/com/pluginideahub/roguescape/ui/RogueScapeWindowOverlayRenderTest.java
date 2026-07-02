@@ -108,7 +108,9 @@ public class RogueScapeWindowOverlayRenderTest
 			new RogueScapeWindowOverlay.Tab("THE CONTRACT", JournalSpreadBlocks.render(
 				SidePanelViewModel.contractSpread(com.pluginideahub.roguescape.core.RunMode.FRESH_SOURCE,
 					"Dungeon Crawl Run", "", briefing, "",
-					com.pluginideahub.roguescape.core.seed.RouteNames.smartName("crawl-route-2"), 1, 12))));
+					com.pluginideahub.roguescape.core.seed.RouteNames.smartName("crawl-route-2"), 1, 12,
+					java.util.EnumSet.of(com.pluginideahub.roguescape.core.restriction.Curse.FAMINE,
+						com.pluginideahub.roguescape.core.restriction.Curse.ANCHORED)))));
 		writePng(tabs, 0, new File(dir, "window-contract-book.png"), true);
 		assertTrue(new File(dir, "window-contract-book.png").exists());
 	}

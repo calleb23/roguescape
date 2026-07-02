@@ -37,7 +37,8 @@ public class JournalSpreadTest
 				"rat-king-42", "Naked", false, 0);
 		JournalSpread spread = SidePanelViewModel.contractSpread(
 			com.pluginideahub.roguescape.core.RunMode.FRESH_SOURCE, "Dungeon Crawl Run", "",
-			briefing, "", "The Rat King's Road", 1, 12);
+			briefing, "", "The Rat King's Road", 1, 12,
+			java.util.EnumSet.of(com.pluginideahub.roguescape.core.restriction.Curse.FAMINE));
 
 		assertTrue(spread.title().contains("Contract"));
 		// Left: the mode contracts as single-choice rows (Dungeon Crawl selected) and Begin.
@@ -47,15 +48,24 @@ public class JournalSpreadTest
 		assertTrue("Begin stamp on the left page", spread.left().stream().anyMatch(b ->
 			b.kind() == JournalSpread.Block.Kind.CHOICES
 				&& b.choices().stream().anyMatch(c -> c.actionId().equals("start-run"))));
-		// Right: one named route at a time, with the browse arrows.
-		assertTrue("the route heading names the route and its number", spread.right().stream().anyMatch(b ->
-			b.kind() == JournalSpread.Block.Kind.HEADING
-				&& b.text().contains("The Rat King's Road") && b.text().contains("No. 2 of 12")));
+		// Right: Route | Curses side by side, browse arrows at the page bottom.
+		JournalSpread.Block cols = spread.right().stream()
+			.filter(b -> b.kind() == JournalSpread.Block.Kind.COLUMNS)
+			.findFirst().orElse(null);
+		assertNotNull("Route|Curses columns present", cols);
+		assertTrue("the route heading names the route", cols.colLeft().stream().anyMatch(b ->
+			b.kind() == JournalSpread.Block.Kind.HEADING && b.text().contains("The Rat King's Road")));
+		assertTrue("route position is a terse note", cols.colLeft().stream().anyMatch(b ->
+			b.text().equals("No. 2 of 12")));
+		assertTrue("the picked curse is circled", cols.colRight().stream().anyMatch(b ->
+			b.kind() == JournalSpread.Block.Kind.CHOICES && b.choices().stream().anyMatch(c ->
+				c.actionId().equals("curse:FAMINE") && c.isSelected())));
+		assertTrue("unpicked curses stay pickable", cols.colRight().stream().anyMatch(b ->
+			b.kind() == JournalSpread.Block.Kind.CHOICES && b.choices().stream().anyMatch(c ->
+				c.actionId().equals("curse:ANCHORED") && !c.isSelected())));
 		assertTrue("browse arrows on the right page", spread.right().stream().anyMatch(b ->
 			b.kind() == JournalSpread.Block.Kind.CHOICES && b.choices().stream().anyMatch(c ->
 				c.actionId().equals("routes-page:next"))));
-		assertTrue("win condition on the right page", spread.right().stream().anyMatch(b ->
-			b.text().startsWith("WIN:")));
 	}
 
 	@Test
@@ -63,8 +73,12 @@ public class JournalSpreadTest
 	{
 		JournalSpread spread = SidePanelViewModel.contractSpread(
 			com.pluginideahub.roguescape.core.RunMode.FRESH_SOURCE, "Run", "", null, "no route",
-			"The Iron Toll", 0, 12);
-		assertTrue(spread.right().stream().anyMatch(b ->
+			"The Iron Toll", 0, 12, java.util.Collections.emptySet());
+		JournalSpread.Block cols = spread.right().stream()
+			.filter(b -> b.kind() == JournalSpread.Block.Kind.COLUMNS)
+			.findFirst().orElse(null);
+		assertNotNull(cols);
+		assertTrue(cols.colLeft().stream().anyMatch(b ->
 			b.tone() == JournalSpread.Tone.NEGATIVE && b.text().contains("no route")));
 	}
 

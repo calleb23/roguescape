@@ -77,7 +77,7 @@ public class ViewModelTest
 		base.addStage("R1", RunStageType.ROOM, "Lumbridge", "", "Find one permitted upgrade", 1);
 		base.enterStage("R1");
 		RogueScapeRun run = RogueScapeRun.wrap(base);
-		run.setRegionRule("R1", new StageRegionRule(RoomKind.REGION, Collections.singleton("lumbridge"), true));
+		run.setRegionRule("R1", new StageRegionRule(RoomKind.SUPPLY, Collections.singleton("lumbridge"), true));
 		RogueScapeRunLoop loop = new RogueScapeRunLoop(run, 1_000L)
 			.setTravelGatedStages(true)
 			.setTimeLimitMillis(60_000L);

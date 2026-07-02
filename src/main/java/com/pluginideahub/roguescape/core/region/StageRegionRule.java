@@ -8,7 +8,7 @@ import java.util.Set;
  * Stage 3 — region rule attached to a route stage. Defines:
  *
  * <ul>
- *   <li>{@code roomKind} — finer category for the stage (region/supply/weapon/shop/boss...).</li>
+ *   <li>{@code roomKind} — finer category for the stage (weapon/armour/supply/crafting/boss).</li>
  *   <li>{@code allowedRegionIds} — the allowed region IDs the player must remain within
  *       while this stage is current. Empty means "no region restriction for this stage".</li>
  *   <li>{@code allowsRegionGain} — whether items observed inside the allowed region count
@@ -19,7 +19,7 @@ import java.util.Set;
  */
 public final class StageRegionRule
 {
-	public static final StageRegionRule UNRESTRICTED = new StageRegionRule(RoomKind.REGION, Collections.emptySet(), true);
+	public static final StageRegionRule UNRESTRICTED = new StageRegionRule(RoomKind.SUPPLY, Collections.emptySet(), true);
 
 	private final RoomKind roomKind;
 	private final Set<String> allowedRegionIds;
@@ -27,7 +27,7 @@ public final class StageRegionRule
 
 	public StageRegionRule(RoomKind roomKind, Set<String> allowedRegionIds, boolean allowsRegionGain)
 	{
-		this.roomKind = roomKind == null ? RoomKind.REGION : roomKind;
+		this.roomKind = roomKind == null ? RoomKind.SUPPLY : roomKind;
 		Set<String> copy = new LinkedHashSet<>();
 		if (allowedRegionIds != null)
 		{

@@ -28,7 +28,7 @@ public class RogueScapeCustomBuilderWidgetPreviewTest
 			Arrays.asList("Lumbridge Swamp", "Draynor Village", "Barbarian Village", "Edgeville",
 				"Varrock East", "Varrock West", "Grand Exchange", "Falador", "Port Sarim",
 				"Rimmington", "Karamja Jungle", "Al-Kharid"),
-			Arrays.asList("Supply", "Armour", "Weapons", "Skilling", "All", "Shopping"),
+			Arrays.asList("Weapon", "Armour", "Supply", "Crafting", "All"),
 			Arrays.asList("Giant Mole", "King Black Dragon", "Chaos Elemental", "Scorpia", "Venenatis"),
 			Arrays.asList("No Food", "No Potions", "No Teleports", "No Shields", "No Magic", "No Ranged"),
 			Arrays.asList("No Food", "No Teleports"),

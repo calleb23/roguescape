@@ -190,7 +190,7 @@ public class RogueScapeRunLoopTest
 	public void travelGatedRunStartsRoomTimerWhenEnteringAllowedRegion()
 	{
 		RogueScapeRunLoop loop = loopWithTwoStages().setTravelGatedStages(true).setTimeLimitMillis(60_000L);
-		loop.run().setRegionRule("R1", new StageRegionRule(RoomKind.REGION, Collections.singleton("lumbridge"), true));
+		loop.run().setRegionRule("R1", new StageRegionRule(RoomKind.SUPPLY, Collections.singleton("lumbridge"), true));
 
 		loop.markNow(20_000L);
 		assertEquals(RunPhase.TRAVEL_TO_STAGE, loop.phase());

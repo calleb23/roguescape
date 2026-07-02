@@ -49,8 +49,8 @@ public class RogueScapeCustomRunFactoryTest
 		assertEquals(RoomKind.WEAPON, run.regionPolicy().ruleFor(first.id()).roomKind());
 		assertEquals(RunObjectiveKind.WEAPON_UPGRADE, first.objectiveKind());
 		assertEquals(RunStageType.BOSS, second.type());
-		assertEquals(RoomKind.SHOP, run.regionPolicy().ruleFor(third.id()).roomKind());
-		assertEquals(RunObjectiveKind.SHOP_PURCHASE, third.objectiveKind());
+		assertEquals(RoomKind.SUPPLY, run.regionPolicy().ruleFor(third.id()).roomKind());
+		assertEquals(RunObjectiveKind.SUPPLY_ITEMS, third.objectiveKind());
 
 		run.moveToRegion("12850");
 		assertTrue(loop.notifyRegionChanged(1_500L));

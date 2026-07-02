@@ -94,7 +94,7 @@ public class RogueScapePanel extends PluginPanel
 	private boolean customBankUnlocks;
 	private int customTimeLimitMinutes;
 	private int customBossLimit;
-	private static final String[] CUSTOM_ALLOWANCES = {"Supply", "Armour", "Weapons", "Skilling", "All", "Shopping"};
+	private static final String[] CUSTOM_ALLOWANCES = {"Weapon", "Armour", "Supply", "Crafting", "All"};
 
 	// STARTING CURSES widgets
 	private final List<Relic> modifierDefs = new ArrayList<>();
@@ -555,7 +555,7 @@ public class RogueScapePanel extends PluginPanel
 	public void addRoomForAllowance(String allowance)
 	{
 		String normalized = allowance == null ? "" : allowance.trim().toLowerCase();
-		if ("supply".equals(normalized))
+		if ("supply".equals(normalized) || "shopping".equals(normalized) || "shop".equals(normalized))
 		{
 			addFirstRoomOfKind(RoomKind.SUPPLY, "Supply");
 		}
@@ -565,19 +565,15 @@ public class RogueScapePanel extends PluginPanel
 		}
 		else if ("weapons".equals(normalized) || "weapon".equals(normalized))
 		{
-			addFirstRoomOfKind(RoomKind.WEAPON, "Weapons");
+			addFirstRoomOfKind(RoomKind.WEAPON, "Weapon");
 		}
-		else if ("skilling".equals(normalized))
+		else if ("crafting".equals(normalized) || "skilling".equals(normalized))
 		{
-			addFirstRoomOfKind(RoomKind.SKILLING, "Skilling");
-		}
-		else if ("shopping".equals(normalized) || "shop".equals(normalized))
-		{
-			addFirstRoomOfKind(RoomKind.SHOP, "Shopping");
+			addFirstRoomOfKind(RoomKind.CRAFTING, "Crafting");
 		}
 		else
 		{
-			addFirstRoomOfKind(RoomKind.REGION, "All");
+			addFirstRoomOfKind(RoomKind.SUPPLY, "All");
 		}
 	}
 
@@ -1545,9 +1541,8 @@ public class RogueScapePanel extends PluginPanel
 	{
 		if (kind == RoomKind.SUPPLY) return "Supply";
 		if (kind == RoomKind.ARMOUR) return "Armour";
-		if (kind == RoomKind.WEAPON) return "Weapons";
-		if (kind == RoomKind.SKILLING) return "Skilling";
-		if (kind == RoomKind.SHOP) return "Shopping";
+		if (kind == RoomKind.WEAPON) return "Weapon";
+		if (kind == RoomKind.CRAFTING) return "Crafting";
 		return "All";
 	}
 
@@ -1555,8 +1550,7 @@ public class RogueScapePanel extends PluginPanel
 	{
 		String value = allowance == null ? "" : allowance.trim().toLowerCase();
 		if ("boss".equals(value)) return "random relic draft";
-		if ("supply".equals(value)) return "random supply draft";
-		if ("all".equals(value)) return "random relic draft";
+		if ("supply".equals(value) || "all".equals(value)) return "random supply draft";
 		return "random unlock draft";
 	}
 

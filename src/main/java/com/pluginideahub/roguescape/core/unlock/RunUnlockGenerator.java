@@ -15,7 +15,7 @@ public final class RunUnlockGenerator
 		{
 			return null;
 		}
-		RoomKind kind = rule == null ? RoomKind.REGION : rule.roomKind();
+		RoomKind kind = rule == null ? RoomKind.ARMOUR : rule.roomKind();
 		RunUnlockType type = typeFor(kind);
 		return new RunUnlock(type, labelFor(type, stage.name()), stage.id(), stage.name());
 	}
@@ -23,10 +23,8 @@ public final class RunUnlockGenerator
 	private static RunUnlockType typeFor(RoomKind kind)
 	{
 		if (kind == RoomKind.SUPPLY) return RunUnlockType.POTION;
-		if (kind == RoomKind.SKILLING) return RunUnlockType.BANK;
-		if (kind == RoomKind.SHOP) return RunUnlockType.TRADE;
-		if (kind == RoomKind.WEAPON || kind == RoomKind.COMBAT) return RunUnlockType.PRAYER;
-		if (kind == RoomKind.ARMOUR) return RunUnlockType.INVENTORY;
+		if (kind == RoomKind.CRAFTING) return RunUnlockType.BANK;
+		if (kind == RoomKind.WEAPON) return RunUnlockType.PRAYER;
 		return RunUnlockType.INVENTORY;
 	}
 

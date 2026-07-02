@@ -7,6 +7,7 @@ import com.pluginideahub.roguescape.core.reward.RewardOption;
 import com.pluginideahub.roguescape.core.reward.SupplyDraftGenerator;
 import com.pluginideahub.roguescape.core.reward.UnlockDraftGenerator;
 import com.pluginideahub.roguescape.core.region.RoomKind;
+import com.pluginideahub.roguescape.core.region.StageRegionRule;
 import com.pluginideahub.roguescape.core.unlock.RunUnlockGenerator;
 
 /**
@@ -222,14 +223,17 @@ public final class RogueScapeRunLoop
 		int index = run.drafts().size();
 		String draftId = "BASE-" + (stageId == null ? "STAGE" : stageId) + "-" + (index + 1);
 		long seed = draftSeed(run.session().seed(), stageId, index);
-		RoomKind kind = completedStage == null ? RoomKind.REGION : run.regionPolicy().ruleFor(completedStage.id()).roomKind();
-		if (kind == RoomKind.SUPPLY)
-		{
-			pendingRewardDraft = SupplyDraftGenerator.supplyDraft(draftId, stageId, seed);
-		}
-		else if (kind == RoomKind.REGION || kind == RoomKind.BOSS)
+		StageRegionRule rule = completedStage == null
+			? StageRegionRule.UNRESTRICTED
+			: run.regionPolicy().ruleFor(completedStage.id());
+		RoomKind kind = rule.roomKind();
+		if (rule == StageRegionRule.UNRESTRICTED || kind == RoomKind.BOSS)
 		{
 			pendingRewardDraft = RelicDraftGenerator.relicDraft(draftId, stageId, seed, 3);
+		}
+		else if (kind == RoomKind.SUPPLY)
+		{
+			pendingRewardDraft = SupplyDraftGenerator.supplyDraft(draftId, stageId, seed);
 		}
 		else
 		{

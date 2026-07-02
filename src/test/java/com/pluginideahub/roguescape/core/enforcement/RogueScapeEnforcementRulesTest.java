@@ -85,7 +85,7 @@ public class RogueScapeEnforcementRulesTest
 	@Test
 	public void forRunBlocksGroundPickupWhenRegionRestricted()
 	{
-		StageRegionRule rule = new StageRegionRule(RoomKind.REGION, regions("lumbridge"), true);
+		StageRegionRule rule = new StageRegionRule(RoomKind.SUPPLY, regions("lumbridge"), true);
 		RogueScapeRun run = runWithEnteredStage("R1", rule, false);
 		RogueScapeEnforcementRules rules = RogueScapeEnforcementRules.forRun(run);
 		assertTrue(rules.blockGroundPickup());
@@ -96,7 +96,7 @@ public class RogueScapeEnforcementRulesTest
 	@Test
 	public void forRunBlocksPickupButNotWalkDuringTravelBeforeRegionLockArms()
 	{
-		StageRegionRule rule = new StageRegionRule(RoomKind.REGION, regions("lumbridge"), true);
+		StageRegionRule rule = new StageRegionRule(RoomKind.SUPPLY, regions("lumbridge"), true);
 		RogueScapeRun run = runWithEnteredStage("R1", rule, false)
 			.setRegionRestrictionArmed(false);
 

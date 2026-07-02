@@ -178,16 +178,12 @@ public final class RunBriefingBuilder
 		}
 		switch (kind)
 		{
-			case COMBAT: return "Combat room";
-			case SUPPLY: return "Supply room";
 			case WEAPON: return "Weapon room";
 			case ARMOUR: return "Armour room";
-			case SHOP: return "Shop room";
-			case SKILLING: return "Skilling room";
-			case CHOICE_CHEST: return "Choice chest";
+			case SUPPLY: return "Supply room";
+			case CRAFTING: return "Crafting room";
 			case BOSS: return "Boss";
-			case REGION:
-			default: return "Region room";
+			default: return "Room";
 		}
 	}
 

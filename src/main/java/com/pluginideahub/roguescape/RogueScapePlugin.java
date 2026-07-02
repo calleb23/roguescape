@@ -893,7 +893,7 @@ public class RogueScapePlugin extends Plugin
 				continue;
 			}
 			StageRegionRule existing = rogueRun.regionPolicy().ruleFor(stage.id());
-			RoomKind kind = existing == null ? RoomKind.REGION : existing.roomKind();
+			RoomKind kind = existing == null ? RoomKind.SUPPLY : existing.roomKind();
 			rogueRun.setRegionRule(stage.id(), new StageRegionRule(kind, selectedRegions, true));
 		}
 		runSession.recordRunLoopNote("Applied custom zone: " + customRoomEditorState.selection().getName()
@@ -1017,6 +1017,7 @@ public class RogueScapePlugin extends Plugin
 		rogueRun = RogueScapeRun.wrap(runSession)
 			.declareStarterKit(RogueScapeCustomRunFactory.starterKitForLoadout(panel != null ? panel.customBuilderLoadout() : "Naked"))
 			.setBankAccessAllowed(config.bankAccessAllowed())
+			.setCurses(windowContent != null ? windowContent.selectedCurses() : java.util.Collections.emptySet())
 			.setStartSnapshot(previousInventorySnapshot);
 		try
 		{

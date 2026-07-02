@@ -47,6 +47,9 @@ public final class RogueScapeRun
 	private boolean bankAccessAllowed = false;
 	private boolean regionRestrictionArmed = true;
 	private InventorySnapshot startSnapshot = new InventorySnapshot();
+	/** The curses chosen at setup — setup-only burdens folded into {@link #currentRestrictions}. */
+	private final java.util.EnumSet<com.pluginideahub.roguescape.core.restriction.Curse> curses =
+		java.util.EnumSet.noneOf(com.pluginideahub.roguescape.core.restriction.Curse.class);
 
 	private RogueScapeRun(RogueScapeRunSession session) { this.session = session; }
 
@@ -85,6 +88,29 @@ public final class RogueScapeRun
 
 	/** Run score including any relic scoring bonuses. */
 	public int effectiveScore() { return session.runScore() + relicEngine.scoreBonus(); }
+
+	/** The setup curses in force for this run. */
+	public Set<com.pluginideahub.roguescape.core.restriction.Curse> curses()
+	{
+		return Collections.unmodifiableSet(new java.util.LinkedHashSet<>(curses));
+	}
+
+	/** Set the chosen curses at run start (setup-only; they never change mid-run). */
+	public RogueScapeRun setCurses(java.util.Collection<com.pluginideahub.roguescape.core.restriction.Curse> chosen)
+	{
+		curses.clear();
+		if (chosen != null)
+		{
+			for (com.pluginideahub.roguescape.core.restriction.Curse c : chosen)
+			{
+				if (c != null)
+				{
+					curses.add(c);
+				}
+			}
+		}
+		return this;
+	}
 
 	/**
 	 * The run's current rules as a {@link com.pluginideahub.roguescape.core.restriction.RunRestrictions}
@@ -126,6 +152,11 @@ public final class RogueScapeRun
 			{
 				r.restrict(mapped);
 			}
+		}
+		// The chosen setup curses — the subtractive design's burdens, live in enforcement.
+		for (com.pluginideahub.roguescape.core.restriction.Curse curse : curses)
+		{
+			curse.apply(r);
 		}
 		return r;
 	}

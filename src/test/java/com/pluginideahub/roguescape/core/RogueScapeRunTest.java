@@ -44,7 +44,7 @@ public class RogueScapeRunTest
 
 		RogueScapeRun run = RogueScapeRun.wrap(base)
 			.declareStarterKit(kitOf("Bronze dagger"))
-			.setRegionRule("R1", new StageRegionRule(RoomKind.REGION, regions("lumbridge"), true))
+			.setRegionRule("R1", new StageRegionRule(RoomKind.SUPPLY, regions("lumbridge"), true))
 			.setRegionRule("R2", new StageRegionRule(RoomKind.SUPPLY, regions("barbarian_village"), true))
 			.setRegionRule("B1", new StageRegionRule(RoomKind.BOSS, regions("obor_lair"), true));
 
@@ -77,7 +77,7 @@ public class RogueScapeRunTest
 		base.addStage("R1", RunStageType.ROOM, "Lumbridge", "starter zone");
 
 		RogueScapeRun run = RogueScapeRun.wrap(base)
-			.setRegionRule("R1", new StageRegionRule(RoomKind.REGION, regions("lumbridge"), true));
+			.setRegionRule("R1", new StageRegionRule(RoomKind.SUPPLY, regions("lumbridge"), true));
 
 		base.enterStage("R1");
 		run.moveToRegion("lumbridge");

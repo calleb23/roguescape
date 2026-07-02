@@ -130,6 +130,16 @@ final class RogueScapeWindowContent
 	/** The catalogue selection: which numbered route the contract previews and Begin starts. */
 	private int selectedRouteIndex;
 
+	/** The curses picked on the contract page — applied to the run at Begin. */
+	private final java.util.EnumSet<com.pluginideahub.roguescape.core.restriction.Curse> selectedCurses =
+		java.util.EnumSet.noneOf(com.pluginideahub.roguescape.core.restriction.Curse.class);
+
+	/** The contract page's chosen curses (Begin hands these to the run). */
+	java.util.Set<com.pluginideahub.roguescape.core.restriction.Curse> selectedCurses()
+	{
+		return java.util.Collections.unmodifiableSet(selectedCurses);
+	}
+
 	RogueScapeWindowContent(RogueScapePlugin plugin)
 	{
 		this.plugin = plugin;
@@ -200,7 +210,7 @@ final class RogueScapeWindowContent
 			tabs.add(new RogueScapeWindowOverlay.Tab("THE CONTRACT", JournalSpreadBlocks.render(
 				SidePanelViewModel.contractSpread(mode, runTitle, seed, briefing, briefingError,
 					com.pluginideahub.roguescape.core.seed.RouteNames.smartName(routeSeed(mode, selectedRouteIndex)),
-					selectedRouteIndex, ROUTE_CATALOG_SIZE))));
+					selectedRouteIndex, ROUTE_CATALOG_SIZE, selectedCurses))));
 			return tabs;
 		}
 
@@ -255,6 +265,24 @@ final class RogueScapeWindowContent
 			// Browse the route book one page at a time (wraps at the ends).
 			selectedRouteIndex += actionId.endsWith("next") ? 1 : -1;
 			selectedRouteIndex = Math.floorMod(selectedRouteIndex, ROUTE_CATALOG_SIZE);
+			plugin.refreshSidePanel();
+			return;
+		}
+		if (actionId != null && actionId.startsWith("curse:"))
+		{
+			// Toggle a curse on the contract — the hand-drawn circle marks the picked ones.
+			try
+			{
+				com.pluginideahub.roguescape.core.restriction.Curse curse =
+					com.pluginideahub.roguescape.core.restriction.Curse.valueOf(actionId.substring("curse:".length()));
+				if (!selectedCurses.remove(curse))
+				{
+					selectedCurses.add(curse);
+				}
+			}
+			catch (IllegalArgumentException ignored)
+			{
+			}
 			plugin.refreshSidePanel();
 			return;
 		}
@@ -471,12 +499,11 @@ final class RogueScapeWindowContent
 	private static List<RogueScapeWindowOverlay.ModeTile> customRoomAllowanceActions()
 	{
 		List<RogueScapeWindowOverlay.ModeTile> tiles = new ArrayList<>();
-		tiles.add(customActionTile("Supply", "Food, potions, ammo, and utility.", "Add room", RogueScapeTheme.INFO, "custom:add-supply"));
-		tiles.add(customActionTile("Armour", "Armour upgrades are permitted here.", "Add room", RogueScapeTheme.RARITY_RARE, "custom:add-armour"));
-		tiles.add(customActionTile("Weapons", "Weapon upgrades are permitted here.", "Add room", RogueScapeTheme.POSITIVE, "custom:add-weapons"));
-		tiles.add(customActionTile("Skilling", "Gathered resources are permitted here.", "Add room", RogueScapeTheme.RARITY_EPIC, "custom:add-skilling"));
+		tiles.add(customActionTile("Weapon", "A weapon to wield.", "Add room", RogueScapeTheme.POSITIVE, "custom:add-weapon"));
+		tiles.add(customActionTile("Armour", "Armour to wear.", "Add room", RogueScapeTheme.RARITY_RARE, "custom:add-armour"));
+		tiles.add(customActionTile("Supply", "Consumables and raw materials.", "Add room", RogueScapeTheme.INFO, "custom:add-supply"));
+		tiles.add(customActionTile("Crafting", "Craft an upgrade to wear or wield.", "Add room", RogueScapeTheme.RARITY_EPIC, "custom:add-crafting"));
 		tiles.add(customActionTile("All", "Any local permitted gain counts.", "Add room", RogueScapeTheme.GOLD, "custom:add-all"));
-		tiles.add(customActionTile("Shopping", "Shop purchases are permitted here.", "Add room", RogueScapeTheme.RARITY_LEGENDARY, "custom:add-shopping"));
 		return tiles;
 	}
 
@@ -575,17 +602,13 @@ final class RogueScapeWindowContent
 		{
 			plugin.panel.addRoomForAllowance("Armour");
 		}
-		else if ("custom:add-weapons".equals(actionId))
+		else if ("custom:add-weapon".equals(actionId))
 		{
-			plugin.panel.addRoomForAllowance("Weapons");
+			plugin.panel.addRoomForAllowance("Weapon");
 		}
-		else if ("custom:add-skilling".equals(actionId))
+		else if ("custom:add-crafting".equals(actionId))
 		{
-			plugin.panel.addRoomForAllowance("Skilling");
-		}
-		else if ("custom:add-shopping".equals(actionId))
-		{
-			plugin.panel.addRoomForAllowance("Shopping");
+			plugin.panel.addRoomForAllowance("Crafting");
 		}
 		else if ("custom:room-prev".equals(actionId))
 		{

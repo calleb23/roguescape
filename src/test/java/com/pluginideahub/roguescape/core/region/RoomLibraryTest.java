@@ -24,29 +24,29 @@ public class RoomLibraryTest
 		RoomDefinition r = RoomLibrary.lumbridgeSwamp();
 		assertEquals("lumbridge-swamp", r.id());
 		assertEquals("Lumbridge Swamp", r.name());
-		assertEquals(RoomKind.REGION, r.kind());
+		assertEquals(RoomKind.SUPPLY, r.kind());
 		assertTrue(r.regionIds().contains("12851"));
 		assertTrue(r.regionIds().contains("12850"));
 	}
 
 	@Test
-	public void grandExchangeIsAShopWithASingleRegion()
+	public void grandExchangeIsASupplyRoomWithASingleRegion()
 	{
 		RoomDefinition r = RoomLibrary.grandExchange();
 		assertEquals("grand-exchange", r.id());
 		assertEquals("Grand Exchange", r.name());
-		assertEquals(RoomKind.SHOP, r.kind());
+		assertEquals(RoomKind.SUPPLY, r.kind());
 		assertEquals(1, r.regionIds().size());
 		assertTrue(r.regionIds().contains("12598"));
 	}
 
 	@Test
-	public void dwarvenMineIsASkillingRoomWithNonEmptyRegionIds()
+	public void dwarvenMineIsASupplyRoomWithNonEmptyRegionIds()
 	{
 		RoomDefinition r = RoomLibrary.dwarvenMine();
 		assertEquals("dwarven-mine", r.id());
 		assertEquals("Dwarven Mine", r.name());
-		assertEquals(RoomKind.SKILLING, r.kind());
+		assertEquals(RoomKind.SUPPLY, r.kind());
 		assertFalse(r.regionIds().isEmpty());
 		assertTrue(r.regionIds().contains("12441"));
 	}
@@ -71,13 +71,10 @@ public class RoomLibraryTest
 			counts.put(room.kind(), counts.getOrDefault(room.kind(), 0) + 1);
 		}
 
-		assertAtLeast(counts, RoomKind.REGION, 4);
-		assertAtLeast(counts, RoomKind.COMBAT, 3);
-		assertAtLeast(counts, RoomKind.SUPPLY, 5);
-		assertAtLeast(counts, RoomKind.SHOP, 5);
-		assertAtLeast(counts, RoomKind.SKILLING, 3);
-		assertAtLeast(counts, RoomKind.WEAPON, 2);
+		assertAtLeast(counts, RoomKind.WEAPON, 4);
 		assertAtLeast(counts, RoomKind.ARMOUR, 4);
+		assertAtLeast(counts, RoomKind.SUPPLY, 10);
+		assertAtLeast(counts, RoomKind.CRAFTING, 3);
 		assertAtLeast(counts, RoomKind.BOSS, 2);
 	}
 
