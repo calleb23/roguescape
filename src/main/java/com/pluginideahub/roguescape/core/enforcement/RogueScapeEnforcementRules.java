@@ -1,6 +1,8 @@
 package com.pluginideahub.roguescape.core.enforcement;
 
 import com.pluginideahub.roguescape.core.RogueScapeRun;
+import com.pluginideahub.roguescape.core.restriction.Restriction;
+import com.pluginideahub.roguescape.core.restriction.RunRestrictions;
 
 /**
  * Pure-Java enforcement rule model for an active RogueScape run.
@@ -43,26 +45,24 @@ public final class RogueScapeEnforcementRules
 	public RogueScapeEnforcementRules setWarnLeaveRoom(boolean v) { this.warnLeaveRoom = v; return this; }
 
 	/**
-	 * Derive enforcement rules from a run's current state.
-	 *
-	 * Trade and GE are always blocked during an active run. Bank is blocked unless the run
-	 * explicitly allows bank access. Ground pickup and region-leave warning only apply when
-	 * the current stage actually restricts region.
+	 * Derive enforcement rules from the run's {@link RunRestrictions} — the single verdict brain
+	 * of the subtractive design. This class stays a thin menu-blocking view over that state; the
+	 * only extra input is region-lock arming (a timing detail of stage entry, not a rule).
 	 */
 	public static RogueScapeEnforcementRules forRun(RogueScapeRun run)
 	{
 		RogueScapeEnforcementRules rules = new RogueScapeEnforcementRules();
 		if (run == null) return rules;
-		boolean restrictsRegion = run.currentStageRule().restrictsRegion();
-		boolean armedRegionLock = restrictsRegion && run.regionRestrictionArmed();
+		RunRestrictions r = run.currentRestrictions();
+		boolean armedRegionLock = r.isRestricted(Restriction.LEAVE_REGION) && run.regionRestrictionArmed();
 		return rules
-			.setBlockBank(!run.bankUnlocked())
-			.setBlockTrade(!run.tradeUnlocked())
-			.setBlockGrandExchange(true)
-			.setBlockGroundPickup(restrictsRegion)
+			.setBlockBank(r.isRestricted(Restriction.BANK))
+			.setBlockTrade(r.isRestricted(Restriction.TRADE))
+			.setBlockGrandExchange(r.isRestricted(Restriction.GRAND_EXCHANGE))
+			.setBlockGroundPickup(r.isRestricted(Restriction.GROUND_PICKUP_OUTSIDE_ROOM))
 			.setBlockWalkOutsideRoom(armedRegionLock)
-			.setBlockPrayer(!run.prayerUnlocked())
-			.setBlockPotions(!run.potionUnlocked())
+			.setBlockPrayer(r.isRestricted(Restriction.PRAYER))
+			.setBlockPotions(r.isRestricted(Restriction.POTIONS))
 			.setWarnLeaveRoom(armedRegionLock);
 	}
 }

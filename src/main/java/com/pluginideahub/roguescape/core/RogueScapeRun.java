@@ -86,6 +86,67 @@ public final class RogueScapeRun
 	/** Run score including any relic scoring bonuses. */
 	public int effectiveScore() { return session.runScore() + relicEngine.scoreBonus(); }
 
+	/**
+	 * The run's current rules as a {@link com.pluginideahub.roguescape.core.restriction.RunRestrictions}
+	 * — the single verdict brain of the subtractive design. Derived from the run's unlock flags,
+	 * the active stage's region rule, and any relic-imposed category restrictions, so enforcement,
+	 * the loadout gate, and the red-X markers all read the same state.
+	 */
+	public com.pluginideahub.roguescape.core.restriction.RunRestrictions currentRestrictions()
+	{
+		com.pluginideahub.roguescape.core.restriction.RunRestrictions r =
+			new com.pluginideahub.roguescape.core.restriction.RunRestrictions();
+		if (!bankUnlocked())
+		{
+			r.restrict(com.pluginideahub.roguescape.core.restriction.Restriction.BANK);
+		}
+		if (!tradeUnlocked())
+		{
+			r.restrict(com.pluginideahub.roguescape.core.restriction.Restriction.TRADE);
+		}
+		// The Grand Exchange stays sealed for the whole run (no unlock exists for it).
+		r.restrict(com.pluginideahub.roguescape.core.restriction.Restriction.GRAND_EXCHANGE);
+		if (!prayerUnlocked())
+		{
+			r.restrict(com.pluginideahub.roguescape.core.restriction.Restriction.PRAYER);
+		}
+		if (!potionUnlocked())
+		{
+			r.restrict(com.pluginideahub.roguescape.core.restriction.Restriction.POTIONS);
+		}
+		if (currentStageRule().restrictsRegion())
+		{
+			r.restrict(com.pluginideahub.roguescape.core.restriction.Restriction.LEAVE_REGION);
+			r.restrict(com.pluginideahub.roguescape.core.restriction.Restriction.GROUND_PICKUP_OUTSIDE_ROOM);
+		}
+		for (BankItemCategory cat : relicRestrictedCategories())
+		{
+			com.pluginideahub.roguescape.core.restriction.Restriction mapped = categoryRestriction(cat);
+			if (mapped != null)
+			{
+				r.restrict(mapped);
+			}
+		}
+		return r;
+	}
+
+	private static com.pluginideahub.roguescape.core.restriction.Restriction categoryRestriction(BankItemCategory cat)
+	{
+		if (cat == null)
+		{
+			return null;
+		}
+		switch (cat)
+		{
+			case FOOD: return com.pluginideahub.roguescape.core.restriction.Restriction.FOOD;
+			case POTION: return com.pluginideahub.roguescape.core.restriction.Restriction.POTIONS;
+			case AMMO: return com.pluginideahub.roguescape.core.restriction.Restriction.AMMO;
+			case RUNE: return com.pluginideahub.roguescape.core.restriction.Restriction.RUNES;
+			case SHIELD: return com.pluginideahub.roguescape.core.restriction.Restriction.SHIELD;
+			default: return null;
+		}
+	}
+
 	public boolean hasUnlock(RunUnlockType type)
 	{
 		return type != null && unlocks.containsKey(type);
