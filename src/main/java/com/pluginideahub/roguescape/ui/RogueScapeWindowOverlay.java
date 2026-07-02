@@ -786,7 +786,7 @@ public class RogueScapeWindowOverlay extends Overlay implements MouseListener
 		int cols = Math.min(5, Math.max(1, n));
 		int gap = 10;
 		int tileW = (w - gap * (cols - 1)) / cols;
-		int tileH = Math.min(tallTiles(b) ? 116 : 56, bottom - y);
+		int tileH = Math.min(bookMode ? 64 : (tallTiles(b) ? 116 : 56), bottom - y);
 		g.setFont(FontManager.getRunescapeBoldFont());
 		for (int i = 0; i < n; i++)
 		{
@@ -997,7 +997,7 @@ public class RogueScapeWindowOverlay extends Overlay implements MouseListener
 					int n = b.modeTiles == null ? 0 : b.modeTiles.size();
 					int cols = Math.min(5, Math.max(1, n));
 					int rows = n == 0 ? 0 : (n + cols - 1) / cols;
-					h += rows * ((tallTiles(b) ? 116 : 56) + 10) + 8;
+					h += rows * ((bookMode ? 64 : (tallTiles(b) ? 116 : 56)) + 10) + 8;
 					break;
 				}
 				default:
@@ -1146,6 +1146,43 @@ public class RogueScapeWindowOverlay extends Overlay implements MouseListener
 		return y + cardH + 8;
 	}
 
+	/** Sidebar-style horizontal row: wax seal at the left, title + subtitle left-aligned,
+	 *  detail right-aligned — the journal's contract-row look. */
+	private static void drawModeRow(Graphics2D g, ModeTile tile, Rectangle r, boolean hover)
+	{
+		Color c = tile.color;
+		RogueScapePaper.card(g, r.x, r.y, r.width, r.height, tile.selected);
+		if (tile.selected || hover)
+		{
+			g.setColor(new Color(c.getRed(), c.getGreen(), c.getBlue(), tile.selected ? 40 : 22));
+			g.fillRect(r.x + 2, r.y + 2, r.width - 4, r.height - 4);
+		}
+		RogueScapePaper.waxSeal(g, r.x + 20, r.y + r.height / 2, Math.min(12, r.height / 2 - 4), c);
+
+		int textX = r.x + 40;
+		boolean hasSub = !tile.subtitle.isEmpty() && r.height >= 52;
+		g.setFont(new java.awt.Font(java.awt.Font.SERIF, java.awt.Font.BOLD, 14));
+		FontMetrics fm = g.getFontMetrics();
+		int titleY = hasSub ? r.y + 24 : r.y + r.height / 2 + 5;
+		int titleRoom = r.width - (tile.detail.isEmpty() ? 48 : 130);
+		g.setColor(tile.selected ? RogueScapeTheme.GOLD : RogueScapeTheme.INK);
+		g.drawString(clipTo(ascii(tile.title), fm, titleRoom), textX, titleY);
+		if (hasSub)
+		{
+			g.setFont(new java.awt.Font(java.awt.Font.SERIF, java.awt.Font.ITALIC, 12));
+			g.setColor(RogueScapeTheme.INK_FADED);
+			g.drawString(clipTo(ascii(tile.subtitle), g.getFontMetrics(), r.width - 60), textX, r.y + 42);
+		}
+		if (!tile.detail.isEmpty())
+		{
+			g.setFont(new java.awt.Font(java.awt.Font.SERIF, java.awt.Font.PLAIN, 11));
+			FontMetrics dfm = g.getFontMetrics();
+			String detail = clipTo(ascii(tile.detail), dfm, 86);
+			g.setColor(RogueScapeTheme.GOLD_DIM);
+			g.drawString(detail, r.x + r.width - dfm.stringWidth(detail) - 8, r.y + r.height / 2 + 4);
+		}
+	}
+
 	/** Tall tiles carry a subtitle (contract cards); subtitle-less tiles (route entries, page
 	 *  arrows) render compact. */
 	private static boolean tallTiles(Block b)
@@ -1200,6 +1237,11 @@ public class RogueScapeWindowOverlay extends Overlay implements MouseListener
 	private static void drawModeTile(Graphics2D g, ModeTile tile, Rectangle r, boolean hover)
 	{
 		Color c = tile.color;
+		if (r.height <= 70)
+		{
+			drawModeRow(g, tile, r, hover);
+			return;
+		}
 		g.setPaint(new java.awt.GradientPaint(0, r.y, RogueScapeTheme.SECTION_HEADER_BG,
 			0, r.y + r.height, RogueScapeFrame.darken(RogueScapeTheme.PANEL_BG, 4)));
 		g.fillRoundRect(r.x, r.y, r.width, r.height, 8, 8);
@@ -1210,7 +1252,7 @@ public class RogueScapeWindowOverlay extends Overlay implements MouseListener
 		}
 		g.setColor(tile.selected ? RogueScapeTheme.lighten(c, 40) : hover ? RogueScapeTheme.lighten(c, 20) : RogueScapeTheme.BORDER);
 		g.drawRoundRect(r.x, r.y, r.width - 1, r.height - 1, 8, 8);
-		drawDiamond(g, r.x + r.width / 2, r.y + 20, 10, RogueScapeFrame.darken(c, 45), c);
+		RogueScapePaper.waxSeal(g, r.x + r.width / 2, r.y + 20, 11, c);
 
 		g.setFont(FontManager.getRunescapeBoldFont());
 		FontMetrics fm = g.getFontMetrics();

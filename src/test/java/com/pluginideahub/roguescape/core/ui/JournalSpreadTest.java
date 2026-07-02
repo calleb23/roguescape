@@ -35,28 +35,23 @@ public class JournalSpreadTest
 				com.pluginideahub.roguescape.core.RunMode.FRESH_SOURCE,
 				com.pluginideahub.roguescape.core.RunPreset.UNSPECIFIED,
 				"rat-king-42", "Naked", false, 0);
-		java.util.List<String> catalog = java.util.Arrays.asList(
-			"The Rat King's Road", "The Molten Vigil", "The Sunken March", "The Iron Toll",
-			"The Crooked Climb", "The Beggar's Oath");
 		JournalSpread spread = SidePanelViewModel.contractSpread(
-			com.pluginideahub.roguescape.core.RunMode.FRESH_SOURCE, "Dungeon Crawl Run", "rat-king-42",
-			briefing, "", catalog, 1, 0);
+			com.pluginideahub.roguescape.core.RunMode.FRESH_SOURCE, "Dungeon Crawl Run", "",
+			briefing, "", "The Rat King's Road", 1, 12);
 
 		assertTrue(spread.title().contains("Contract"));
-		// Left: the mode contracts (Dungeon Crawl selected) and the Begin stamp.
+		// Left: the mode contracts as single-choice rows (Dungeon Crawl selected) and Begin.
 		assertTrue("mode choices on the left page", spread.left().stream().anyMatch(b ->
 			b.kind() == JournalSpread.Block.Kind.CHOICES
 				&& b.choices().stream().anyMatch(c -> c.title().equals("Dungeon Crawl") && c.isSelected())));
 		assertTrue("Begin stamp on the left page", spread.left().stream().anyMatch(b ->
 			b.kind() == JournalSpread.Block.Kind.CHOICES
 				&& b.choices().stream().anyMatch(c -> c.actionId().equals("start-run"))));
-		// Right: the route catalogue — every entry pickable, the selected one marked.
-		assertTrue("catalogue heading with page count", spread.right().stream().anyMatch(b ->
-			b.kind() == JournalSpread.Block.Kind.HEADING && b.text().startsWith("The Routes")));
-		assertTrue("the picked route is selected", spread.right().stream().anyMatch(b ->
-			b.kind() == JournalSpread.Block.Kind.CHOICES && b.choices().stream().anyMatch(c ->
-				c.actionId().equals("route:1") && c.isSelected())));
-		assertTrue("page arrows for a multi-page catalogue", spread.right().stream().anyMatch(b ->
+		// Right: one named route at a time, with the browse arrows.
+		assertTrue("the route heading names the route and its number", spread.right().stream().anyMatch(b ->
+			b.kind() == JournalSpread.Block.Kind.HEADING
+				&& b.text().contains("The Rat King's Road") && b.text().contains("No. 2 of 12")));
+		assertTrue("browse arrows on the right page", spread.right().stream().anyMatch(b ->
 			b.kind() == JournalSpread.Block.Kind.CHOICES && b.choices().stream().anyMatch(c ->
 				c.actionId().equals("routes-page:next"))));
 		assertTrue("win condition on the right page", spread.right().stream().anyMatch(b ->
@@ -68,7 +63,7 @@ public class JournalSpreadTest
 	{
 		JournalSpread spread = SidePanelViewModel.contractSpread(
 			com.pluginideahub.roguescape.core.RunMode.FRESH_SOURCE, "Run", "", null, "no route",
-			java.util.Collections.emptyList(), 0, 0);
+			"The Iron Toll", 0, 12);
 		assertTrue(spread.right().stream().anyMatch(b ->
 			b.tone() == JournalSpread.Tone.NEGATIVE && b.text().contains("no route")));
 	}

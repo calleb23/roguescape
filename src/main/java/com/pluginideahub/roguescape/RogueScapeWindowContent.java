@@ -129,7 +129,6 @@ final class RogueScapeWindowContent
 
 	/** The catalogue selection: which numbered route the contract previews and Begin starts. */
 	private int selectedRouteIndex;
-	private int routePage;
 
 	RogueScapeWindowContent(RogueScapePlugin plugin)
 	{
@@ -148,17 +147,6 @@ final class RogueScapeWindowContent
 	{
 		String prefix = mode == RunMode.BANK_DRAFT ? "ladder" : "crawl";
 		return prefix + "-route-" + (i + 1);
-	}
-
-	/** The catalogue's smart names for the mode, in order. */
-	private static List<String> routeCatalogNames(RunMode mode)
-	{
-		List<String> names = new ArrayList<>();
-		for (int i = 0; i < ROUTE_CATALOG_SIZE; i++)
-		{
-			names.add(com.pluginideahub.roguescape.core.seed.RouteNames.smartName(routeSeed(mode, i)));
-		}
-		return names;
 	}
 
 	/** The seed of the route the player has picked — what Begin starts. */
@@ -211,7 +199,8 @@ final class RogueScapeWindowContent
 			}
 			tabs.add(new RogueScapeWindowOverlay.Tab("THE CONTRACT", JournalSpreadBlocks.render(
 				SidePanelViewModel.contractSpread(mode, runTitle, seed, briefing, briefingError,
-					routeCatalogNames(mode), selectedRouteIndex, routePage))));
+					com.pluginideahub.roguescape.core.seed.RouteNames.smartName(routeSeed(mode, selectedRouteIndex)),
+					selectedRouteIndex, ROUTE_CATALOG_SIZE))));
 			return tabs;
 		}
 
@@ -261,25 +250,11 @@ final class RogueScapeWindowContent
 			plugin.dispatchAction(PanelAction.START_RUN);
 			return;
 		}
-		if (actionId != null && actionId.startsWith("route:"))
-		{
-			try
-			{
-				int idx = Integer.parseInt(actionId.substring("route:".length()));
-				selectedRouteIndex = Math.max(0, Math.min(ROUTE_CATALOG_SIZE - 1, idx));
-				routePage = selectedRouteIndex / SidePanelViewModel.ROUTE_PAGE_SIZE;
-			}
-			catch (NumberFormatException ignored)
-			{
-			}
-			plugin.refreshSidePanel();
-			return;
-		}
 		if ("routes-page:prev".equals(actionId) || "routes-page:next".equals(actionId))
 		{
-			int pages = (ROUTE_CATALOG_SIZE + SidePanelViewModel.ROUTE_PAGE_SIZE - 1) / SidePanelViewModel.ROUTE_PAGE_SIZE;
-			routePage += actionId.endsWith("next") ? 1 : -1;
-			routePage = Math.max(0, Math.min(pages - 1, routePage));
+			// Browse the route book one page at a time (wraps at the ends).
+			selectedRouteIndex += actionId.endsWith("next") ? 1 : -1;
+			selectedRouteIndex = Math.floorMod(selectedRouteIndex, ROUTE_CATALOG_SIZE);
 			plugin.refreshSidePanel();
 			return;
 		}
