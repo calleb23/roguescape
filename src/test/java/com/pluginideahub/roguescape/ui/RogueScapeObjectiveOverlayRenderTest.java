@@ -20,7 +20,7 @@ public class RogueScapeObjectiveOverlayRenderTest
 
 		RogueScapeObjectiveOverlay.View view = new RogueScapeObjectiveOverlay.View(
 			"Barbarian Village",
-			"Find a legal weapon upgrade (0 / 1)",
+			"Find a weapon upgrade (0 / 1)",
 			"Giant Mole",
 			"12341",
 			"Room Active",

@@ -9,7 +9,7 @@ import java.util.Locale;
  * RuneLite inventory deltas do not prove why an item appeared. This helper only preserves
  * short-lived nearby signals (menu clicks/chat text) so the adapter can mark the next gain
  * as bank/trade/GE/shop/ground-pickup when the signal is obvious. Everything else remains
- * UNKNOWN and is surfaced as suspicious by the core.
+ * UNKNOWN and is flagged by the core.
  */
 public final class ProvenanceSignalTracker
 {

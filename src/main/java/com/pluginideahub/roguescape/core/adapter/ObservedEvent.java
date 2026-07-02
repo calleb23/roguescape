@@ -6,7 +6,7 @@ import java.util.Map;
 
 /**
  * Stage 6 — a single observation emitted by the passive RuneLite adapter (or by a test).
- * Carries enough context for the adapter helpers to convert to legality-classifier events
+ * Carries enough context for the adapter helpers to convert to restriction-rule events
  * without exposing RuneLite types.
  */
 public final class ObservedEvent

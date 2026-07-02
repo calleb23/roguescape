@@ -13,7 +13,7 @@ import org.junit.Test;
 import static org.junit.Assert.*;
 
 /**
- * The plugin no longer classifies item provenance as legal/illegal — disallowed actions are
+ * The plugin no longer classifies item provenance as permitted/forbidden — disallowed actions are
  * blocked at the menu instead. These tests cover what the run actually tracks now: items collected,
  * objective/boss completion, and region awareness.
  */
@@ -81,11 +81,11 @@ public class RogueScapeRunTest
 
 		base.enterStage("R1");
 		run.moveToRegion("lumbridge");
-		assertTrue(run.currentRegionLegal());
+		assertTrue(run.currentRegionAllowed());
 
 		// Leaving the room's region is surfaced for the UI/enforcement but never fails the run.
 		run.moveToRegion("karamja");
-		assertFalse(run.currentRegionLegal());
+		assertFalse(run.currentRegionAllowed());
 		assertEquals(RunState.ACTIVE, base.runState());
 	}
 

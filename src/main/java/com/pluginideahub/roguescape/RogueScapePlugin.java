@@ -490,8 +490,8 @@ public class RogueScapePlugin extends Plugin
 		if (enforcementActive())
 		{
 			RogueScapeEnforcementRules rules = RogueScapeEnforcementRules.forRun(rogueRun);
-			String signal = rules.warnLeaveRoom() && !rogueRun.currentRegionLegal()
-				? "⚠ Outside legal room region!"
+			String signal = rules.warnLeaveRoom() && !rogueRun.currentRegionAllowed()
+				? "⚠ Outside allowed room region!"
 				: "";
 			if (!signal.isEmpty() && !signal.equals(latestProvenanceSignal))
 			{
@@ -648,7 +648,7 @@ public class RogueScapePlugin extends Plugin
 			return;
 		}
 		RogueScapeEnforcementRules rules = RogueScapeEnforcementRules.forRun(rogueRun);
-		boolean inside = rogueRun.currentRegionLegal();
+		boolean inside = rogueRun.currentRegionAllowed();
 		MenuEntry[] entries = client.getMenuEntries();
 		if (entries == null || entries.length == 0)
 		{
@@ -697,7 +697,7 @@ public class RogueScapePlugin extends Plugin
 		{
 			RogueScapeEnforcementRules rules = RogueScapeEnforcementRules.forRun(rogueRun);
 			MenuEnforcementDecision decision = MenuEnforcementEvaluator.evaluate(
-				event.getMenuOption(), event.getMenuTarget(), rules, rogueRun.currentRegionLegal());
+				event.getMenuOption(), event.getMenuTarget(), rules, rogueRun.currentRegionAllowed());
 			if (decision == MenuEnforcementDecision.BLOCK)
 			{
 				if (config.enforcementBlocking())
@@ -1270,7 +1270,7 @@ public class RogueScapePlugin extends Plugin
 			score,
 			progress,
 			stage.objectiveComplete(),
-			rogueRun.currentRegionLegal());
+			rogueRun.currentRegionAllowed());
 	}
 
 	private String targetRegionLabel()

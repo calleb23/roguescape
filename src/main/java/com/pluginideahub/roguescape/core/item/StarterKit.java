@@ -6,8 +6,8 @@ import java.util.Map;
 
 /**
  * Stage 2 — declared starter kit. Items present in the kit (up to the declared quantity)
- * are classified as LEGAL_STARTER_KIT. Anything in inventory beyond the declared kit at
- * run start is treated as pre-run supply / suspicious by the classifier.
+ * count as permitted starter-kit items. Anything in inventory beyond the declared kit at
+ * run start is treated as pre-run supply and flagged by the restriction rules.
  */
 public final class StarterKit
 {

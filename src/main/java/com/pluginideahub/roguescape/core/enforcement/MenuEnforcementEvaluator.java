@@ -8,7 +8,7 @@ package com.pluginideahub.roguescape.core.enforcement;
  * supplied as-is from {@code MenuEntry.getOption()} / {@code MenuEntry.getTarget()}.
  *
  * The sentinel option {@link #REGION_CHECK_OPTION} is used by the plugin to ask the
- * evaluator whether the player has left the legal region, without any menu text.
+ * evaluator whether the player has left the allowed region, without any menu text.
  */
 public final class MenuEnforcementEvaluator
 {
@@ -19,7 +19,7 @@ public final class MenuEnforcementEvaluator
 	public static MenuEnforcementDecision evaluate(
 		String option, String target,
 		RogueScapeEnforcementRules rules,
-		boolean playerInsideLegalRegion)
+		boolean playerInsideAllowedRegion)
 	{
 		if (rules == null) return MenuEnforcementDecision.ALLOW;
 
@@ -28,7 +28,7 @@ public final class MenuEnforcementEvaluator
 
 		if (REGION_CHECK_OPTION.equalsIgnoreCase(option))
 		{
-			return rules.warnLeaveRoom() && !playerInsideLegalRegion
+			return rules.warnLeaveRoom() && !playerInsideAllowedRegion
 				? MenuEnforcementDecision.WARN
 				: MenuEnforcementDecision.ALLOW;
 		}
@@ -58,12 +58,12 @@ public final class MenuEnforcementEvaluator
 			return MenuEnforcementDecision.BLOCK;
 		}
 
-		if (rules.blockGroundPickup() && !playerInsideLegalRegion && isGroundPickup(opt))
+		if (rules.blockGroundPickup() && !playerInsideAllowedRegion && isGroundPickup(opt))
 		{
 			return MenuEnforcementDecision.BLOCK;
 		}
 
-		if (rules.blockWalkOutsideRoom() && !playerInsideLegalRegion && isWalkAction(opt))
+		if (rules.blockWalkOutsideRoom() && !playerInsideAllowedRegion && isWalkAction(opt))
 		{
 			return MenuEnforcementDecision.BLOCK;
 		}

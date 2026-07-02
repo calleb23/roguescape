@@ -45,7 +45,7 @@ public class RogueScapePrototypeTest
 	{
 		RogueScapeRunSession session = RogueScapeRunSession.start("Barrows staircase dungeon crawl");
 
-		session.enterRoom("Lumbridge Basement", "rats and one suspicious crate");
+		session.enterRoom("Lumbridge Basement", "rats and one unmarked crate");
 		session.observeItemGain("Bronze dagger", 1, RogueScapeRunSession.ItemSource.STARTER_KIT, "Lumbridge Basement", "starter weapon", 1);
 		session.addRelic("Crate Goblin", "First supply found in every new room is doubled");
 		session.enterRoom("Barbarian Village", "food check before stronghold");
@@ -66,9 +66,9 @@ public class RogueScapePrototypeTest
 	}
 
 	@Test
-	public void legalFreshSourceRewardsScoreAndCountCorrectly()
+	public void permittedFreshSourceRewardsScoreAndCountCorrectly()
 	{
-		RogueScapeRunSession session = RogueScapeRunSession.start("Fresh-source legal scoring test");
+		RogueScapeRunSession session = RogueScapeRunSession.start("Fresh-source permitted scoring test");
 		session.enterRoom("Grand Exchange", "buying supplies");
 		session.observeItemGain("Shark", 5, RogueScapeRunSession.ItemSource.BOUGHT_DURING_RUN, "Grand Exchange", "healing", 3);
 		session.observeItemGain("Oak logs", 10, RogueScapeRunSession.ItemSource.GATHERED_OR_CRAFTED, "Draynor Village", "fuel", 1);

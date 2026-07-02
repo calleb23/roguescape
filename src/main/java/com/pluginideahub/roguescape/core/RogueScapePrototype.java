@@ -34,7 +34,7 @@ public final class RogueScapePrototype
 			"fresh-ironman-scramble",
 			"Fresh Ironman Scramble",
 			"No Grand Exchange, no traded items; find everything from scratch.",
-			Arrays.asList("Declare a starting region.", "Only FOUND_DURING_RUN or GATHERED_OR_CRAFTED items are legal.")
+			Arrays.asList("Declare a starting region.", "Only FOUND_DURING_RUN or GATHERED_OR_CRAFTED items are permitted.")
 		));
 		deck.add(new PrototypeRuleCard(
 			"barrows-no-teleport-run",

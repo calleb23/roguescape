@@ -430,11 +430,11 @@ final class RogueScapeWindowContent
 	{
 		List<RogueScapeWindowOverlay.ModeTile> tiles = new ArrayList<>();
 		tiles.add(customActionTile("Supply", "Food, potions, ammo, and utility.", "Add room", RogueScapeTheme.INFO, "custom:add-supply"));
-		tiles.add(customActionTile("Armour", "Armour upgrades are legal here.", "Add room", RogueScapeTheme.RARITY_RARE, "custom:add-armour"));
-		tiles.add(customActionTile("Weapons", "Weapon upgrades are legal here.", "Add room", RogueScapeTheme.POSITIVE, "custom:add-weapons"));
-		tiles.add(customActionTile("Skilling", "Gathered resources are legal here.", "Add room", RogueScapeTheme.RARITY_EPIC, "custom:add-skilling"));
-		tiles.add(customActionTile("All", "Any local legal gain counts.", "Add room", RogueScapeTheme.GOLD, "custom:add-all"));
-		tiles.add(customActionTile("Shopping", "Shop purchases are legal here.", "Add room", RogueScapeTheme.RARITY_LEGENDARY, "custom:add-shopping"));
+		tiles.add(customActionTile("Armour", "Armour upgrades are permitted here.", "Add room", RogueScapeTheme.RARITY_RARE, "custom:add-armour"));
+		tiles.add(customActionTile("Weapons", "Weapon upgrades are permitted here.", "Add room", RogueScapeTheme.POSITIVE, "custom:add-weapons"));
+		tiles.add(customActionTile("Skilling", "Gathered resources are permitted here.", "Add room", RogueScapeTheme.RARITY_EPIC, "custom:add-skilling"));
+		tiles.add(customActionTile("All", "Any local permitted gain counts.", "Add room", RogueScapeTheme.GOLD, "custom:add-all"));
+		tiles.add(customActionTile("Shopping", "Shop purchases are permitted here.", "Add room", RogueScapeTheme.RARITY_LEGENDARY, "custom:add-shopping"));
 		return tiles;
 	}
 
@@ -813,7 +813,7 @@ final class RogueScapeWindowContent
 			case RELIC: return "choose one power — the rest crumble to dust";
 			case SUPPLY: return "choose one bundle — the rest crumble to dust";
 			case UNLOCK: return "choose one key — the rest crumble to dust";
-			case BANK_UNLOCK: return "choose one item to make lawful";
+			case BANK_UNLOCK: return "choose one item to permit";
 			default: return "choose one — the rest crumble to dust";
 		}
 	}
@@ -959,7 +959,7 @@ final class RogueScapeWindowContent
 		}
 		if (option.isBankUnlock() && option.bankItem() != null)
 		{
-			lines.add("Makes this bank item legal.");
+			lines.add("Permits this bank item.");
 			lines.add("Bank withdrawal must match the chosen item.");
 			return new RogueScapeRewardOverlay.Card(option.label(), "BANK",
 				RogueScapeRewardOverlay.Rarity.RARE, rewardIconFor(option), lines);

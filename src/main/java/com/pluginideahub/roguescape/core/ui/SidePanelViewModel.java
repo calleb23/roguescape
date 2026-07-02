@@ -692,7 +692,7 @@ public final class SidePanelViewModel
 				b.status("Room timer: " + loop.timeRemainingLabel() + " once you enter");
 			}
 			b.status("");
-			b.status(run.currentRegionLegal()
+			b.status(run.currentRegionAllowed()
 				? "You are in the room. The timer will arm on the next tick."
 				: "Walk to the allowed room to start the timer.");
 			b.status("Movement is allowed during Travel.");

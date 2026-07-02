@@ -326,7 +326,7 @@ public class RogueScapeRunSession
 		return rewards.size();
 	}
 
-	/** Total items collected during the run (no legality judgment — every gain counts). */
+	/** Total items collected during the run (no restriction judgment — every gain counts). */
 	public int itemsCollected()
 	{
 		return rewards.size();

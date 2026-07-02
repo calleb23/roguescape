@@ -35,7 +35,7 @@ public class RogueScapeRewardOverlayRenderTest
 			new RogueScapeRewardOverlay.RewardView("D1", "The chest holds a relic", "choose one power — the rest crumble to dust", cards,
 				Arrays.asList("Chapter: 7 of 50", "Stamped: Barbarian Village", "Next: Giant Mole",
 					"Build:", "Bloodthirsty", "", "Score: 182",
-					"Relics: 4", "Lawful: 18", "Forbidden: 0", "", "Curses:", "Twisted Souls",
+					"Relics: 4", "Permitted: 18", "Forbidden: 0", "", "Curses:", "Twisted Souls",
 					"Dark Hunger", "", "Noted:", "The chest is open."),
 				Arrays.asList(1631, 995, 385, 1712, 1127, 4587, 6685));
 

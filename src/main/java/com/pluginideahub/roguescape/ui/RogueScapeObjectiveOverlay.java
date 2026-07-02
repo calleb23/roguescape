@@ -27,10 +27,10 @@ public final class RogueScapeObjectiveOverlay extends Overlay
 		final String score;
 		final double progress;
 		final boolean objectiveReady;
-		final boolean regionLegal;
+		final boolean regionAllowed;
 
 		public View(String stage, String objective, String next, String region, String phase, String score,
-			double progress, boolean objectiveReady, boolean regionLegal)
+			double progress, boolean objectiveReady, boolean regionAllowed)
 		{
 			this.stage = stage == null ? "" : stage;
 			this.objective = objective == null ? "" : objective;
@@ -40,7 +40,7 @@ public final class RogueScapeObjectiveOverlay extends Overlay
 			this.score = score == null ? "" : score;
 			this.progress = Math.max(0, Math.min(1, progress));
 			this.objectiveReady = objectiveReady;
-			this.regionLegal = regionLegal;
+			this.regionAllowed = regionAllowed;
 		}
 	}
 
@@ -100,7 +100,7 @@ public final class RogueScapeObjectiveOverlay extends Overlay
 		drawPill(g, PAD, y - 13, view.phase, RogueScapeTheme.ACCENT);
 		drawRight(g, view.score, WIDTH - PAD, y, RogueScapeTheme.GOLD);
 		y += 16;
-		g.setColor(view.regionLegal ? RogueScapeTheme.POSITIVE : RogueScapeTheme.NEGATIVE);
+		g.setColor(view.regionAllowed ? RogueScapeTheme.POSITIVE : RogueScapeTheme.NEGATIVE);
 		g.drawString(clip("Region: " + view.region, fm, WIDTH - PAD * 2), PAD, y);
 		if (!view.next.isEmpty())
 		{

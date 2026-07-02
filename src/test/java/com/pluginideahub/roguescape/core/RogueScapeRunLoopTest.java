@@ -187,7 +187,7 @@ public class RogueScapeRunLoopTest
 	}
 
 	@Test
-	public void travelGatedRunStartsRoomTimerWhenEnteringLegalRegion()
+	public void travelGatedRunStartsRoomTimerWhenEnteringAllowedRegion()
 	{
 		RogueScapeRunLoop loop = loopWithTwoStages().setTravelGatedStages(true).setTimeLimitMillis(60_000L);
 		loop.run().setRegionRule("R1", new StageRegionRule(RoomKind.REGION, Collections.singleton("lumbridge"), true));

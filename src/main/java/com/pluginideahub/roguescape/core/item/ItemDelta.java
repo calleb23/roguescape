@@ -5,7 +5,7 @@ import java.util.Objects;
 /**
  * Stage 2 — observed positive inventory change. Negative deltas (drops/uses) are tracked
  * separately or as part of richer adapters; this type focuses on item *gains* because
- * legality is primarily about how new items entered the run.
+ * restriction rules are primarily about how new items entered the run.
  */
 public final class ItemDelta
 {

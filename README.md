@@ -42,7 +42,7 @@ Open the RogueScape side panel from the RuneLite toolbar, or configure under
 
 - **Grey Out Outside Room** / **Room Mask Opacity** — the passive off-room visual aid.
 - **In-game Windows** — show the draggable in-game builder window (on by default).
-- **Allow Bank Unlocks**, **Flag Pre-run Supplies** — legality tuning.
+- **Allow Bank Unlocks**, **Flag Pre-run Supplies** — restriction tuning.
 - **Developer Mode** — exposes DEV TOOLS for stepping a run without playing (off by default; for UI
   development).
 - **Experimental Quest-tab UI** — opt-in widget probe; off by default.

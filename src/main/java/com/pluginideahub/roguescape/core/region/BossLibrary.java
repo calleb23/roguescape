@@ -9,7 +9,7 @@ import java.util.Set;
 /**
  * Stage 5 — content bank of named OSRS boss stages. Each definition is tagged
  * {@link RoomKind#BOSS} and carries the integer region IDs (as strings) of the boss's lair so
- * a RuneLite adapter can map world points to legality without exposing RuneLite types to the
+ * a RuneLite adapter can map world points to region permissions without exposing RuneLite types to the
  * pure-Java core.
  */
 public final class BossLibrary

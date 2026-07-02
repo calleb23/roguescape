@@ -9,10 +9,10 @@ import java.util.Set;
  *
  * <ul>
  *   <li>{@code roomKind} — finer category for the stage (region/supply/weapon/shop/boss...).</li>
- *   <li>{@code allowedRegionIds} — the legal region IDs the player must remain within
+ *   <li>{@code allowedRegionIds} — the allowed region IDs the player must remain within
  *       while this stage is current. Empty means "no region restriction for this stage".</li>
  *   <li>{@code allowsRegionGain} — whether items observed inside the allowed region count
- *       as legal region gains. Boss/choice-chest stages may leave this false.</li>
+ *       as allowed region gains. Boss/choice-chest stages may leave this false.</li>
  * </ul>
  *
  * Instances are immutable.
@@ -45,7 +45,7 @@ public final class StageRegionRule
 	public boolean allowsRegionGain() { return allowsRegionGain; }
 	public boolean restrictsRegion() { return !allowedRegionIds.isEmpty(); }
 
-	public boolean isLegalRegion(String regionId)
+	public boolean isAllowedRegion(String regionId)
 	{
 		if (allowedRegionIds.isEmpty()) return true;
 		return regionId != null && allowedRegionIds.contains(regionId);

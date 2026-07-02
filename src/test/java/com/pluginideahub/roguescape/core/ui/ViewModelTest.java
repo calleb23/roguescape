@@ -30,7 +30,7 @@ public class ViewModelTest
 		assertEquals("Demo run", overlay.goal());
 		assertEquals("Lumbridge", overlay.currentRoom());
 		assertEquals(1, overlay.itemsCollected());
-		assertTrue(overlay.currentRegionLegal());
+		assertTrue(overlay.currentRegionAllowed());
 		assertTrue(overlay.warnings().isEmpty());
 	}
 
@@ -74,7 +74,7 @@ public class ViewModelTest
 	public void travelViewModelShowsDestinationAndWaitsForEntry()
 	{
 		RogueScapeRunSession base = RogueScapeRunSession.start("Travel run");
-		base.addStage("R1", RunStageType.ROOM, "Lumbridge", "", "Find one legal upgrade", 1);
+		base.addStage("R1", RunStageType.ROOM, "Lumbridge", "", "Find one permitted upgrade", 1);
 		base.enterStage("R1");
 		RogueScapeRun run = RogueScapeRun.wrap(base);
 		run.setRegionRule("R1", new StageRegionRule(RoomKind.REGION, Collections.singleton("lumbridge"), true));
@@ -87,7 +87,7 @@ public class ViewModelTest
 		assertEquals(RunPhase.TRAVEL_TO_STAGE.getDisplayName(), vm.phaseLabel());
 		assertTrue(vm.statusRows().stream().anyMatch(s -> s.equals("CURRENT: Travel")));
 		assertTrue(vm.statusRows().stream().anyMatch(s -> s.equals("Travel to Lumbridge.")));
-		assertTrue(vm.statusRows().stream().anyMatch(s -> s.contains("The task waits there: Find one legal upgrade")));
+		assertTrue(vm.statusRows().stream().anyMatch(s -> s.contains("The task waits there: Find one permitted upgrade")));
 		assertTrue(vm.statusRows().stream().anyMatch(s -> s.equals("Allowed regions: lumbridge")));
 		assertTrue(vm.statusRows().stream().anyMatch(s -> s.equals("Room timer: 01:00 once you enter")));
 		assertTrue(vm.statusRows().stream().anyMatch(s -> s.contains("Walk to the allowed room")));
@@ -102,7 +102,7 @@ public class ViewModelTest
 	public void activeViewModelShowsObjectiveCompletion()
 	{
 		RogueScapeRunSession base = RogueScapeRunSession.start("Objective run");
-		base.addStage("R1", RunStageType.ROOM, "Lumbridge", "", "Find one legal upgrade", 1);
+		base.addStage("R1", RunStageType.ROOM, "Lumbridge", "", "Find one permitted upgrade", 1);
 		base.enterStage("R1");
 		RogueScapeRun run = RogueScapeRun.wrap(base);
 		run.applyItemDelta("Bronze dagger", 1, ProvenanceHint.OBSERVED_LOOT);

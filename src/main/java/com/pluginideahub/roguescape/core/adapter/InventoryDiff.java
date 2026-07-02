@@ -11,7 +11,7 @@ import java.util.Map;
 /**
  * Stage 6 — pure diff helper. Compares two snapshots and returns positive deltas as
  * {@link ItemDelta} instances. Used to convert RuneLite {@code ItemContainerChanged} signals
- * into the core's legality event stream without exposing RuneLite types.
+ * into the core's restriction event stream without exposing RuneLite types.
  */
 public final class InventoryDiff
 {

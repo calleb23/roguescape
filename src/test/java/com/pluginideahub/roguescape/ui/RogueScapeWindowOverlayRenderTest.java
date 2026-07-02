@@ -65,7 +65,7 @@ public class RogueScapeWindowOverlayRenderTest
 
 		RogueScapeRunSession base = RogueScapeRunSession.start("Preview run");
 		base.addStage("B0", RunStageType.BOSS, "Obor", "");
-		base.addStage("R1", RunStageType.ROOM, "Canifis", "", "Find a lawful weapon upgrade", 1);
+		base.addStage("R1", RunStageType.ROOM, "Canifis", "", "Find a weapon upgrade", 1);
 		base.addStage("B1", RunStageType.BOSS, "Giant Mole", "");
 		base.addStage("B2", RunStageType.BOSS, "Scorpia", "");
 		base.addStage("B3", RunStageType.BOSS, "Vorkath", "");
@@ -215,12 +215,12 @@ public class RogueScapeWindowOverlayRenderTest
 		live.add(RogueScapeWindowOverlay.Block.badge("Room Active", "Time 06:18", RogueScapeTheme.ACCENT, 0));
 		live.add(RogueScapeWindowOverlay.Block.heading("CURRENT STAGE"));
 		live.add(RogueScapeWindowOverlay.Block.badge("Barbarian Village", "ROOM", RogueScapeTheme.GOLD, 0));
-		live.add(RogueScapeWindowOverlay.Block.text("Objective: Find a legal weapon upgrade (0 / 1)",
+		live.add(RogueScapeWindowOverlay.Block.text("Objective: Find a weapon upgrade (0 / 1)",
 			RogueScapeTheme.TEXT_PRIMARY));
 		live.add(RogueScapeWindowOverlay.Block.text("Next: Giant Mole", RogueScapeTheme.TEXT_MUTED));
 		live.add(RogueScapeWindowOverlay.Block.heading("BUILD STATE"));
 		live.add(RogueScapeWindowOverlay.Block.text("Score: 18", RogueScapeTheme.GOLD));
-		live.add(RogueScapeWindowOverlay.Block.text("Relics: 2   Legal/Illegal: 6/0", RogueScapeTheme.TEXT_PRIMARY));
+		live.add(RogueScapeWindowOverlay.Block.text("Relics: 2   Permitted/Forbidden: 6/0", RogueScapeTheme.TEXT_PRIMARY));
 		tabs.add(new RogueScapeWindowOverlay.Tab("LIVE RUN", live));
 
 		List<RogueScapeWindowOverlay.Block> build = new ArrayList<>();

@@ -1683,7 +1683,7 @@ public class RogueScapePanel extends PluginPanel
 	{
 		CollapsibleSection section = new CollapsibleSection("Dev Tools", true);
 		JPanel c = section.content();
-		c.add(mutedRow("Simulate stepping a run to test UI states. Buttons drive the run loop through legal transitions."));
+		c.add(mutedRow("Simulate stepping a run to test UI states. Buttons drive the run loop through valid transitions."));
 		c.add(vGap(4));
 		c.add(devButton("Force Complete Stage", PanelAction.DEV_COMPLETE_STAGE));
 		c.add(vGap(3));
@@ -1791,7 +1791,7 @@ public class RogueScapePanel extends PluginPanel
 		for (String row : model.statusRows())
 		{
 			if (row == null || row.trim().isEmpty()) continue;
-			if (row.startsWith("Score:") || row.startsWith("Legal/Illegal:") || row.startsWith("CURRENT:")) continue;
+			if (row.startsWith("Score:") || row.startsWith("Permitted/Forbidden:") || row.startsWith("CURRENT:")) continue;
 			if (firstDetail)
 			{
 				liveRunContent.add(vGap(4));
@@ -2033,7 +2033,7 @@ public class RogueScapePanel extends PluginPanel
 		String value = line.substring(idx + 2);
 		String lower = value.toLowerCase();
 		Color color = RogueScapeTheme.TEXT_PRIMARY;
-		if (lower.contains("illegal"))
+		if (lower.contains("forbidden"))
 		{
 			color = RogueScapeTheme.NEGATIVE;
 		}

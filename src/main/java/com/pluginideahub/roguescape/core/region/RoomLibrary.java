@@ -12,7 +12,7 @@ import java.util.Set;
  * consumes these definitions when constructing a {@link com.pluginideahub.roguescape.core.RunRoute}.
  *
  * Region IDs match the integer ID returned by {@code WorldPoint.getRegionID()} so a thin
- * RuneLite adapter can map world points to room legality without exposing RuneLite types
+ * RuneLite adapter can map world points to room permissions without exposing RuneLite types
  * to the pure-Java core.
  */
 public final class RoomLibrary

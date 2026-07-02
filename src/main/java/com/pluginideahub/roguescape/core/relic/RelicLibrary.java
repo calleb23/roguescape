@@ -126,8 +126,8 @@ public final class RelicLibrary
 
 	/**
 	 * One Bank Mercy — the run can survive exactly one bank withdrawal during the run.
-	 * Without the relic, a bank withdrawal is illegal (per legality classifier rules); with
-	 * the relic, the first such illegal bank withdrawal is downgraded to suspicious and
+	 * Without the relic, a bank withdrawal is forbidden (per restriction rules); with
+	 * the relic, the first such forbidden bank withdrawal is downgraded to a warning and
 	 * the relic charge is consumed.
 	 */
 	public static Relic oneBankMercy()

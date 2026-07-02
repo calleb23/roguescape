@@ -9,7 +9,7 @@ import java.util.Set;
  * the overlay so they can be unit-tested.
  *
  * Allowed region IDs are stored as Strings to match {@link StageRegionRule}, which
- * is the source-of-truth for the current stage's legal regions.
+ * is the source-of-truth for the current stage's allowed regions.
  */
 public final class RogueScapeRoomMaskRules
 {

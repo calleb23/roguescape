@@ -17,7 +17,7 @@ public class JournalSpreadTest
 	private static SidePanelViewModel runVm()
 	{
 		RogueScapeRunSession base = RogueScapeRunSession.start("Spread run");
-		base.addStage("R1", RunStageType.ROOM, "Lumbridge", "", "Find one legal upgrade", 1);
+		base.addStage("R1", RunStageType.ROOM, "Lumbridge", "", "Find one permitted upgrade", 1);
 		base.addStage("R2", RunStageType.ROOM, "Varrock", "");
 		base.enterStage("R1");
 		RogueScapeRun run = RogueScapeRun.wrap(base);
@@ -137,7 +137,7 @@ public class JournalSpreadTest
 		assertTrue("the current room is named",
 			spread.right().stream().anyMatch(b -> b.text().startsWith("Room — Lumbridge")));
 		assertTrue("the objective sits in the info block",
-			spread.right().stream().anyMatch(b -> b.text().contains("Find one legal upgrade")));
+			spread.right().stream().anyMatch(b -> b.text().contains("Find one permitted upgrade")));
 		assertTrue("what comes next is noted",
 			spread.right().stream().anyMatch(b -> b.text().equals("Next: Varrock")));
 		assertTrue("a forbidden rule note appears in the info block",

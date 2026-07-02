@@ -404,7 +404,7 @@ public class RogueScapeRewardOverlay extends Overlay implements MouseListener
 		FontMetrics vfm = g.getFontMetrics();
 		int vx = Math.max(labelEnd + 10, x + w - vfm.stringWidth(value));
 		RogueScapePaper.leader(g, labelEnd, baseline - 4, vx - 6);
-		Color valueColor = label.equalsIgnoreCase("Illegal") && !value.equals("0")
+		Color valueColor = label.equalsIgnoreCase("Forbidden") && !value.equals("0")
 			? RogueScapeTheme.NEGATIVE : RogueScapeTheme.INK;
 		g.setColor(valueColor);
 		g.drawString(value, vx, baseline);
@@ -570,8 +570,8 @@ public class RogueScapeRewardOverlay extends Overlay implements MouseListener
 		String lower = key == null ? "" : key.toLowerCase();
 		Color c = lower.contains("floor") ? RogueScapeTheme.BAR_PROGRESS
 			: lower.contains("score") || lower.contains("relic") ? RogueScapeTheme.GOLD
-			: lower.contains("illegal") || lower.contains("modifier") ? RogueScapeTheme.NEGATIVE
-			: lower.contains("legal") ? RogueScapeTheme.POSITIVE
+			: lower.contains("forbidden") || lower.contains("modifier") ? RogueScapeTheme.NEGATIVE
+			: lower.contains("permitted") ? RogueScapeTheme.POSITIVE
 			: lower.contains("signal") ? RogueScapeTheme.ACCENT
 			: RogueScapeTheme.INFO;
 		if (lower.contains("floor"))
@@ -584,7 +584,7 @@ public class RogueScapeRewardOverlay extends Overlay implements MouseListener
 			g.fillRect(cx + 3, cy - 3, 3, 8);
 			return;
 		}
-		if (lower.contains("illegal") || lower.contains("modifier"))
+		if (lower.contains("forbidden") || lower.contains("modifier"))
 		{
 			drawSkull(g, cx, cy, c);
 			return;

@@ -28,7 +28,7 @@ import java.util.Set;
  * Composition rather than inheritance is intentional: Stage 1 has a large stable test
  * surface, and the Stage 2/3 work happens around it without rewriting behaviour.
  *
- * The plugin no longer classifies item provenance as legal/illegal — disallowed actions are
+ * The plugin no longer classifies item provenance as permitted/forbidden — disallowed actions are
  * blocked outright by {@code MenuEnforcementEvaluator}. Items observed in-run simply count toward
  * the current room's objective and the run score.
  */
@@ -242,11 +242,11 @@ public final class RogueScapeRun
 		return last;
 	}
 
-	public boolean currentRegionLegal()
+	public boolean currentRegionAllowed()
 	{
 		StageRegionRule rule = currentStageRule();
 		if (!rule.restrictsRegion()) return true;
-		return rule.isLegalRegion(currentRegionId);
+		return rule.isAllowedRegion(currentRegionId);
 	}
 
 	// ---------- Item events ----------
@@ -254,7 +254,7 @@ public final class RogueScapeRun
 	/**
 	 * Records an item observed during the run: it counts toward the current room's objective and
 	 * the run score, feeds relic category limits, and (for boss loot) signals a boss defeat. No
-	 * legality judgment is made — disallowed actions are blocked at the menu, not classified here.
+	 * permission judgment is made — disallowed actions are blocked at the menu, not classified here.
 	 */
 	public void applyItemDelta(ItemDelta delta)
 	{

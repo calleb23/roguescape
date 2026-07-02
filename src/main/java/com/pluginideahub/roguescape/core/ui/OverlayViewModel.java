@@ -20,7 +20,7 @@ public final class OverlayViewModel
 	private final int score;
 	private final int relicCount;
 	private final int itemsCollected;
-	private final boolean currentRegionLegal;
+	private final boolean currentRegionAllowed;
 	private final List<String> warnings;
 
 	private OverlayViewModel(Builder b)
@@ -31,7 +31,7 @@ public final class OverlayViewModel
 		this.score = b.score;
 		this.relicCount = b.relicCount;
 		this.itemsCollected = b.itemsCollected;
-		this.currentRegionLegal = b.currentRegionLegal;
+		this.currentRegionAllowed = b.currentRegionAllowed;
 		this.warnings = Collections.unmodifiableList(new ArrayList<>(b.warnings));
 	}
 
@@ -41,7 +41,7 @@ public final class OverlayViewModel
 	public int score() { return score; }
 	public int relicCount() { return relicCount; }
 	public int itemsCollected() { return itemsCollected; }
-	public boolean currentRegionLegal() { return currentRegionLegal; }
+	public boolean currentRegionAllowed() { return currentRegionAllowed; }
 	public List<String> warnings() { return warnings; }
 
 	public static OverlayViewModel from(RogueScapeRun run)
@@ -55,8 +55,8 @@ public final class OverlayViewModel
 			.score(s.runScore())
 			.relicCount(s.relicCount())
 			.itemsCollected(run.itemsCollected())
-			.currentRegionLegal(run.currentRegionLegal());
-		if (!run.currentRegionLegal())
+			.currentRegionAllowed(run.currentRegionAllowed());
+		if (!run.currentRegionAllowed())
 		{
 			b.warning("Outside this room's region: " + run.currentRegionId());
 		}
@@ -73,7 +73,7 @@ public final class OverlayViewModel
 		private int score;
 		private int relicCount;
 		private int itemsCollected;
-		private boolean currentRegionLegal = true;
+		private boolean currentRegionAllowed = true;
 		private final List<String> warnings = new ArrayList<>();
 
 		public Builder goal(String g) { this.goal = g == null ? "" : g; return this; }
@@ -82,7 +82,7 @@ public final class OverlayViewModel
 		public Builder score(int v) { this.score = v; return this; }
 		public Builder relicCount(int v) { this.relicCount = v; return this; }
 		public Builder itemsCollected(int v) { this.itemsCollected = v; return this; }
-		public Builder currentRegionLegal(boolean b) { this.currentRegionLegal = b; return this; }
+		public Builder currentRegionAllowed(boolean b) { this.currentRegionAllowed = b; return this; }
 		public Builder warning(String w) { if (w != null && !w.isEmpty()) warnings.add(w); return this; }
 
 		public OverlayViewModel build() { return new OverlayViewModel(this); }

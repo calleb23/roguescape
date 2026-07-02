@@ -16,9 +16,9 @@ public enum RelicEffectKind
 	CATEGORY_LIMIT,
 	/** Multiplies or adds to the score for matching items at recap. */
 	SCORING_BIAS,
-	/** Marks specific items/categories as forbidden — items become illegal even if legally sourced. */
+	/** Marks specific items/categories as forbidden — items become forbidden even if permitted-sourced. */
 	RESTRICTION,
-	/** Adds an allowance — converts an otherwise suspicious source into legal (rarely used). */
+	/** Adds an allowance — converts an otherwise blocked source into a permitted one (rarely used). */
 	PERMISSION,
 	/** Lifts one restriction from the run's {@code RunRestrictions} — the canonical relic effect. */
 	EASE_RESTRICTION,

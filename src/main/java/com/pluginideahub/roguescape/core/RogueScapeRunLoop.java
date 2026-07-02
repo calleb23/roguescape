@@ -300,7 +300,7 @@ public final class RogueScapeRunLoop
 			return false;
 		}
 		RunStage stage = currentActiveStage();
-		if (stage == null || !run.currentRegionLegal())
+		if (stage == null || !run.currentRegionAllowed())
 		{
 			return false;
 		}
