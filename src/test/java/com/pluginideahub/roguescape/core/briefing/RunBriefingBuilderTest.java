@@ -65,9 +65,10 @@ public class RunBriefingBuilderTest
 		RunBriefing briefing = RunBriefingBuilder.preview(RunMode.BANK_DRAFT, RunPreset.UNSPECIFIED,
 			"rewarded-seed", "Naked", false, 0);
 
-		assertEquals("Rewarded", briefing.modeLabel());
+		assertEquals("Boss Ladder", briefing.modeLabel());
 		assertTrue(briefing.modeSummary().toLowerCase().contains("boss"));
-		assertEquals(2, briefing.bossCount());
+		assertEquals(3, briefing.bossCount());
+		assertEquals(0, briefing.roomCount());
 	}
 
 	@Test

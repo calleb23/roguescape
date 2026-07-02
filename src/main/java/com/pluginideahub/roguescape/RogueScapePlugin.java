@@ -1506,7 +1506,7 @@ public class RogueScapePlugin extends Plugin
 
 	static String runModeName(RunMode mode)
 	{
-		if (mode == RunMode.BANK_DRAFT) return "Rewarded";
+		if (mode == RunMode.BANK_DRAFT) return "Boss Ladder";
 		if (mode == RunMode.CUSTOM_CREATOR) return "Custom";
 		return "Scavenger";
 	}

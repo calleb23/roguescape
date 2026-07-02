@@ -448,7 +448,7 @@ final class RogueScapeWindowContent
 		List<RogueScapeWindowOverlay.ModeTile> tiles = new ArrayList<>();
 		tiles.add(new RogueScapeWindowOverlay.ModeTile("Scavenger", "Rooms define what can be collected.",
 			"Room-first", RogueScapeTheme.POSITIVE, "Scavenger".equals(selected), "custom:mode-scavenger"));
-		tiles.add(new RogueScapeWindowOverlay.ModeTile("Rewarded", "Bosses and rewards carry the run.",
+		tiles.add(new RogueScapeWindowOverlay.ModeTile("Boss Ladder", "Bosses and rewards carry the run.",
 			"Boss-first", RogueScapeTheme.RARITY_LEGENDARY, "Rewarded".equals(selected), "custom:mode-rewarded"));
 		return tiles;
 	}

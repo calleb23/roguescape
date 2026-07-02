@@ -136,7 +136,7 @@ public final class RunBriefingBuilder
 		if (mode == null) return "Scavenger";
 		switch (mode)
 		{
-			case BANK_DRAFT: return "Rewarded";
+			case BANK_DRAFT: return "Boss Ladder";
 			case CUSTOM_CREATOR: return "Custom";
 			case REGION_CRAWL: return "Region Crawl";
 			case SEEDED_RACE: return "Seeded Race";

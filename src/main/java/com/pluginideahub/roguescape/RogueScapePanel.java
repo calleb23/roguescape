@@ -1216,7 +1216,7 @@ public class RogueScapePanel extends PluginPanel
 		// full-width cards below are its visible face.
 		modeCombo.removeAllItems();
 		modeCombo.addItem("Scavenger");
-		modeCombo.addItem("Rewarded");
+		modeCombo.addItem("Boss Ladder");
 		modeCombo.addItem("Custom Creator");
 		modeCombo.addItem("Seeded Race");
 		modeCombo.addItem("Region Crawl");
@@ -1227,7 +1227,7 @@ public class RogueScapePanel extends PluginPanel
 		modeTilesPanel.setMaximumSize(new Dimension(Integer.MAX_VALUE, 5 * 54 + 16));
 		modeTilesPanel.setAlignmentX(Component.LEFT_ALIGNMENT);
 		modeTilesPanel.add(modeCard("scavenge", "Scavenger", "earn power, room by room", 0, RogueScapeTheme.WAX_GREEN));
-		modeTilesPanel.add(modeCard("reward", "Rewarded", "short prep, boss loot", 1, RogueScapeTheme.WAX_GOLD));
+		modeTilesPanel.add(modeCard("reward", "Boss Ladder", "climb the bosses, earn back freedom", 1, RogueScapeTheme.WAX_GOLD));
 		modeTilesPanel.add(modeCard("custom", "Custom", "draw your own route", 2, RogueScapeTheme.WAX_BLUE));
 		modeTilesPanel.add(modeCard("seeded-race", "Seeded Race", "same seed, same fate", 3, RogueScapeTheme.WAX_RED));
 		modeTilesPanel.add(modeCard("region-crawl", "Region Crawl", "one region at a time", 4, RogueScapeTheme.WAX_GREEN));
@@ -1259,7 +1259,7 @@ public class RogueScapePanel extends PluginPanel
 	{
 		switch (selectedMode())
 		{
-			case BANK_DRAFT: return "Rewarded Run";
+			case BANK_DRAFT: return "Boss Ladder Run";
 			case CUSTOM_CREATOR: return "Custom Run";
 			case FRESH_SOURCE:
 			case UNSPECIFIED:

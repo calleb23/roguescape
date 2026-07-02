@@ -180,16 +180,17 @@ public class RunRouteBuilderTest
 	}
 
 	@Test
-	public void rewardedGeneratedRouteHasPrepRoomAndTwoBosses()
+	public void bossLadderRouteIsBossesOnly()
 	{
+		// Locked 2026-07-02: the Boss Ladder route is purely the boss line-up — no prep ROOM
+		// stage; gearing up happens in the prep PHASE between bosses.
 		RogueScapeRunSession session = freshSession();
 		RogueScapeRun run = RogueScapeRun.wrap(session);
 		RunRouteBuilder.buildRoute(RunMode.BANK_DRAFT, RunPreset.UNSPECIFIED, "rewarded", session, run);
 
 		assertEquals(3, session.route().size());
-		assertEquals(1, countOfType(session, RunStageType.ROOM));
-		assertEquals(2, countOfType(session, RunStageType.BOSS));
-		assertEquals(RoomKind.SUPPLY, run.regionPolicy().ruleFor(session.route().stages().get(0).id()).roomKind());
+		assertEquals(0, countOfType(session, RunStageType.ROOM));
+		assertEquals(3, countOfType(session, RunStageType.BOSS));
 	}
 
 	@Test

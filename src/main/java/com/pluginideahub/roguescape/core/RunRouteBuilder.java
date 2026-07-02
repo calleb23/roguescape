@@ -215,6 +215,11 @@ public final class RunRouteBuilder
 
 	private static List<RoomDefinition> selectRoomsForMode(RunMode mode, int roomCount, DeterministicRng random)
 	{
+		if (roomCount <= 0)
+		{
+			// Boss Ladder: bosses only — no prep room stage.
+			return new ArrayList<>();
+		}
 		if (mode != RunMode.BANK_DRAFT)
 		{
 			return selectBalancedRooms(roomCount, random);
@@ -338,14 +343,16 @@ public final class RunRouteBuilder
 	private static int roomCount(RunMode mode, RunPreset preset)
 	{
 		if (mode == RunMode.CUSTOM_CREATOR) return 3;
-		if (mode == RunMode.BANK_DRAFT) return 1;
+		// Boss Ladder is bosses only — no prep ROOM stage (the prep PHASE between bosses
+		// handles gearing up). Locked 2026-07-02.
+		if (mode == RunMode.BANK_DRAFT) return 0;
 		return 3;
 	}
 
 	private static int bossCount(RunMode mode, RunPreset preset)
 	{
 		if (mode == RunMode.CUSTOM_CREATOR) return 1;
-		if (mode == RunMode.BANK_DRAFT) return 2;
+		if (mode == RunMode.BANK_DRAFT) return 3;
 		return 1;
 	}
 
