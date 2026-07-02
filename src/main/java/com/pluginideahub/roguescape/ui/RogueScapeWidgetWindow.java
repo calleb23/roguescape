@@ -39,14 +39,15 @@ public final class RogueScapeWidgetWindow implements MouseListener
 {
 	private static final int W = RogueScapeWidgetSkin.BOOK_W;
 	private static final int H = RogueScapeWidgetSkin.BOOK_H;
-	private static final int TITLE_H = 28; // masthead / drag region height
-	private static final int TAB_TOP = RogueScapeWidgetSkin.PAGE_TOP + 2; // tab strip top (under the masthead rule)
+	private static final int TITLE_H = 44; // masthead / drag region height (fits the large quill title)
+	private static final int TAB_TOP = 14; // tab strip shares the masthead, right of the title
 	private static final int TAB_H = 20;
+	private static final int TAB_LEFT = 320; // tabs start right of the title's reach
 	private static final int SPINE_GUTTER = 24; // half-width of the centre spine kept clear of content
 
 	// Content region (relative to the window origin).
 	private static final int CONTENT_X = 18;
-	private static final int CONTENT_TOP = TAB_TOP + TAB_H + 8;
+	private static final int CONTENT_TOP = RogueScapeWidgetSkin.PAGE_TOP + 8;
 	private static final int CONTENT_W = W - 36;
 	private static final int CONTENT_BOTTOM = RogueScapeWidgetSkin.PAGE_BOTTOM - 6;
 	private static final int LINE_H = 15;
@@ -257,7 +258,7 @@ public final class RogueScapeWidgetWindow implements MouseListener
 		titleText.setTextColor(COL_PRIMARY);
 		titleText.setFontId(FontID.QUILL_CAPS_LARGE);
 		titleText.setTextShadowed(false);
-		fill(titleText, 40, 6, 260, 22);
+		fill(titleText, 40, 6, 270, 40);
 
 		// Close button (the game's own close sprite). Clicks are handled by the MouseListener so
 		// they're consumed before the game world sees them (no walk-through).
@@ -301,8 +302,8 @@ public final class RogueScapeWidgetWindow implements MouseListener
 		tabRects.clear();
 		int n = Math.max(1, tabs.size());
 		int stripY = TAB_TOP;
-		int stripX = CONTENT_X;
-		int stripW = CONTENT_W;
+		int stripX = TAB_LEFT;
+		int stripW = W - 50 - TAB_LEFT; // stop short of the close button
 		int tabW = stripW / n;
 
 		for (int i = 0; i < tabs.size(); i++)
@@ -409,15 +410,16 @@ public final class RogueScapeWidgetWindow implements MouseListener
 			}
 			case PAGE_TITLE:
 			{
+				// The quill title needs a full 22px line before the subtitle starts.
 				text(contentLayer, x, y, w, RogueScapeWindowOverlay.ascii(b.text),
 					COL_PRIMARY, FontID.QUILL_MEDIUM, false);
 				if (b.sub != null && !b.sub.isEmpty())
 				{
-					text(contentLayer, x, y + 16, w, RogueScapeWindowOverlay.ascii(b.sub),
+					text(contentLayer, x, y + 24, w, RogueScapeWindowOverlay.ascii(b.sub),
 						COL_MUTED, FontID.PLAIN_11, false);
-					return y + 34;
+					return y + 42;
 				}
-				return y + 20;
+				return y + 26;
 			}
 			case COLUMNS:
 			{
@@ -820,14 +822,24 @@ public final class RogueScapeWidgetWindow implements MouseListener
 			bd.setTextColor(tile.selected ? COL_STAMP : COL_SLOT_BORDER);
 			fill(bd, tx, ty, tileW, tileH);
 
-			Widget title = text(contentLayer, tx + 4, ty + 14, tileW - 8,
+			// Narrow tiles (curse strip) drop to the small font and get a second title line to
+			// wrap into, so labels never bleed into the neighbouring tile.
+			boolean narrow = tileW < 80;
+			Widget title = text(contentLayer, tx + 4, ty + (narrow ? 6 : 14), tileW - 8,
 				RogueScapeWindowOverlay.ascii(tile.title), COL_PRIMARY,
-				FontID.BOLD_12, false);
+				narrow ? FontID.PLAIN_11 : FontID.BOLD_12, false);
+			title.setOriginalHeight(narrow ? 30 : LINE_H);
 			title.setXTextAlignment(WidgetTextAlignment.CENTER);
+			title.revalidate();
 
-			Widget subtitle = text(contentLayer, tx + 6, ty + 36, tileW - 12,
-				RogueScapeWindowOverlay.ascii(tile.subtitle), COL_MUTED, FontID.PLAIN_11, false);
-			subtitle.setXTextAlignment(WidgetTextAlignment.CENTER);
+			if (!narrow)
+			{
+				Widget subtitle = text(contentLayer, tx + 6, ty + 36, tileW - 12,
+					RogueScapeWindowOverlay.ascii(tile.subtitle), COL_MUTED, FontID.PLAIN_11, false);
+				subtitle.setOriginalHeight(tileH - 56);
+				subtitle.setXTextAlignment(WidgetTextAlignment.CENTER);
+				subtitle.revalidate();
+			}
 
 			if (tile.detail != null && !tile.detail.isEmpty())
 			{
@@ -880,10 +892,15 @@ public final class RogueScapeWidgetWindow implements MouseListener
 		return tabs == null ? new ArrayList<>() : tabs;
 	}
 
-	/** Trims long tab labels so six fit across the strip (e.g. "RUN CONTROL" -> "RUN"). */
+	/** Trims long tab labels so six fit across the strip: drops a leading article, then keeps
+	 * the first meaningful word (e.g. "The Contract" -> "Contract", "RUN CONTROL" -> "RUN"). */
 	private static String shorten(String name)
 	{
 		String s = RogueScapeWindowOverlay.ascii(name).trim();
+		if (s.regionMatches(true, 0, "the ", 0, 4))
+		{
+			s = s.substring(4).trim();
+		}
 		int space = s.indexOf(' ');
 		if (space > 0)
 		{

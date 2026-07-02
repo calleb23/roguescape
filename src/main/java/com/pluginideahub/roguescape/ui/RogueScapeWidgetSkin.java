@@ -35,7 +35,7 @@ public final class RogueScapeWidgetSkin
 	public static final int BOOK_W = 680;
 	public static final int BOOK_H = 430;
 	/** Where the two-page chrome starts/stops vertically (below the masthead, above the margin). */
-	public static final int PAGE_TOP = 34;
+	public static final int PAGE_TOP = 58;
 	public static final int PAGE_BOTTOM = BOOK_H - 14;
 
 	private static final int SEAL_SIZE = 26;
