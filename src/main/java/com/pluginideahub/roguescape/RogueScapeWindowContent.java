@@ -134,7 +134,6 @@ final class RogueScapeWindowContent
 		List<RogueScapeWindowOverlay.Tab> tabs = new ArrayList<>();
 		if (plugin.rogueRun == null || plugin.runSession == null || plugin.runLoop == null)
 		{
-			List<RogueScapeWindowOverlay.Block> lobby = new ArrayList<>();
 			RunMode mode = plugin.panel != null ? plugin.panel.selectedMode() : ModePresetParser.parseMode(plugin.config.modePreset());
 			RunPreset preset = plugin.panel != null ? plugin.panel.selectedPreset() : RunPreset.UNSPECIFIED;
 			String runTitle = plugin.panel != null && plugin.panel.selectedGoal() != null && !plugin.panel.selectedGoal().trim().isEmpty()
@@ -148,24 +147,21 @@ final class RogueScapeWindowContent
 				// Custom mode: the window becomes the route builder (mirrors the widget window).
 				return customBuilderTabs();
 			}
-			lobby.add(RogueScapeWindowOverlay.Block.heading("Pick Your Contract"));
-			lobby.add(RogueScapeWindowOverlay.Block.modeTiles(lobbyModeTiles(mode, seed)));
-			lobby.add(RogueScapeWindowOverlay.Block.gap());
-			lobby.add(RogueScapeWindowOverlay.Block.badge("Selected: " + RogueScapePlugin.runModeName(mode), startLine(mode, preset, seed),
-				RogueScapeTheme.BANNER, 0));
-			lobby.add(RogueScapeWindowOverlay.Block.text("Run: " + runTitle, RogueScapeTheme.TEXT_PRIMARY));
-			lobby.add(RogueScapeWindowOverlay.Block.modeTiles(startRunTile(mode)));
-			lobby.add(RogueScapeWindowOverlay.Block.gap());
-			addBriefingBlocks(lobby, mode, preset, seed);
-			tabs.add(new RogueScapeWindowOverlay.Tab("CONTRACT", lobby));
-
-			List<RogueScapeWindowOverlay.Block> rules = new ArrayList<>();
-			rules.add(RogueScapeWindowOverlay.Block.heading("The Rules"));
-			for (String line : plugin.formatRules().split("\\n"))
+			// The Contract spread: choices on the left page, the live briefing on the right.
+			String loadout = plugin.panel != null ? plugin.panel.customBuilderLoadout() : "Naked";
+			RunBriefing briefing = null;
+			String briefingError = "";
+			try
 			{
-				rules.add(RogueScapeWindowOverlay.Block.text("- " + line, RogueScapeTheme.TEXT_PRIMARY));
+				briefing = RunBriefingBuilder.preview(mode, preset, seed, loadout,
+					plugin.config.bankAccessAllowed(), 0);
 			}
-			tabs.add(new RogueScapeWindowOverlay.Tab("THE RULES", rules));
+			catch (RuntimeException ex)
+			{
+				briefingError = ex.getMessage() == null ? "" : ex.getMessage();
+			}
+			tabs.add(new RogueScapeWindowOverlay.Tab("THE CONTRACT", JournalSpreadBlocks.render(
+				SidePanelViewModel.contractSpread(mode, runTitle, seed, briefing, briefingError))));
 			return tabs;
 		}
 
@@ -178,34 +174,19 @@ final class RogueScapeWindowContent
 		return tabs;
 	}
 
-	/** True when the window is showing a live run — rendered as the open-book two-page spread. */
-	boolean isRunSpread()
+	/**
+	 * True when the window is showing a journal spread (contract, run, reward, recap) — rendered
+	 * as the open book. Only the custom route builder keeps the tabbed panel.
+	 */
+	boolean isBookSpread()
 	{
-		return plugin.rogueRun != null && plugin.runSession != null && plugin.runLoop != null;
-	}
-
-	private static void addActionTile(List<RogueScapeWindowOverlay.ModeTile> tiles, SidePanelViewModel vm,
-		PanelAction action, String title, String subtitle, java.awt.Color color)
-	{
-		if (vm.isActionEnabled(action))
+		if (plugin.rogueRun != null && plugin.runSession != null && plugin.runLoop != null)
 		{
-			tiles.add(new RogueScapeWindowOverlay.ModeTile(title, subtitle, "", color, false, "action-" + action.name()));
+			return true;
 		}
-	}
-
-	private static List<RogueScapeWindowOverlay.ModeTile> lobbyModeTiles(RunMode selectedMode, String seed)
-	{
-		List<RogueScapeWindowOverlay.ModeTile> tiles = new ArrayList<>();
-		tiles.add(new RogueScapeWindowOverlay.ModeTile("Scavenger", "Earn power, room by room.",
-			"Fresh source", RogueScapeTheme.POSITIVE, selectedMode == RunMode.FRESH_SOURCE || selectedMode == RunMode.UNSPECIFIED,
-			"scavenger"));
-		tiles.add(new RogueScapeWindowOverlay.ModeTile("Rewarded", "Short prep, boss loot.",
-			"Campaign", RogueScapeTheme.RARITY_LEGENDARY, selectedMode == RunMode.BANK_DRAFT,
-			"rewarded"));
-		tiles.add(new RogueScapeWindowOverlay.ModeTile("Custom", "Draw your own route.",
-			"Open builder", RogueScapeTheme.RARITY_EPIC, selectedMode == RunMode.CUSTOM_CREATOR,
-			"custom"));
-		return tiles;
+		RunMode mode = plugin.panel != null ? plugin.panel.selectedMode()
+			: ModePresetParser.parseMode(plugin.config.modePreset());
+		return mode != RunMode.CUSTOM_CREATOR;
 	}
 
 	void selectRunBuilderMode(String actionId)
@@ -239,87 +220,6 @@ final class RogueScapeWindowContent
 			}
 		}
 		plugin.refreshSidePanel();
-	}
-
-	private List<RogueScapeWindowOverlay.ModeTile> startRunTile(RunMode mode)
-	{
-		List<RogueScapeWindowOverlay.ModeTile> tiles = new ArrayList<>();
-		tiles.add(new RogueScapeWindowOverlay.ModeTile("BEGIN THE RUN",
-			mode == RunMode.CUSTOM_CREATOR ? "Sign and stamp the custom route" : "Sign and stamp the contract",
-			"The route is drawn", RogueScapeTheme.POSITIVE, false, "start-run"));
-		return tiles;
-	}
-
-
-
-	private static String startLine(RunMode mode, RunPreset preset, String seed)
-	{
-		StringBuilder sb = new StringBuilder();
-		sb.append("Preset ");
-		sb.append(preset == null || preset == RunPreset.UNSPECIFIED ? "Auto" : preset.name());
-		if (mode == RunMode.SEEDED_RACE)
-		{
-			sb.append(" | Seed ");
-			sb.append(seed == null || seed.trim().isEmpty() ? "(random)" : seed.trim());
-		}
-		return sb.toString();
-	}
-
-	/**
-	 * Renders the pre-run briefing: the exact route the chosen mode will build, room by room, with
-	 * each room's clear condition spelled out, plus the run-wide rules and win/lose conditions. The
-	 * briefing is generated from a real preview run (via {@link RunBriefingBuilder}) using the same
-	 * loadout/bank settings {@code startRun} applies, so what the player reads here is what they
-	 * actually get when they Begin.
-	 */
-	private void addBriefingBlocks(List<RogueScapeWindowOverlay.Block> out, RunMode mode, RunPreset preset, String seed)
-	{
-		String loadout = plugin.panel != null ? plugin.panel.customBuilderLoadout() : "Naked";
-		RunBriefing briefing;
-		try
-		{
-			briefing = RunBriefingBuilder.preview(mode, preset, seed, loadout,
-				plugin.config.bankAccessAllowed(), 0);
-		}
-		catch (RuntimeException ex)
-		{
-			out.add(RogueScapeWindowOverlay.Block.text("Could not preview this route: " + ex.getMessage(),
-				RogueScapeTheme.NEGATIVE));
-			return;
-		}
-
-		out.add(RogueScapeWindowOverlay.Block.text(briefing.modeSummary(), RogueScapeTheme.TEXT_MUTED));
-		out.add(RogueScapeWindowOverlay.Block.gap());
-
-		String routeHeading = "THE ROUTE — " + briefing.roomCount() + " ROOMS"
-			+ (briefing.bossCount() > 0 ? " + BOSS" : "");
-		out.add(RogueScapeWindowOverlay.Block.heading(routeHeading));
-		if (!briefing.routeLocked())
-		{
-			out.add(RogueScapeWindowOverlay.Block.text("Rooms re-roll on Begin. Set a seed to lock this exact route.",
-				RogueScapeTheme.TEXT_MUTED));
-		}
-		for (RunBriefing.RoomLine room : briefing.rooms())
-		{
-			out.add(RogueScapeWindowOverlay.Block.text(room.index() + ". " + room.name() + "  [" + room.kindLabel() + "]",
-				room.bossStage() ? RogueScapeTheme.NEGATIVE : RogueScapeTheme.GOLD));
-			out.add(RogueScapeWindowOverlay.Block.text("     " + room.collectLabel(), RogueScapeTheme.TEXT_PRIMARY));
-			out.add(RogueScapeWindowOverlay.Block.text("     Clear by: " + room.gatingLabel(), RogueScapeTheme.TEXT_MUTED));
-		}
-
-		out.add(RogueScapeWindowOverlay.Block.gap());
-		out.add(RogueScapeWindowOverlay.Block.heading("THE RULES"));
-		out.add(RogueScapeWindowOverlay.Block.text("Loadout: " + briefing.loadoutLabel(), RogueScapeTheme.TEXT_PRIMARY));
-		out.add(RogueScapeWindowOverlay.Block.text(briefing.bankAccessLabel(), RogueScapeTheme.TEXT_PRIMARY));
-		out.add(RogueScapeWindowOverlay.Block.text(briefing.timeModelLabel(), RogueScapeTheme.TEXT_PRIMARY));
-		out.add(RogueScapeWindowOverlay.Block.text("Seed: " + briefing.seedLabel(), RogueScapeTheme.TEXT_MUTED));
-
-		out.add(RogueScapeWindowOverlay.Block.gap());
-		out.add(RogueScapeWindowOverlay.Block.text("WIN: " + briefing.winCondition(), RogueScapeTheme.POSITIVE));
-		for (String lose : briefing.loseConditions())
-		{
-			out.add(RogueScapeWindowOverlay.Block.text("LOSE: " + lose, RogueScapeTheme.NEGATIVE));
-		}
 	}
 
 	private List<RogueScapeWindowOverlay.Tab> customBuilderTabs()
@@ -824,13 +724,12 @@ final class RogueScapeWindowContent
 		List<RogueScapeRewardOverlay.Card> pendingCards = pendingRewardCards();
 		if (pendingCards != null)
 		{
-			if (plugin.runLoop != null)
-			{
-				live.add(RogueScapeWindowOverlay.Block.pageTitle("The chest opens",
-					plugin.runLoop.phase().getDisplayName() + " — " + plugin.runLoop.runElapsedLabel()));
-			}
-			live.add(RogueScapeWindowOverlay.Block.heading("The Chest Opens"));
-			live.add(RogueScapeWindowOverlay.Block.cards(pendingCards));
+			// The Reward spread: cards (choice) on the left page, The Ledger on the right.
+			String sub = plugin.runLoop == null ? ""
+				: plugin.runLoop.phase().getDisplayName() + " — " + plugin.runLoop.runElapsedLabel();
+			List<RogueScapeWindowOverlay.Block> cardsPage = new ArrayList<>();
+			cardsPage.add(RogueScapeWindowOverlay.Block.cards(pendingCards));
+			live.addAll(JournalSpreadBlocks.render(vm.rewardSpread("The chest opens", sub), cardsPage));
 			return live;
 		}
 
@@ -846,87 +745,6 @@ final class RogueScapeWindowContent
 		return live;
 	}
 
-	/** A simple lobby placeholder tab: a heading plus one muted explanatory line. */
-	private static List<RogueScapeWindowOverlay.Block> placeholderTab(String heading, String message)
-	{
-		List<RogueScapeWindowOverlay.Block> blocks = new ArrayList<>();
-		blocks.add(RogueScapeWindowOverlay.Block.heading(heading));
-		blocks.add(RogueScapeWindowOverlay.Block.text(message, RogueScapeTheme.TEXT_MUTED));
-		return blocks;
-	}
-
-	/** Counts route stages; {@code clearedOnly} counts only cleared ones, else the total. */
-
-
-	/** Converts view-model text rows into window blocks, dropping decoration lines and coloring by content. */
-	private static void addTextBlocks(List<RogueScapeWindowOverlay.Block> out, List<String> rows)
-	{
-		for (String row : rows)
-		{
-			if (row == null)
-			{
-				continue;
-			}
-			if (row.isEmpty())
-			{
-				out.add(RogueScapeWindowOverlay.Block.gap());
-				continue;
-			}
-			if (row.startsWith("═"))
-			{
-				continue;
-			}
-			String lower = row.toLowerCase();
-			java.awt.Color color;
-			if (row.contains("✗") || lower.contains("illegal") || lower.contains("failed") || lower.contains("over "))
-			{
-				color = RogueScapeTheme.NEGATIVE;
-			}
-			else if (row.contains("✓") || lower.contains("complete") || row.trim().startsWith("+"))
-			{
-				color = RogueScapeTheme.POSITIVE;
-			}
-			else if (row.startsWith("  ") || row.startsWith("-"))
-			{
-				color = RogueScapeTheme.TEXT_MUTED;
-			}
-			else
-			{
-				color = RogueScapeTheme.TEXT_PRIMARY;
-			}
-			out.add(RogueScapeWindowOverlay.Block.text(row, color));
-		}
-	}
-
-	/** ARTIFACTS tab — held relics as an icon grid (emblems) plus their names. */
-	private List<RogueScapeWindowOverlay.Block> artifactsBlocks()
-	{
-		List<RogueScapeWindowOverlay.Block> out = new ArrayList<>();
-		List<Relic> held = plugin.rogueRun.heldRelics();
-		out.add(RogueScapeWindowOverlay.Block.heading("Relics in pocket  (" + held.size() + ")"));
-		if (held.isEmpty())
-		{
-			out.add(RogueScapeWindowOverlay.Block.text("No artifacts yet.", RogueScapeTheme.TEXT_MUTED));
-			out.add(RogueScapeWindowOverlay.Block.text(
-				"Claim relics from reward chests to build your collection.", RogueScapeTheme.TEXT_MUTED));
-			return out;
-		}
-		// One rarity-colored badge per relic (name + effect), matching the MODIFIERS tab.
-		for (Relic relic : held)
-		{
-			boolean curse = relic.description() != null && relic.description().startsWith("Curse");
-			out.add(RogueScapeWindowOverlay.Block.badge(
-				relic.name(),
-				relic.description() == null || relic.description().isEmpty()
-					? (relic.effects().isEmpty() ? "" : relicEffectSummary(relic.effects().get(0)))
-					: relic.description(),
-				curse ? RogueScapeTheme.NEGATIVE : rarityColor(relicRarity(relic)),
-				relicIcon(relic)));
-		}
-		return out;
-	}
-
-	/** BUILD tab — the aggregate effect of the held relic loadout (all real, relic-derived data). */
 	/** Maps a reward-card index to its choose action (reuses the panel-action dispatch). */
 	PanelAction rewardActionForIndex(int idx)
 	{

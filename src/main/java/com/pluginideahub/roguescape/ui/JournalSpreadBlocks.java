@@ -19,13 +19,24 @@ public final class JournalSpreadBlocks
 
 	public static List<RogueScapeWindowOverlay.Block> render(JournalSpread spread)
 	{
+		return render(spread, null);
+	}
+
+	/**
+	 * Renders a spread with an adapter-supplied left page (e.g. the reward cards, whose icons the
+	 * core cannot hold). When {@code leftOverride} is null the spread's own left page is used.
+	 */
+	public static List<RogueScapeWindowOverlay.Block> render(JournalSpread spread,
+		List<RogueScapeWindowOverlay.Block> leftOverride)
+	{
 		List<RogueScapeWindowOverlay.Block> out = new ArrayList<>();
 		if (spread == null)
 		{
 			return out;
 		}
 		out.add(RogueScapeWindowOverlay.Block.pageTitle(spread.title(), spread.subtitle()));
-		out.add(RogueScapeWindowOverlay.Block.columns(toBlocks(spread.left()), toBlocks(spread.right())));
+		List<RogueScapeWindowOverlay.Block> left = leftOverride != null ? leftOverride : toBlocks(spread.left());
+		out.add(RogueScapeWindowOverlay.Block.columns(left, toBlocks(spread.right())));
 		return out;
 	}
 
@@ -54,11 +65,25 @@ public final class JournalSpreadBlocks
 				case HOURGLASS:
 					out.add(RogueScapeWindowOverlay.Block.hourglass(b.text(), b.value()));
 					break;
+				case CHOICES:
+					out.add(RogueScapeWindowOverlay.Block.modeTiles(toTiles(b.choices())));
+					break;
 				default:
 					break;
 			}
 		}
 		return out;
+	}
+
+	private static List<RogueScapeWindowOverlay.ModeTile> toTiles(List<JournalSpread.Choice> choices)
+	{
+		List<RogueScapeWindowOverlay.ModeTile> tiles = new ArrayList<>();
+		for (JournalSpread.Choice c : choices)
+		{
+			tiles.add(new RogueScapeWindowOverlay.ModeTile(c.title(), c.subtitle(), c.detail(),
+				color(c.tone()), c.isSelected(), c.actionId()));
+		}
+		return tiles;
 	}
 
 	private static Color color(JournalSpread.Tone tone)

@@ -7,6 +7,7 @@ import com.pluginideahub.roguescape.core.RunMode;
 import com.pluginideahub.roguescape.core.RunPhase;
 import com.pluginideahub.roguescape.core.RunStageType;
 import com.pluginideahub.roguescape.core.RunState;
+import com.pluginideahub.roguescape.core.briefing.RunBriefing;
 import com.pluginideahub.roguescape.core.relic.Relic;
 import com.pluginideahub.roguescape.core.reward.RewardDraft;
 import com.pluginideahub.roguescape.core.reward.RewardOption;
@@ -99,6 +100,7 @@ public final class SidePanelViewModel
 	private final String objective;
 	private final boolean objectiveDone;
 	private final String nextStage;
+	private final boolean runOver;
 
 	private SidePanelViewModel(Builder b)
 	{
@@ -129,6 +131,7 @@ public final class SidePanelViewModel
 		this.objective = b.objective;
 		this.objectiveDone = b.objectiveDone;
 		this.nextStage = b.nextStage;
+		this.runOver = b.runOver;
 	}
 
 	public PanelTab activeTab() { return activeTab; }
@@ -160,6 +163,109 @@ public final class SidePanelViewModel
 	public String objective() { return objective; }
 	public boolean objectiveDone() { return objectiveDone; }
 	public String nextStage() { return nextStage; }
+	/** True when the run has ended (complete or failed) — the spread renders as The Final Page. */
+	public boolean isRunOver() { return runOver; }
+
+	/**
+	 * The Contract (lobby) as a two-page spread. Left page = the choices: the mode contracts,
+	 * the run title, and the Begin stamp. Right page = the context: the live briefing of the
+	 * route the current selection will build (or why it could not be previewed). Pure core —
+	 * the adapter supplies the selection state and the pre-built {@link RunBriefing}.
+	 */
+	public static JournalSpread contractSpread(RunMode mode, String runTitle, String seed,
+		RunBriefing briefing, String briefingError)
+	{
+		List<JournalSpread.Block> left = new ArrayList<>();
+		left.add(JournalSpread.Block.heading("Pick Your Contract"));
+		List<JournalSpread.Choice> contracts = new ArrayList<>();
+		contracts.add(new JournalSpread.Choice("Scavenger", "Earn power, room by room.", "Fresh source",
+			JournalSpread.Tone.POSITIVE, mode == RunMode.FRESH_SOURCE || mode == RunMode.UNSPECIFIED, "scavenger"));
+		contracts.add(new JournalSpread.Choice("Boss Ladder", "Short prep, boss loot.", "Climb",
+			JournalSpread.Tone.GOLD, mode == RunMode.BANK_DRAFT, "rewarded"));
+		contracts.add(new JournalSpread.Choice("Custom", "Draw your own route.", "Open builder",
+			JournalSpread.Tone.MUTED, mode == RunMode.CUSTOM_CREATOR, "custom"));
+		left.add(JournalSpread.Block.choices(contracts));
+		left.add(JournalSpread.Block.gap());
+		left.add(JournalSpread.Block.text("Run: " + (runTitle == null || runTitle.isEmpty() ? "(auto)" : runTitle),
+			JournalSpread.Tone.INK));
+		if (seed != null && !seed.trim().isEmpty())
+		{
+			left.add(JournalSpread.Block.note("Seed: " + seed.trim(), JournalSpread.Tone.MUTED));
+		}
+		left.add(JournalSpread.Block.gap());
+		left.add(JournalSpread.Block.choices(Collections.singletonList(
+			new JournalSpread.Choice("BEGIN THE RUN", "Sign and stamp the contract", "The route is drawn",
+				JournalSpread.Tone.POSITIVE, false, "start-run"))));
+
+		List<JournalSpread.Block> right = new ArrayList<>();
+		if (briefing == null)
+		{
+			right.add(JournalSpread.Block.text(
+				"Could not preview this route" + (briefingError == null || briefingError.isEmpty()
+					? "." : ": " + briefingError), JournalSpread.Tone.NEGATIVE));
+		}
+		else
+		{
+			right.add(JournalSpread.Block.heading("The Route — " + briefing.roomCount() + " rooms"
+				+ (briefing.bossCount() > 0 ? " + boss" : "")));
+			if (!briefing.routeLocked())
+			{
+				right.add(JournalSpread.Block.note("Rooms re-roll on Begin. Set a seed to lock this route.",
+					JournalSpread.Tone.MUTED));
+			}
+			for (RunBriefing.RoomLine room : briefing.rooms())
+			{
+				right.add(JournalSpread.Block.text(room.index() + ". " + room.name() + "  [" + room.kindLabel() + "]",
+					room.bossStage() ? JournalSpread.Tone.NEGATIVE : JournalSpread.Tone.GOLD));
+				right.add(JournalSpread.Block.note("   " + room.collectLabel() + " — clear by "
+					+ room.gatingLabel(), JournalSpread.Tone.MUTED));
+			}
+			right.add(JournalSpread.Block.gap());
+			right.add(JournalSpread.Block.heading("The Rules"));
+			right.add(JournalSpread.Block.note("Loadout: " + briefing.loadoutLabel(), JournalSpread.Tone.INK));
+			right.add(JournalSpread.Block.note(briefing.bankAccessLabel(), JournalSpread.Tone.INK));
+			right.add(JournalSpread.Block.note(briefing.timeModelLabel(), JournalSpread.Tone.INK));
+			right.add(JournalSpread.Block.note("Seed: " + briefing.seedLabel(), JournalSpread.Tone.MUTED));
+			right.add(JournalSpread.Block.gap());
+			right.add(JournalSpread.Block.note("WIN: " + briefing.winCondition(), JournalSpread.Tone.POSITIVE));
+			for (String lose : briefing.loseConditions())
+			{
+				right.add(JournalSpread.Block.note("LOSE: " + lose, JournalSpread.Tone.NEGATIVE));
+			}
+		}
+
+		return new JournalSpread("The Contract", "choose, sign, and stamp", left, right);
+	}
+
+	/**
+	 * The Reward phase as a two-page spread. Left page = the choice (the reward cards — injected
+	 * by the adapter, which owns their icons); right page = The Ledger: the hourglass, the score,
+	 * and the relics already in pocket, so the pick is made in context.
+	 */
+	public JournalSpread rewardSpread(String chestTitle, String chestSubtitle)
+	{
+		List<JournalSpread.Block> right = new ArrayList<>();
+		right.add(JournalSpread.Block.heading("The Ledger"));
+		right.add(JournalSpread.Block.hourglass("The Hourglass", timerLabel));
+		right.add(JournalSpread.Block.text("Score: " + score, JournalSpread.Tone.GOLD));
+		right.add(JournalSpread.Block.gap());
+		right.add(JournalSpread.Block.heading("Relics in pocket"));
+		if (relicRows.isEmpty())
+		{
+			right.add(JournalSpread.Block.note("The pockets are empty.", JournalSpread.Tone.MUTED));
+		}
+		else
+		{
+			for (String row : relicRows)
+			{
+				right.add(JournalSpread.Block.note(row, JournalSpread.Tone.INK));
+			}
+		}
+		return new JournalSpread(
+			chestTitle == null || chestTitle.isEmpty() ? "The chest opens" : chestTitle,
+			chestSubtitle == null ? "" : chestSubtitle,
+			Collections.emptyList(), right);
+	}
 
 	/**
 	 * The Run phase as a two-page journal spread. Left page = "what I have / my choices" (the
@@ -183,38 +289,23 @@ public final class SidePanelViewModel
 
 		String title;
 		String subtitle;
-		if (current != null)
+		if (runOver || current == null)
+		{
+			// Terminal page (complete/failed): the recap reads as the journal's final entry.
+			title = "The Final Page";
+			subtitle = stateLabel + " — " + elapsed + " afoot";
+		}
+		else
 		{
 			title = "Chapter " + current.numeral() + " — " + current.name();
 			subtitle = phaseLabel + " — " + elapsed + " afoot";
 		}
-		else
-		{
-			title = stateLabel;
-			subtitle = "Time " + elapsed;
-		}
 
-		// Left page: the entry (objective + what is next) and the rules of this place.
+		// Left page: the entry (objective + rules) for a live run, the recap when it is over.
 		List<JournalSpread.Block> left = new ArrayList<>();
-		if (!objective.isEmpty())
+		if (runOver || current == null)
 		{
-			left.add(JournalSpread.Block.text(objective,
-				objectiveDone ? JournalSpread.Tone.POSITIVE : JournalSpread.Tone.INK));
-		}
-		if (!nextStage.isEmpty())
-		{
-			left.add(JournalSpread.Block.text("Next: " + nextStage, JournalSpread.Tone.MUTED));
-		}
-		List<JournalSpread.Block> rules = ruleBlocks();
-		if (!rules.isEmpty())
-		{
-			left.add(JournalSpread.Block.gap());
-			left.add(JournalSpread.Block.heading("The rules of this place"));
-			left.addAll(rules);
-		}
-		else if (current == null)
-		{
-			// Terminal page: the recap rows become the entry.
+			// The recap rows become the entry.
 			for (String row : statusRows)
 			{
 				if (row == null || row.trim().isEmpty())
@@ -224,6 +315,25 @@ public final class SidePanelViewModel
 				JournalSpread.Tone tone = row.contains("✓") ? JournalSpread.Tone.POSITIVE
 					: row.contains("✗") ? JournalSpread.Tone.NEGATIVE : JournalSpread.Tone.INK;
 				left.add(JournalSpread.Block.text(row, tone));
+			}
+		}
+		else
+		{
+			if (!objective.isEmpty())
+			{
+				left.add(JournalSpread.Block.text(objective,
+					objectiveDone ? JournalSpread.Tone.POSITIVE : JournalSpread.Tone.INK));
+			}
+			if (!nextStage.isEmpty())
+			{
+				left.add(JournalSpread.Block.text("Next: " + nextStage, JournalSpread.Tone.MUTED));
+			}
+			List<JournalSpread.Block> rules = ruleBlocks();
+			if (!rules.isEmpty())
+			{
+				left.add(JournalSpread.Block.gap());
+				left.add(JournalSpread.Block.heading("The rules of this place"));
+				left.addAll(rules);
 			}
 		}
 
@@ -462,6 +572,7 @@ public final class SidePanelViewModel
 
 		// Finished-run states: show a recap and reset only.
 		RunState runState = s.runState();
+		b.runOver(runState == RunState.COMPLETE || runState == RunState.FAILED);
 		if (runState == RunState.COMPLETE)
 		{
 			b.status("\u2713 The run is complete.");
@@ -719,6 +830,7 @@ public final class SidePanelViewModel
 		private String objective = "";
 		private boolean objectiveDone;
 		private String nextStage = "";
+		private boolean runOver;
 
 		public Builder activeTab(PanelTab t) { this.activeTab = t; return this; }
 		public Builder lobby(boolean v) { this.lobby = v; return this; }
@@ -747,6 +859,7 @@ public final class SidePanelViewModel
 		public Builder objective(String s) { this.objective = s == null ? "" : s; return this; }
 		public Builder objectiveDone(boolean v) { this.objectiveDone = v; return this; }
 		public Builder nextStage(String s) { this.nextStage = s == null ? "" : s; return this; }
+		public Builder runOver(boolean v) { this.runOver = v; return this; }
 		public SidePanelViewModel build() { return new SidePanelViewModel(this); }
 	}
 }

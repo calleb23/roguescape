@@ -17,18 +17,53 @@ public final class JournalSpread
 	/** Semantic colour role; the renderer maps each to a concrete theme colour. */
 	public enum Tone { INK, POSITIVE, NEGATIVE, MUTED, GOLD }
 
+	/** One selectable option (a contract card, a Begin stamp); actionId routes the click. */
+	public static final class Choice
+	{
+		private final String title;
+		private final String subtitle;
+		private final String detail;
+		private final Tone tone;
+		private final boolean selected;
+		private final String actionId;
+
+		public Choice(String title, String subtitle, String detail, Tone tone, boolean selected, String actionId)
+		{
+			this.title = title == null ? "" : title;
+			this.subtitle = subtitle == null ? "" : subtitle;
+			this.detail = detail == null ? "" : detail;
+			this.tone = tone == null ? Tone.INK : tone;
+			this.selected = selected;
+			this.actionId = actionId == null ? "" : actionId;
+		}
+
+		public String title() { return title; }
+		public String subtitle() { return subtitle; }
+		public String detail() { return detail; }
+		public Tone tone() { return tone; }
+		public boolean isSelected() { return selected; }
+		public String actionId() { return actionId; }
+	}
+
 	/** One page element, kind-tagged, built via the static factories. */
 	public static final class Block
 	{
-		public enum Kind { HEADING, TEXT, NOTE, GAP, CHAPTERS, HOURGLASS }
+		public enum Kind { HEADING, TEXT, NOTE, GAP, CHAPTERS, HOURGLASS, CHOICES }
 
 		private final Kind kind;
 		private final String text;
 		private final String value;
 		private final Tone tone;
 		private final List<SidePanelViewModel.Chapter> chapters;
+		private final List<Choice> choices;
 
 		private Block(Kind kind, String text, String value, Tone tone, List<SidePanelViewModel.Chapter> chapters)
+		{
+			this(kind, text, value, tone, chapters, null);
+		}
+
+		private Block(Kind kind, String text, String value, Tone tone, List<SidePanelViewModel.Chapter> chapters,
+			List<Choice> choices)
 		{
 			this.kind = kind;
 			this.text = text == null ? "" : text;
@@ -36,6 +71,8 @@ public final class JournalSpread
 			this.tone = tone == null ? Tone.INK : tone;
 			this.chapters = chapters == null ? Collections.emptyList()
 				: Collections.unmodifiableList(new ArrayList<>(chapters));
+			this.choices = choices == null ? Collections.emptyList()
+				: Collections.unmodifiableList(new ArrayList<>(choices));
 		}
 
 		public static Block heading(String text)
@@ -69,11 +106,18 @@ public final class JournalSpread
 			return new Block(Kind.HOURGLASS, label, time, Tone.INK, null);
 		}
 
+		/** Selectable options (contract cards / the Begin stamp) rendered as clickable tiles. */
+		public static Block choices(List<Choice> choices)
+		{
+			return new Block(Kind.CHOICES, "", "", Tone.INK, null, choices);
+		}
+
 		public Kind kind() { return kind; }
 		public String text() { return text; }
 		public String value() { return value; }
 		public Tone tone() { return tone; }
 		public List<SidePanelViewModel.Chapter> chapters() { return chapters; }
+		public List<Choice> choices() { return choices; }
 	}
 
 	private final String title;

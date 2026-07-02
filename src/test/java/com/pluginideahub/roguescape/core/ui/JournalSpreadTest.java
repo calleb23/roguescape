@@ -28,6 +28,73 @@ public class JournalSpreadTest
 	}
 
 	@Test
+	public void contractSpreadPutsChoicesLeftAndBriefingRight()
+	{
+		com.pluginideahub.roguescape.core.briefing.RunBriefing briefing =
+			com.pluginideahub.roguescape.core.briefing.RunBriefingBuilder.preview(
+				com.pluginideahub.roguescape.core.RunMode.FRESH_SOURCE,
+				com.pluginideahub.roguescape.core.RunPreset.UNSPECIFIED,
+				"rat-king-42", "Naked", false, 0);
+		JournalSpread spread = SidePanelViewModel.contractSpread(
+			com.pluginideahub.roguescape.core.RunMode.FRESH_SOURCE, "Scavenger Run", "rat-king-42",
+			briefing, "");
+
+		assertTrue(spread.title().contains("Contract"));
+		// Left: the mode contracts (Scavenger selected) and the Begin stamp.
+		assertTrue("mode choices on the left page", spread.left().stream().anyMatch(b ->
+			b.kind() == JournalSpread.Block.Kind.CHOICES
+				&& b.choices().stream().anyMatch(c -> c.title().equals("Scavenger") && c.isSelected())));
+		assertTrue("Begin stamp on the left page", spread.left().stream().anyMatch(b ->
+			b.kind() == JournalSpread.Block.Kind.CHOICES
+				&& b.choices().stream().anyMatch(c -> c.actionId().equals("start-run"))));
+		// Right: the route briefing with win/lose.
+		assertTrue("route rooms on the right page", spread.right().stream().anyMatch(b ->
+			b.kind() == JournalSpread.Block.Kind.HEADING && b.text().startsWith("The Route")));
+		assertTrue("win condition on the right page", spread.right().stream().anyMatch(b ->
+			b.text().startsWith("WIN:")));
+	}
+
+	@Test
+	public void contractSpreadWithoutBriefingExplainsWhy()
+	{
+		JournalSpread spread = SidePanelViewModel.contractSpread(
+			com.pluginideahub.roguescape.core.RunMode.FRESH_SOURCE, "Run", "", null, "no route");
+		assertTrue(spread.right().stream().anyMatch(b ->
+			b.tone() == JournalSpread.Tone.NEGATIVE && b.text().contains("no route")));
+	}
+
+	@Test
+	public void rewardSpreadPutsLedgerRight()
+	{
+		JournalSpread spread = runVm().rewardSpread("The chest opens", "Reward — 01:01");
+		assertTrue(spread.title().contains("chest"));
+		assertTrue("ledger heading on the right page", spread.right().stream().anyMatch(b ->
+			b.kind() == JournalSpread.Block.Kind.HEADING && b.text().equals("The Ledger")));
+		assertTrue("hourglass on the right page", spread.right().stream().anyMatch(b ->
+			b.kind() == JournalSpread.Block.Kind.HOURGLASS));
+		assertTrue("pocket relics on the right page", spread.right().stream().anyMatch(b ->
+			b.text().contains("No Food")));
+		// Left page stays empty in core — the adapter injects the cards there.
+		assertTrue(spread.left().isEmpty());
+	}
+
+	@Test
+	public void terminalRunSpreadReadsAsTheFinalPage()
+	{
+		RogueScapeRunSession base = RogueScapeRunSession.start("Final page");
+		base.addStage("R1", RunStageType.ROOM, "Lumbridge", "");
+		base.enterStage("R1");
+		RogueScapeRun run = RogueScapeRun.wrap(base);
+		base.completeRun("Done", com.pluginideahub.roguescape.core.RunCompletionReason.MANUAL_SUCCESS);
+		RogueScapeRunLoop loop = new RogueScapeRunLoop(run, 0L);
+		JournalSpread spread = SidePanelViewModel.active(loop, PanelTab.RUN).runSpread();
+
+		assertTrue(spread.title().equals("The Final Page"));
+		assertTrue("recap stats land on the left page", spread.left().stream().anyMatch(b ->
+			b.text().startsWith("Time afoot:")));
+	}
+
+	@Test
 	public void mastheadNamesTheCurrentChapter()
 	{
 		JournalSpread spread = runVm().runSpread();

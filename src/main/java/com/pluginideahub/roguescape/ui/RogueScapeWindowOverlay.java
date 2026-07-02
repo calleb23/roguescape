@@ -38,6 +38,8 @@ public class RogueScapeWindowOverlay extends Overlay implements MouseListener
 
 	private static final int WIDTH = 524;
 	private static final int HEIGHT = 366;
+	private static final int BOOK_WIDTH = 680;
+	private static final int BOOK_HEIGHT = 430;
 	private static final int TITLE_H = 30;
 	private static final int TAB_H = 24;
 	private static final int FOOTER_H = 18;
@@ -306,6 +308,18 @@ public class RogueScapeWindowOverlay extends Overlay implements MouseListener
 		this.bookModeSupplier = s;
 	}
 
+	/** Window width: the open-book spread needs a wider page than the tabbed panel. */
+	private int winW()
+	{
+		return bookMode ? BOOK_WIDTH : WIDTH;
+	}
+
+	/** Window height, book vs tabbed. */
+	private int winH()
+	{
+		return bookMode ? BOOK_HEIGHT : HEIGHT;
+	}
+
 	@Override
 	public Dimension render(Graphics2D g)
 	{
@@ -323,18 +337,17 @@ public class RogueScapeWindowOverlay extends Overlay implements MouseListener
 		{
 			selected = 0;
 		}
-		centerOnAppear();
-
 		if (bookModeSupplier != null)
 		{
 			bookMode = bookModeSupplier.getAsBoolean();
 		}
+		centerOnAppear();
 
 		g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 
-		RogueScapeFrame.background(g, 0, 0, WIDTH, HEIGHT);
+		RogueScapeFrame.background(g, 0, 0, winW(), winH());
 		boolean art = false;
-		RogueScapeFrame.frame(g, 0, 0, WIDTH, HEIGHT);
+		RogueScapeFrame.frame(g, 0, 0, winW(), winH());
 		modeTileRects.clear();
 		modeTileActions.clear();
 		drawTitle(g, art);
@@ -349,7 +362,7 @@ public class RogueScapeWindowOverlay extends Overlay implements MouseListener
 		drawContent(g, tabs.isEmpty() ? null : tabs.get(selected));
 		drawFooter(g);
 
-		return new Dimension(WIDTH, HEIGHT);
+		return new Dimension(winW(), winH());
 	}
 
 	private void centerOnAppear()
@@ -360,8 +373,8 @@ public class RogueScapeWindowOverlay extends Overlay implements MouseListener
 			if (cs != null && cs.width > 0 && cs.height > 0)
 			{
 				setPreferredLocation(new Point(
-					Math.max(0, (cs.width - WIDTH) / 2),
-					Math.max(0, (cs.height - HEIGHT) / 2)));
+					Math.max(0, (cs.width - winW()) / 2),
+					Math.max(0, (cs.height - winH()) / 2)));
 			}
 		}
 		wasVisible = true;
@@ -371,7 +384,7 @@ public class RogueScapeWindowOverlay extends Overlay implements MouseListener
 
 	private void drawTitle(Graphics2D g, boolean art)
 	{
-		int x0 = 3, y0 = 3, w = WIDTH - 6;
+		int x0 = 3, y0 = 3, w = winW() - 6;
 		int cy = y0 + TITLE_H / 2;
 		if (!art)
 		{
@@ -394,7 +407,7 @@ public class RogueScapeWindowOverlay extends Overlay implements MouseListener
 		g.drawString("RogueScape", PAD + 16, ty);
 
 		int cs = 18;
-		closeRect.setBounds(WIDTH - cs - 8, y0 + (TITLE_H - cs) / 2, cs, cs);
+		closeRect.setBounds(winW() - cs - 8, y0 + (TITLE_H - cs) / 2, cs, cs);
 		g.setColor(hoverClose ? RogueScapeTheme.BTN_RED_HOVER : RogueScapeTheme.SECTION_BG);
 		g.fillRoundRect(closeRect.x, closeRect.y, closeRect.width, closeRect.height, 5, 5);
 		g.setColor(hoverClose ? RogueScapeTheme.NEGATIVE : RogueScapeTheme.BORDER);
@@ -410,7 +423,7 @@ public class RogueScapeWindowOverlay extends Overlay implements MouseListener
 		tabRects.clear();
 		int top = 3 + TITLE_H;
 		int x = 3;
-		int w = WIDTH - 6;
+		int w = winW() - 6;
 		int n = Math.max(1, tabs.size());
 		int tabW = w / n;
 
@@ -491,8 +504,8 @@ public class RogueScapeWindowOverlay extends Overlay implements MouseListener
 	private void drawBookChrome(Graphics2D g)
 	{
 		int top = 3 + TITLE_H + 2;
-		int bottom = HEIGHT - FOOTER_H - 6;
-		int cx = WIDTH / 2;
+		int bottom = winH() - FOOTER_H - 6;
+		int cx = winW() / 2;
 
 		// Page-curl: both pages dip toward the gutter — shadow deepens toward the crease.
 		for (int i = 22; i >= 1; i--)
@@ -523,7 +536,7 @@ public class RogueScapeWindowOverlay extends Overlay implements MouseListener
 		{
 			g.setColor(new Color(0x24, 0x18, 0x0C, Math.max(8, 38 - i * 8)));
 			g.drawLine(5 + i, top + 4, 5 + i, bottom - 4);
-			g.drawLine(WIDTH - 6 - i, top + 4, WIDTH - 6 - i, bottom - 4);
+			g.drawLine(winW() - 6 - i, top + 4, winW() - 6 - i, bottom - 4);
 		}
 	}
 
@@ -531,8 +544,8 @@ public class RogueScapeWindowOverlay extends Overlay implements MouseListener
 	{
 		int x = 3 + PAD;
 		int top = 3 + TITLE_H + (bookMode ? 0 : TAB_H) + PAD;
-		int w = WIDTH - 6 - PAD * 2;
-		int bottom = HEIGHT - FOOTER_H - 6;
+		int w = winW() - 6 - PAD * 2;
+		int bottom = winH() - FOOTER_H - 6;
 		if (tab == null)
 		{
 			return;
@@ -975,8 +988,8 @@ public class RogueScapeWindowOverlay extends Overlay implements MouseListener
 
 	private void drawFooter(Graphics2D g)
 	{
-		int y0 = HEIGHT - FOOTER_H - 3;
-		int x0 = 3, w = WIDTH - 6;
+		int y0 = winH() - FOOTER_H - 3;
+		int x0 = 3, w = winW() - 6;
 		g.setColor(RogueScapeFrame.darken(RogueScapeTheme.PANEL_BG, 2));
 		g.fillRect(x0, y0, w, FOOTER_H);
 		g.setColor(RogueScapeTheme.BORDER);

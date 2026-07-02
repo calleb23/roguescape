@@ -224,7 +224,7 @@ public class RogueScapePlugin extends Plugin
 		// Overlays repaint every game frame, so no explicit repaint hook is needed.
 		icons = new RogueScapeIcons(itemManager, spriteManager, null);
 		window = new RogueScapeWindowOverlay(windowContent::windowTabs, icons);
-		window.setBookMode(windowContent::isRunSpread);
+		window.setBookMode(windowContent::isBookSpread);
 		window.setModeTileHandler(windowContent::selectRunBuilderMode);
 		window.setCanvasSize(() -> new Dimension(client.getCanvasWidth(), client.getCanvasHeight()));
 		overlayManager.add(window);

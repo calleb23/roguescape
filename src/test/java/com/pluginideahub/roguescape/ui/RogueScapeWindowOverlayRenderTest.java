@@ -84,6 +84,81 @@ public class RogueScapeWindowOverlayRenderTest
 		assertTrue(new File(dir, "window-run-book.png").exists());
 	}
 
+	/** The Contract (lobby) spread as an open book, built from a real route briefing. */
+	@Test
+	public void rendersContractSpreadToPng() throws Exception
+	{
+		File dir = new File("build/ui-preview");
+		dir.mkdirs();
+
+		com.pluginideahub.roguescape.core.briefing.RunBriefing briefing =
+			com.pluginideahub.roguescape.core.briefing.RunBriefingBuilder.preview(
+				com.pluginideahub.roguescape.core.RunMode.FRESH_SOURCE,
+				com.pluginideahub.roguescape.core.RunPreset.UNSPECIFIED,
+				"rat-king-42", "Naked", false, 0);
+		List<RogueScapeWindowOverlay.Tab> tabs = Collections.singletonList(
+			new RogueScapeWindowOverlay.Tab("THE CONTRACT", JournalSpreadBlocks.render(
+				SidePanelViewModel.contractSpread(com.pluginideahub.roguescape.core.RunMode.FRESH_SOURCE,
+					"Scavenger Run", "rat-king-42", briefing, ""))));
+		writePng(tabs, 0, new File(dir, "window-contract-book.png"), true);
+		assertTrue(new File(dir, "window-contract-book.png").exists());
+	}
+
+	/** The Reward spread as an open book: sample cards on the left, The Ledger on the right. */
+	@Test
+	public void rendersRewardSpreadToPng() throws Exception
+	{
+		File dir = new File("build/ui-preview");
+		dir.mkdirs();
+
+		RogueScapeRunSession base = RogueScapeRunSession.start("Reward preview");
+		base.addStage("R1", RunStageType.ROOM, "Canifis", "");
+		base.enterStage("R1");
+		RogueScapeRun run = RogueScapeRun.wrap(base);
+		run.chooseRelic(ModifierLibrary.noFood());
+		RogueScapeRunLoop loop = new RogueScapeRunLoop(run, 1_000L);
+		loop.markNow(379_000L);
+		SidePanelViewModel vm = SidePanelViewModel.active(loop, PanelTab.RUN);
+
+		List<RogueScapeWindowOverlay.Block> cardsPage = new ArrayList<>();
+		cardsPage.add(RogueScapeWindowOverlay.Block.cards(Arrays.asList(
+			new RogueScapeRewardOverlay.Card("One Bank Mercy", "RELIC",
+				RogueScapeRewardOverlay.Rarity.RARE, 0, Arrays.asList("Unlocks one bank visit.")),
+			new RogueScapeRewardOverlay.Card("Four-Food Limit", "RELIC",
+				RogueScapeRewardOverlay.Rarity.EPIC, 0, Arrays.asList("Permits up to 4 food.")),
+			new RogueScapeRewardOverlay.Card("No Potions", "CURSE",
+				RogueScapeRewardOverlay.Rarity.LEGENDARY, 0, Arrays.asList("Curse: potions are forbidden.")))));
+		List<RogueScapeWindowOverlay.Tab> tabs = Collections.singletonList(
+			new RogueScapeWindowOverlay.Tab("THE CHEST", JournalSpreadBlocks.render(
+				vm.rewardSpread("The chest opens", "Reward — 06:19"), cardsPage)));
+		writePng(tabs, 0, new File(dir, "window-reward-book.png"), true);
+		assertTrue(new File(dir, "window-reward-book.png").exists());
+	}
+
+	/** The Recap spread (The Final Page) as an open book for a completed run. */
+	@Test
+	public void rendersRecapSpreadToPng() throws Exception
+	{
+		File dir = new File("build/ui-preview");
+		dir.mkdirs();
+
+		RogueScapeRunSession base = RogueScapeRunSession.start("Recap preview");
+		base.addStage("R1", RunStageType.ROOM, "Canifis", "");
+		base.addStage("B1", RunStageType.BOSS, "Giant Mole", "");
+		base.enterStage("R1");
+		base.clearStage("R1");
+		RogueScapeRun run = RogueScapeRun.wrap(base);
+		base.completeRun("Done", com.pluginideahub.roguescape.core.RunCompletionReason.MANUAL_SUCCESS);
+		RogueScapeRunLoop loop = new RogueScapeRunLoop(run, 1_000L);
+		loop.markNow(1_202_000L);
+		SidePanelViewModel vm = SidePanelViewModel.active(loop, PanelTab.RUN);
+
+		List<RogueScapeWindowOverlay.Tab> tabs = Collections.singletonList(
+			new RogueScapeWindowOverlay.Tab("THE FINAL PAGE", JournalSpreadBlocks.render(vm.runSpread())));
+		writePng(tabs, 0, new File(dir, "window-recap-book.png"), true);
+		assertTrue(new File(dir, "window-recap-book.png").exists());
+	}
+
 	private static void writePng(List<RogueScapeWindowOverlay.Tab> tabs, int tab, File out) throws Exception
 	{
 		writePng(tabs, tab, out, false);
