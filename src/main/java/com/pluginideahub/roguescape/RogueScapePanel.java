@@ -1707,6 +1707,18 @@ public class RogueScapePanel extends PluginPanel
 		c.add(mutedRow("Journal injection (needs 'Experimental Quest-tab UI' on):"));
 		c.add(vGap(3));
 		c.add(devButton("Log Journal Widgets", PanelAction.DEV_LOG_JOURNAL));
+		c.add(vGap(6));
+		c.add(mutedRow("Room sculptor (spike): clear the area around you, then place models (id from config)."));
+		c.add(vGap(3));
+		c.add(devButton("Sculpt: Clear Area (r=3)", PanelAction.DEV_SCULPT_CLEAR));
+		c.add(vGap(3));
+		c.add(devButton("Sculpt: Blank Floors (r=3)", PanelAction.DEV_SCULPT_BLANK_FLOORS));
+		c.add(vGap(3));
+		c.add(devButton("Sculpt: Place Model Here", PanelAction.DEV_SCULPT_PLACE_MODEL));
+		c.add(vGap(3));
+		JButton restore = devButton("Sculpt: Restore World", PanelAction.DEV_SCULPT_RESTORE);
+		styleButton(restore, RogueScapeTheme.ButtonRole.DANGER);
+		c.add(restore);
 		return section;
 	}
 

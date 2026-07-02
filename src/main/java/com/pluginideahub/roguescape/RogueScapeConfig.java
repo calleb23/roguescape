@@ -154,4 +154,26 @@ public interface RogueScapeConfig extends Config
 	{
 		return false;
 	}
+
+	@ConfigItem(
+		keyName = "sculptModelId",
+		name = "Sculptor model id",
+		description = "Cache MODEL id the DEV room sculptor places at your tile (0 = off). Walls, doors and furniture are all models; find ids with cache tools.",
+		position = 16
+	)
+	default int sculptModelId()
+	{
+		return 0;
+	}
+
+	@ConfigItem(
+		keyName = "sculptOrientation",
+		name = "Sculptor orientation",
+		description = "Orientation for placed sculptor models (0-2047; 0=south, 512=west, 1024=north, 1536=east).",
+		position = 17
+	)
+	default int sculptOrientation()
+	{
+		return 0;
+	}
 }
