@@ -46,7 +46,9 @@ The three things a run accumulates, split by **domain** (not mechanics):
   objective. Simpler than a legality engine.
 - **Gear-tier cap = equip-level requirement.** "No armour above 60 Defence req" — a tiny general rule
   using item equip reqs. (Name-matching by material is a fallback for the few top tiers.)
-- **Boss Ladder has a PREP phase** between bosses: bank/GE temporarily allowed to gear up; on entering
+- **Boss Ladder is bosses only — no prep ROOM stage** (locked 2026-07-02): the route is purely
+  the boss line-up. The PREP **phase** stays as a state between bosses: bank/GE temporarily
+  allowed to gear up; on entering
   the fight the plugin **validates the full worn+carried loadout** against the run's restrictions,
   then re-locks.
 - **Death ends the run.** (OSRS item loss on death is a separate, real consequence.)

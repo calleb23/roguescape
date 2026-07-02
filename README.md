@@ -14,7 +14,7 @@ play the game for you.
 | Mode | Shape | Fantasy |
 |---|---|---|
 | **Scavenger** | 3 rooms → 1 boss | Rooms build the run, the boss tests the build |
-| **Rewarded** | 1 prep room → 2 bosses | Short prep, then boss-chain pressure carried by rewards |
+| **Boss Ladder** | Bosses only (prep *phase* between them) | Climb the ladder; rewards un-shackle you, you gear up between fights |
 | **Custom** | Player-built mixed route | Build your own route of rooms, bosses, zones, mods, and constraints |
 
 ## Features
