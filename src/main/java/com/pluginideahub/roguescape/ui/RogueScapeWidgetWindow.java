@@ -422,9 +422,49 @@ public final class RogueScapeWidgetWindow implements MouseListener
 				return y + 24;
 			}
 			case TEXT:
+			case NOTE:
 			{
 				return drawWrappedText(RogueScapeWindowOverlay.ascii(b.text), rgb(b.color), y);
 			}
+			case PAGE_TITLE:
+			{
+				text(contentLayer, CONTENT_X, y, CONTENT_W, RogueScapeWindowOverlay.ascii(b.text),
+					COL_GOLD, FontID.BOLD_12, true);
+				if (b.sub != null && !b.sub.isEmpty())
+				{
+					text(contentLayer, CONTENT_X, y + 16, CONTENT_W, RogueScapeWindowOverlay.ascii(b.sub),
+						COL_MUTED, FontID.PLAIN_11, false);
+					return y + 34;
+				}
+				return y + 20;
+			}
+			case COLUMNS:
+			{
+				// The widget window flattens the two pages into one flow (left page, then right).
+				if (b.left != null)
+				{
+					for (Block child : b.left)
+					{
+						y = drawBlock(child, y);
+					}
+				}
+				if (b.right != null)
+				{
+					y += 6;
+					for (Block child : b.right)
+					{
+						y = drawBlock(child, y);
+					}
+				}
+				return y;
+			}
+			case POCKETS:
+			{
+				String row = b.names == null || b.names.isEmpty() ? "(none)" : String.join("  ·  ", b.names);
+				return drawWrappedText(RogueScapeWindowOverlay.ascii(row), rgb(b.color), y);
+			}
+			case FILL:
+				return y + 6;
 			case STATBAR:
 				return drawStatBar(b, y);
 			case ITEMGRID:

@@ -205,9 +205,12 @@ public final class SidePanelViewModel
 			left.add(JournalSpread.Block.note("Seed: " + seed.trim(), JournalSpread.Tone.MUTED));
 		}
 		left.add(JournalSpread.Block.gap());
-		left.add(JournalSpread.Block.choices(Collections.singletonList(
-			new JournalSpread.Choice("BEGIN THE RUN", "Sign and stamp the contract", "The route is drawn",
-				JournalSpread.Tone.POSITIVE, false, "start-run"))));
+		List<JournalSpread.Choice> actions = new ArrayList<>();
+		actions.add(new JournalSpread.Choice("BEGIN THE RUN", "Sign and stamp the contract", "This exact route",
+			JournalSpread.Tone.POSITIVE, false, "start-run"));
+		actions.add(new JournalSpread.Choice("REROLL", "Tear the page, draw another route", "New fate",
+			JournalSpread.Tone.MUTED, false, "reroll-route"));
+		left.add(JournalSpread.Block.choices(actions));
 
 		List<JournalSpread.Block> right = new ArrayList<>();
 		if (briefing == null)

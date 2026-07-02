@@ -124,9 +124,43 @@ final class RogueScapeWindowContent
 {
 	private final RogueScapePlugin plugin;
 
+	/**
+	 * The lobby's rolled route seed: the briefing previews THIS route and Begin starts THIS
+	 * route — what you see is what you sign. Reroll replaces it; a user-typed seed overrides it.
+	 */
+	private String pendingRouteSeed;
+
 	RogueScapeWindowContent(RogueScapePlugin plugin)
 	{
 		this.plugin = plugin;
+	}
+
+	/** The seed the lobby is currently previewing (user seed wins; else the rolled one). */
+	String effectiveLobbySeed(String userSeed)
+	{
+		if (userSeed != null && !userSeed.trim().isEmpty())
+		{
+			return userSeed.trim();
+		}
+		if (pendingRouteSeed == null)
+		{
+			rerollRoute();
+		}
+		return pendingRouteSeed;
+	}
+
+	/** Roll a fresh route seed for the lobby preview. */
+	void rerollRoute()
+	{
+		pendingRouteSeed = "route-" + Integer.toHexString(new java.util.Random().nextInt(0xFFFFFF));
+	}
+
+	/** The seed Begin should start with (and roll a fresh one for the next contract). */
+	String consumePendingRouteSeed()
+	{
+		String seed = pendingRouteSeed;
+		rerollRoute();
+		return seed;
 	}
 
 	List<RogueScapeWindowOverlay.Tab> windowTabs()
@@ -139,7 +173,7 @@ final class RogueScapeWindowContent
 			String runTitle = plugin.panel != null && plugin.panel.selectedGoal() != null && !plugin.panel.selectedGoal().trim().isEmpty()
 				? plugin.panel.selectedGoal().trim()
 				: RogueScapePlugin.runModeName(mode);
-			String seed = plugin.panel != null && plugin.panel.selectedSeed() != null && !plugin.panel.selectedSeed().trim().isEmpty()
+			String userSeed = plugin.panel != null && plugin.panel.selectedSeed() != null && !plugin.panel.selectedSeed().trim().isEmpty()
 				? plugin.panel.selectedSeed().trim()
 				: plugin.config.seedText();
 			if (mode == RunMode.CUSTOM_CREATOR)
@@ -148,6 +182,8 @@ final class RogueScapeWindowContent
 				return customBuilderTabs();
 			}
 			// The Contract spread: choices on the left page, the live briefing on the right.
+			// The previewed route is pinned to a rolled seed, so Begin starts exactly what you see.
+			String seed = effectiveLobbySeed(userSeed);
 			String loadout = plugin.panel != null ? plugin.panel.customBuilderLoadout() : "Naked";
 			RunBriefing briefing = null;
 			String briefingError = "";
@@ -209,6 +245,12 @@ final class RogueScapeWindowContent
 		if ("start-run".equals(actionId))
 		{
 			plugin.dispatchAction(PanelAction.START_RUN);
+			return;
+		}
+		if ("reroll-route".equals(actionId))
+		{
+			rerollRoute();
+			plugin.refreshSidePanel();
 			return;
 		}
 		plugin.panel.selectRunBuilderMode(actionId);

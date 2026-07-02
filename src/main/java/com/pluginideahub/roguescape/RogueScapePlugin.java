@@ -974,7 +974,11 @@ public class RogueScapePlugin extends Plugin
 		String panelGoal = panel != null ? panel.selectedGoal() : "";
 		String goal = (panelGoal == null || panelGoal.trim().isEmpty()) ? config.goalText() : panelGoal.trim();
 		String rawSeed = panel != null ? panel.selectedSeed() : config.seedText();
-		String seed = (rawSeed == null || rawSeed.trim().isEmpty()) ? null : rawSeed.trim();
+		// No user seed -> start the exact route the Contract previewed (the rolled pending seed),
+		// so the run is always the one you signed for, never a surprise re-roll.
+		String seed = (rawSeed == null || rawSeed.trim().isEmpty())
+			? (windowContent != null ? windowContent.consumePendingRouteSeed() : null)
+			: rawSeed.trim();
 		RunPreset preset = panel != null ? panel.selectedPreset() : RunPreset.UNSPECIFIED;
 
 		boolean custom = mode == RunMode.CUSTOM_CREATOR && panel != null;
