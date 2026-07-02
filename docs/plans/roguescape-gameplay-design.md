@@ -3,6 +3,36 @@
 Planning only; no code. Balance **values are deferred to playtest** — this doc locks the *structure*
 and the *levers*, not the numbers.
 
+## Grill-session decisions (locked 2026-07-02) — collections taxonomy & the journey spread
+
+The three things a run accumulates, split by **domain** (not mechanics):
+
+- **UPGRADES = equipment.** The build's equipment story, one tall list.
+  - *Boss Ladder:* gear-tier ladder steps — **per-category lanes: Weapon / Armour / Jewellery**
+    ("May now wield rune-grade weapons"). A tier raise is an upgrade, never a relic.
+  - *Scavenger:* the gear you **found & kept** in rooms (the four-category collection log).
+- **RELICS = everything that isn't equipment.** Named artifacts, each a binary permit: prayer
+  back, a high prayer (Piety/Rigour/Augury), spellbook swap, bank/GE/trade back, teleports,
+  food/potions permitted, inventory slots (Deep Pockets stays a relic). The old separate
+  bank/prayer/potion "unlock" reward type is **retired — those are relics now**.
+- **CURSES = setup burdens** (unchanged): chosen before the run, add restrictions, score.
+- **Supplies are neither** — consumables are just items, tracked in the tally; the *permission*
+  to use them (food allowed, potions allowed) is relic territory.
+- **No slot caps** on relics/curses — pockets and strips grow/scroll; the sketch counts were
+  incidental.
+- **Relics in Scavenger** get their footing from (a) combat-toggle locks Scav starts with —
+  prayers and spellbook are locked until relics/shrines open them — and (b) **mid-run curse
+  accumulation** (cursed chests / event rooms add restrictions during the run) so later drafts
+  always have something to ease.
+
+**The journey spread** (the Run phase's two pages, from ref/current journey info.kra):
+- *Left page — what I have:* the **Upgrades** list (tall), the **Relic** pockets (column of wax
+  seals), the **Curses** strip (bottom row of seals).
+- *Right page — the journey:* "Route —" title; the **boss line-up band** (current boss unlocked,
+  the rest padlocked; Boss Ladder gets a side arrow to scroll the ladder; Scavenger may show the
+  boss portrait during its boss fight purely for flavour); **Room [current]**; the **Info** block
+  under it carries the objective + the rules of this place.
+
 ## Grill-session decisions (locked)
 - **The whole game = restrictions + RNG.** Everything reduces to those two.
 - **Rise of POWER, not challenge.** A run **starts shackled** (restrictions on) and relics **earn back
