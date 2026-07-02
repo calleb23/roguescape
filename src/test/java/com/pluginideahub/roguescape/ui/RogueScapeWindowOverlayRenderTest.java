@@ -64,12 +64,20 @@ public class RogueScapeWindowOverlayRenderTest
 		dir.mkdirs();
 
 		RogueScapeRunSession base = RogueScapeRunSession.start("Preview run");
+		base.addStage("B0", RunStageType.BOSS, "Obor", "");
 		base.addStage("R1", RunStageType.ROOM, "Canifis", "", "Find a lawful weapon upgrade", 1);
-		base.addStage("R2", RunStageType.ROOM, "Dwarven Mine", "");
 		base.addStage("B1", RunStageType.BOSS, "Giant Mole", "");
+		base.addStage("B2", RunStageType.BOSS, "Scorpia", "");
+		base.addStage("B3", RunStageType.BOSS, "Vorkath", "");
+		base.enterStage("B0");
+		base.clearStage("B0");
 		base.enterStage("R1");
 		RogueScapeRun run = RogueScapeRun.wrap(base);
 		run.chooseRelic(ModifierLibrary.noFood());
+		run.chooseRelic(com.pluginideahub.roguescape.core.relic.RelicLibrary.whisperedFaith());
+		run.chooseRelic(com.pluginideahub.roguescape.core.relic.RelicLibrary.keyToTheVault());
+		run.grantUnlock(new com.pluginideahub.roguescape.core.unlock.RunUnlock(
+			com.pluginideahub.roguescape.core.unlock.RunUnlockType.PRAYER, "Prayer unlocked", "B0", "Boss"));
 		RogueScapeRunLoop loop = new RogueScapeRunLoop(run, 1_000L);
 		loop.markNow(379_000L);
 		SidePanelViewModel vm = SidePanelViewModel.active(loop, PanelTab.RUN);

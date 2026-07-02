@@ -101,6 +101,9 @@ public final class SidePanelViewModel
 	private final boolean objectiveDone;
 	private final String nextStage;
 	private final boolean runOver;
+	private final List<String> upgradeRows;
+	private final List<String> relicNames;
+	private final List<String> curseNames;
 
 	private SidePanelViewModel(Builder b)
 	{
@@ -132,6 +135,9 @@ public final class SidePanelViewModel
 		this.objectiveDone = b.objectiveDone;
 		this.nextStage = b.nextStage;
 		this.runOver = b.runOver;
+		this.upgradeRows = Collections.unmodifiableList(new ArrayList<>(b.upgradeRows));
+		this.relicNames = Collections.unmodifiableList(new ArrayList<>(b.relicNames));
+		this.curseNames = Collections.unmodifiableList(new ArrayList<>(b.curseNames));
 	}
 
 	public PanelTab activeTab() { return activeTab; }
@@ -165,6 +171,12 @@ public final class SidePanelViewModel
 	public String nextStage() { return nextStage; }
 	/** True when the run has ended (complete or failed) — the spread renders as The Final Page. */
 	public boolean isRunOver() { return runOver; }
+	/** The build's kit story: unlock/tier steps and (Scavenger) gear found & kept. */
+	public List<String> upgradeRows() { return upgradeRows; }
+	/** Held relic names (non-curse) — the wax seals in the pockets. */
+	public List<String> relicNames() { return relicNames; }
+	/** Active curse names — the seals on the curse strip. */
+	public List<String> curseNames() { return curseNames; }
 
 	/**
 	 * The Contract (lobby) as a two-page spread. Left page = the choices: the mode contracts,
@@ -319,33 +331,70 @@ public final class SidePanelViewModel
 		}
 		else
 		{
+			// The journey layout (ref/current journey info.kra): left = what the run has gained.
+			left.add(JournalSpread.Block.heading("Upgrades"));
+			if (upgradeRows.isEmpty())
+			{
+				left.add(JournalSpread.Block.note("Nothing gained yet.", JournalSpread.Tone.MUTED));
+			}
+			else
+			{
+				for (String row : upgradeRows)
+				{
+					left.add(JournalSpread.Block.text(row, JournalSpread.Tone.INK));
+				}
+			}
+			left.add(JournalSpread.Block.gap());
+			left.add(JournalSpread.Block.heading("Relics"));
+			left.add(JournalSpread.Block.pockets(relicNames, JournalSpread.Tone.GOLD));
+			left.add(JournalSpread.Block.gap());
+			left.add(JournalSpread.Block.heading("Curses"));
+			left.add(JournalSpread.Block.pockets(curseNames, JournalSpread.Tone.NEGATIVE));
+		}
+
+		// Right page: the journey — the boss line-up band, the current room, then the info block.
+		List<JournalSpread.Block> right = new ArrayList<>();
+		if (runOver || current == null)
+		{
+			// Terminal page keeps the route log + tallies.
+			if (!chapters.isEmpty())
+			{
+				right.add(JournalSpread.Block.heading("The Record"));
+				right.add(JournalSpread.Block.chapters(chapters));
+			}
+			right.add(JournalSpread.Block.hourglass("The Hourglass", elapsed));
+			right.add(JournalSpread.Block.text("Score: " + score, JournalSpread.Tone.GOLD));
+		}
+		else
+		{
+			List<Chapter> bossChapters = new ArrayList<>();
+			for (Chapter c : chapters)
+			{
+				if (c.isBoss())
+				{
+					bossChapters.add(c);
+				}
+			}
+			right.add(JournalSpread.Block.heading("The Route"));
+			if (!bossChapters.isEmpty())
+			{
+				right.add(JournalSpread.Block.bossBand(bossChapters));
+			}
+			right.add(JournalSpread.Block.text("Room — " + (roomName.isEmpty() ? "(travelling)" : roomName),
+				JournalSpread.Tone.INK));
+			right.add(JournalSpread.Block.gap());
 			if (!objective.isEmpty())
 			{
-				left.add(JournalSpread.Block.text(objective,
+				right.add(JournalSpread.Block.text(objective,
 					objectiveDone ? JournalSpread.Tone.POSITIVE : JournalSpread.Tone.INK));
 			}
 			if (!nextStage.isEmpty())
 			{
-				left.add(JournalSpread.Block.text("Next: " + nextStage, JournalSpread.Tone.MUTED));
+				right.add(JournalSpread.Block.note("Next: " + nextStage, JournalSpread.Tone.MUTED));
 			}
-			List<JournalSpread.Block> rules = ruleBlocks();
-			if (!rules.isEmpty())
-			{
-				left.add(JournalSpread.Block.gap());
-				left.add(JournalSpread.Block.heading("The rules of this place"));
-				left.addAll(rules);
-			}
+			right.addAll(ruleBlocks());
+			right.add(JournalSpread.Block.note("Time afoot: " + elapsed, JournalSpread.Tone.MUTED));
 		}
-
-		// Right page: THE RECORD, the hourglass, and the running score.
-		List<JournalSpread.Block> right = new ArrayList<>();
-		if (!chapters.isEmpty())
-		{
-			right.add(JournalSpread.Block.heading("The Record"));
-			right.add(JournalSpread.Block.chapters(chapters));
-		}
-		right.add(JournalSpread.Block.hourglass("The Hourglass", elapsed));
-		right.add(JournalSpread.Block.text("Score: " + score, JournalSpread.Tone.GOLD));
 
 		return new JournalSpread(title, subtitle, left, right);
 	}
@@ -512,6 +561,24 @@ public final class SidePanelViewModel
 			}
 		}
 		b.nextStage(upcoming);
+
+		// The journey spread's collections: upgrades (the kit story), relic pockets, curse strip.
+		for (RunUnlock unlock : run.unlocks())
+		{
+			b.upgrade(unlock.displayRow());
+		}
+		for (Relic relic : run.heldRelics())
+		{
+			boolean curse = relic.description() != null && relic.description().startsWith("Curse");
+			if (curse)
+			{
+				b.curseName(relic.name());
+			}
+			else
+			{
+				b.relicName(relic.name());
+			}
+		}
 
 		// MODIFIERS section: the run's active rules (real state, not invented).
 		b.modifier("Bank unlocks: " + (run.bankUnlocked() ? "ON" : "off"));
@@ -831,6 +898,9 @@ public final class SidePanelViewModel
 		private boolean objectiveDone;
 		private String nextStage = "";
 		private boolean runOver;
+		private final List<String> upgradeRows = new ArrayList<>();
+		private final List<String> relicNames = new ArrayList<>();
+		private final List<String> curseNames = new ArrayList<>();
 
 		public Builder activeTab(PanelTab t) { this.activeTab = t; return this; }
 		public Builder lobby(boolean v) { this.lobby = v; return this; }
@@ -860,6 +930,9 @@ public final class SidePanelViewModel
 		public Builder objectiveDone(boolean v) { this.objectiveDone = v; return this; }
 		public Builder nextStage(String s) { this.nextStage = s == null ? "" : s; return this; }
 		public Builder runOver(boolean v) { this.runOver = v; return this; }
+		public Builder upgrade(String s) { if (s != null && !s.isEmpty()) upgradeRows.add(s); return this; }
+		public Builder relicName(String s) { if (s != null && !s.isEmpty()) relicNames.add(s); return this; }
+		public Builder curseName(String s) { if (s != null && !s.isEmpty()) curseNames.add(s); return this; }
 		public SidePanelViewModel build() { return new SidePanelViewModel(this); }
 	}
 }

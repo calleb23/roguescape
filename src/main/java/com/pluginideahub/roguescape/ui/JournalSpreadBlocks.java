@@ -68,6 +68,13 @@ public final class JournalSpreadBlocks
 				case CHOICES:
 					out.add(RogueScapeWindowOverlay.Block.modeTiles(toTiles(b.choices())));
 					break;
+				case POCKETS:
+					out.add(RogueScapeWindowOverlay.Block.pockets(b.names(),
+						b.tone() == JournalSpread.Tone.NEGATIVE ? RogueScapeTheme.WAX_RED : RogueScapeTheme.WAX_GOLD));
+					break;
+				case BOSS_BAND:
+					out.add(RogueScapeWindowOverlay.Block.bossBand(b.chapters()));
+					break;
 				default:
 					break;
 			}

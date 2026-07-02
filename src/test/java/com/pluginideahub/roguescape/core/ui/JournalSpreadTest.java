@@ -6,7 +6,7 @@ import com.pluginideahub.roguescape.core.RogueScapeRunSession;
 import com.pluginideahub.roguescape.core.RunStageType;
 import org.junit.Test;
 
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 /**
  * Locks the pure-core Run-phase two-page spread: the left/right split now lives on the view model
@@ -103,39 +103,60 @@ public class JournalSpreadTest
 	}
 
 	@Test
-	public void leftPageHoldsEntryAndRulesOfThisPlace()
+	public void leftPageHoldsTheCollections()
 	{
 		JournalSpread spread = runVm().runSpread();
-		// The objective entry.
-		assertTrue("objective appears on the left page",
-			spread.left().stream().anyMatch(b -> b.text().contains("Find one legal upgrade")));
-		// The "rules of this place" heading.
-		assertTrue("rules heading appears on the left page",
-			spread.left().stream().anyMatch(b ->
-				b.kind() == JournalSpread.Block.Kind.HEADING && b.text().equals("The rules of this place")));
-		// A forbidden rule (the No Food relic) shows as a negative-tone note.
-		assertTrue("a forbidden rule note appears on the left page",
-			spread.left().stream().anyMatch(b ->
+		// Upgrades / Relics / Curses headings (the journey layout).
+		assertTrue(spread.left().stream().anyMatch(b ->
+			b.kind() == JournalSpread.Block.Kind.HEADING && b.text().equals("Upgrades")));
+		assertTrue(spread.left().stream().anyMatch(b ->
+			b.kind() == JournalSpread.Block.Kind.HEADING && b.text().equals("Relics")));
+		assertTrue(spread.left().stream().anyMatch(b ->
+			b.kind() == JournalSpread.Block.Kind.HEADING && b.text().equals("Curses")));
+		// The No Food curse-relic lands on the curse strip, not the relic pockets.
+		assertTrue("No Food shows on the curse strip",
+			spread.left().stream().anyMatch(b -> b.kind() == JournalSpread.Block.Kind.POCKETS
+				&& b.tone() == JournalSpread.Tone.NEGATIVE && b.names().contains("No Food")));
+		assertTrue("relic pockets exist (gold strip present, possibly empty)",
+			spread.left().stream().anyMatch(b -> b.kind() == JournalSpread.Block.Kind.POCKETS
+				&& b.tone() == JournalSpread.Tone.GOLD));
+	}
+
+	@Test
+	public void rightPageHoldsTheJourney()
+	{
+		JournalSpread spread = runVm().runSpread();
+		assertTrue("the route heading appears",
+			spread.right().stream().anyMatch(b ->
+				b.kind() == JournalSpread.Block.Kind.HEADING && b.text().equals("The Route")));
+		assertTrue("the current room is named",
+			spread.right().stream().anyMatch(b -> b.text().startsWith("Room — Lumbridge")));
+		assertTrue("the objective sits in the info block",
+			spread.right().stream().anyMatch(b -> b.text().contains("Find one legal upgrade")));
+		assertTrue("what comes next is noted",
+			spread.right().stream().anyMatch(b -> b.text().equals("Next: Varrock")));
+		assertTrue("a forbidden rule note appears in the info block",
+			spread.right().stream().anyMatch(b ->
 				b.kind() == JournalSpread.Block.Kind.NOTE && b.tone() == JournalSpread.Tone.NEGATIVE));
 	}
 
 	@Test
-	public void rightPageHoldsTheRecordHourglassAndScore()
+	public void bossBandListsOnlyBosses()
 	{
-		JournalSpread spread = runVm().runSpread();
-		assertTrue("The Record (chapters) appears on the right page",
-			spread.right().stream().anyMatch(b -> b.kind() == JournalSpread.Block.Kind.CHAPTERS));
-		assertTrue("The Hourglass appears on the right page",
-			spread.right().stream().anyMatch(b -> b.kind() == JournalSpread.Block.Kind.HOURGLASS));
-		assertTrue("the running score appears on the right page",
-			spread.right().stream().anyMatch(b -> b.text().startsWith("Score:")));
-	}
+		RogueScapeRunSession base = RogueScapeRunSession.start("Band run");
+		base.addStage("B1", RunStageType.BOSS, "Giant Mole", "");
+		base.addStage("B2", RunStageType.BOSS, "Scorpia", "");
+		base.addStage("B3", RunStageType.BOSS, "Vorkath", "");
+		base.enterStage("B1");
+		RogueScapeRunLoop loop = new RogueScapeRunLoop(RogueScapeRun.wrap(base), 0L);
+		JournalSpread spread = SidePanelViewModel.active(loop, PanelTab.RUN).runSpread();
 
-	@Test
-	public void leftPageNamesWhatComesNext()
-	{
-		JournalSpread spread = runVm().runSpread();
-		assertTrue("the next stage is named on the left page",
-			spread.left().stream().anyMatch(b -> b.text().equals("Next: Varrock")));
+		JournalSpread.Block band = spread.right().stream()
+			.filter(b -> b.kind() == JournalSpread.Block.Kind.BOSS_BAND)
+			.findFirst().orElse(null);
+		assertNotNull("boss band present", band);
+		assertEquals(3, band.chapters().size());
+		assertTrue(band.chapters().get(0).isCurrent());
+		assertTrue(band.chapters().stream().allMatch(SidePanelViewModel.Chapter::isBoss));
 	}
 }

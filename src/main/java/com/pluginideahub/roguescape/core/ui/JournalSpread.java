@@ -48,7 +48,7 @@ public final class JournalSpread
 	/** One page element, kind-tagged, built via the static factories. */
 	public static final class Block
 	{
-		public enum Kind { HEADING, TEXT, NOTE, GAP, CHAPTERS, HOURGLASS, CHOICES }
+		public enum Kind { HEADING, TEXT, NOTE, GAP, CHAPTERS, HOURGLASS, CHOICES, POCKETS, BOSS_BAND }
 
 		private final Kind kind;
 		private final String text;
@@ -56,14 +56,21 @@ public final class JournalSpread
 		private final Tone tone;
 		private final List<SidePanelViewModel.Chapter> chapters;
 		private final List<Choice> choices;
+		private final List<String> names;
 
 		private Block(Kind kind, String text, String value, Tone tone, List<SidePanelViewModel.Chapter> chapters)
 		{
-			this(kind, text, value, tone, chapters, null);
+			this(kind, text, value, tone, chapters, null, null);
 		}
 
 		private Block(Kind kind, String text, String value, Tone tone, List<SidePanelViewModel.Chapter> chapters,
 			List<Choice> choices)
+		{
+			this(kind, text, value, tone, chapters, choices, null);
+		}
+
+		private Block(Kind kind, String text, String value, Tone tone, List<SidePanelViewModel.Chapter> chapters,
+			List<Choice> choices, List<String> names)
 		{
 			this.kind = kind;
 			this.text = text == null ? "" : text;
@@ -73,6 +80,8 @@ public final class JournalSpread
 				: Collections.unmodifiableList(new ArrayList<>(chapters));
 			this.choices = choices == null ? Collections.emptyList()
 				: Collections.unmodifiableList(new ArrayList<>(choices));
+			this.names = names == null ? Collections.emptyList()
+				: Collections.unmodifiableList(new ArrayList<>(names));
 		}
 
 		public static Block heading(String text)
@@ -112,12 +121,28 @@ public final class JournalSpread
 			return new Block(Kind.CHOICES, "", "", Tone.INK, null, choices);
 		}
 
+		/** A row of stitched pockets holding wax seals — relics (gold) or curses (red). */
+		public static Block pockets(List<String> names, Tone tone)
+		{
+			return new Block(Kind.POCKETS, "", "", tone, null, null, names);
+		}
+
+		/**
+		 * The boss line-up band: the current boss unlocked, later ones padlocked, felled ones
+		 * stamped. Fed with the route's boss chapters.
+		 */
+		public static Block bossBand(List<SidePanelViewModel.Chapter> bosses)
+		{
+			return new Block(Kind.BOSS_BAND, "", "", Tone.INK, bosses);
+		}
+
 		public Kind kind() { return kind; }
 		public String text() { return text; }
 		public String value() { return value; }
 		public Tone tone() { return tone; }
 		public List<SidePanelViewModel.Chapter> chapters() { return chapters; }
 		public List<Choice> choices() { return choices; }
+		public List<String> names() { return names; }
 	}
 
 	private final String title;
