@@ -19,5 +19,11 @@ public enum RelicEffectKind
 	/** Marks specific items/categories as forbidden — items become illegal even if legally sourced. */
 	RESTRICTION,
 	/** Adds an allowance — converts an otherwise suspicious source into legal (rarely used). */
-	PERMISSION
+	PERMISSION,
+	/** Lifts one restriction from the run's {@code RunRestrictions} — the canonical relic effect. */
+	EASE_RESTRICTION,
+	/** Raises the gear-tier cap by {@code magnitude} equip levels. */
+	RAISE_GEAR_TIER,
+	/** Grants {@code magnitude} extra inventory slots under an inventory limit. */
+	ADD_INVENTORY_SLOTS
 }

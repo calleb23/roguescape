@@ -26,6 +26,36 @@ public final class RelicEngine
 	private final EnumMap<BankItemCategory, Integer> categoryCounts = new EnumMap<>(BankItemCategory.class);
 	private final List<String> consumedNotes = new ArrayList<>();
 
+	/**
+	 * Applies a relic's easing effects to the run's live restrictions — the canonical relic act
+	 * of the subtractive design: lift a restriction, raise the gear-tier cap, or add slots.
+	 * Non-easing effects are ignored here (they are interpreted by the scoring paths).
+	 */
+	public static void applyEasing(Relic relic, com.pluginideahub.roguescape.core.restriction.RunRestrictions restrictions)
+	{
+		if (relic == null || restrictions == null)
+		{
+			return;
+		}
+		for (RelicEffect effect : relic.effects())
+		{
+			switch (effect.kind())
+			{
+				case EASE_RESTRICTION:
+					restrictions.permit(effect.eases());
+					break;
+				case RAISE_GEAR_TIER:
+					restrictions.raiseGearTierCap(effect.magnitude());
+					break;
+				case ADD_INVENTORY_SLOTS:
+					restrictions.addInventorySlots(effect.magnitude());
+					break;
+				default:
+					break;
+			}
+		}
+	}
+
 	public RelicEngine addRelic(Relic relic)
 	{
 		if (relic == null) return this;

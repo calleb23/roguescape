@@ -22,6 +22,108 @@ public final class RelicLibrary
 			supplySurge(), capeCollection(), berserkersCurse(), gluttony());
 	}
 
+	// ---------- Restriction-removers (the subtractive design's relic pool) ----------
+	// Each relic eases exactly one thing: lift a restriction, raise the tier cap, add slots.
+	// These are the Boss Ladder MVP pool; the legacy scoring relics above serve the old
+	// Scavenger flow until enforcement fully moves to RunRestrictions.
+
+	/** The restriction-remover pool, in display order. */
+	public static List<Relic> easers()
+	{
+		return Arrays.asList(
+			breadOfTheWanderer(), alchemistsMercy(), keyToTheVault(), merchantsSeal(),
+			waystone(), whisperedFaith(), bulwarkCharm(), fletchersQuiver(), runicFocus(),
+			deepPockets(), armouryKey());
+	}
+
+	/** Eases FAMINE — food may be eaten again. */
+	public static Relic breadOfTheWanderer()
+	{
+		return new Relic("bread-of-the-wanderer", "Bread of the Wanderer",
+			"Food is permitted once more.",
+			RelicEffect.ease(com.pluginideahub.roguescape.core.restriction.Restriction.FOOD));
+	}
+
+	/** Eases DRY_THROAT — potions may be drunk again. */
+	public static Relic alchemistsMercy()
+	{
+		return new Relic("alchemists-mercy", "Alchemist's Mercy",
+			"Potions are permitted once more.",
+			RelicEffect.ease(com.pluginideahub.roguescape.core.restriction.Restriction.POTIONS));
+	}
+
+	/** Eases the bank lock. */
+	public static Relic keyToTheVault()
+	{
+		return new Relic("key-to-the-vault", "Key to the Vault",
+			"The bank is permitted once more.",
+			RelicEffect.ease(com.pluginideahub.roguescape.core.restriction.Restriction.BANK));
+	}
+
+	/** Eases the Grand Exchange lock. */
+	public static Relic merchantsSeal()
+	{
+		return new Relic("merchants-seal", "Merchant's Seal",
+			"The Grand Exchange is permitted once more.",
+			RelicEffect.ease(com.pluginideahub.roguescape.core.restriction.Restriction.GRAND_EXCHANGE));
+	}
+
+	/** Eases ANCHORED — teleports work again. */
+	public static Relic waystone()
+	{
+		return new Relic("waystone", "Waystone",
+			"Teleports are permitted once more.",
+			RelicEffect.ease(com.pluginideahub.roguescape.core.restriction.Restriction.TELEPORTS));
+	}
+
+	/** Eases FAITHLESS — prayer returns. */
+	public static Relic whisperedFaith()
+	{
+		return new Relic("whispered-faith", "Whispered Faith",
+			"Prayer is permitted once more.",
+			RelicEffect.ease(com.pluginideahub.roguescape.core.restriction.Restriction.PRAYER));
+	}
+
+	/** Eases BARE_FISTED — shields may be equipped. */
+	public static Relic bulwarkCharm()
+	{
+		return new Relic("bulwark-charm", "Bulwark Charm",
+			"Shields are permitted once more.",
+			RelicEffect.ease(com.pluginideahub.roguescape.core.restriction.Restriction.SHIELD));
+	}
+
+	/** Eases QUIVERLESS — ammunition may be used. */
+	public static Relic fletchersQuiver()
+	{
+		return new Relic("fletchers-quiver", "Fletcher's Quiver",
+			"Ammunition is permitted once more.",
+			RelicEffect.ease(com.pluginideahub.roguescape.core.restriction.Restriction.AMMO));
+	}
+
+	/** Eases RUNELESS — rune casting returns. */
+	public static Relic runicFocus()
+	{
+		return new Relic("runic-focus", "Runic Focus",
+			"Rune-cast magic is permitted once more.",
+			RelicEffect.ease(com.pluginideahub.roguescape.core.restriction.Restriction.RUNES));
+	}
+
+	/** Loosens TIGHT_POCKETS — seven more inventory slots. */
+	public static Relic deepPockets()
+	{
+		return new Relic("deep-pockets", "Deep Pockets",
+			"Seven more inventory slots may be used.",
+			RelicEffect.addInventorySlots(7));
+	}
+
+	/** Raises the gear-tier cap by ten equip levels. */
+	public static Relic armouryKey()
+	{
+		return new Relic("armoury-key", "Armoury Key",
+			"The gear-tier cap rises by ten equip levels.",
+			RelicEffect.raiseGearTier(10));
+	}
+
 	/**
 	 * One Bank Mercy — the run can survive exactly one bank withdrawal during the run.
 	 * Without the relic, a bank withdrawal is illegal (per legality classifier rules); with

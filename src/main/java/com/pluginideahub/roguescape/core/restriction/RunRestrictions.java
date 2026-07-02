@@ -38,6 +38,31 @@ public final class RunRestrictions
 		return new RunRestrictions();
 	}
 
+	/**
+	 * The starting shackles: a run's initial restrictions assembled from the chosen start tier
+	 * (the gear-tier cap you begin under) plus every chosen curse. This is the setup step of the
+	 * subtractive design — everything after it is relics easing what was assembled here.
+	 */
+	public static RunRestrictions starting(StartTier tier, java.util.Collection<Curse> curses)
+	{
+		RunRestrictions r = new RunRestrictions();
+		if (tier != null)
+		{
+			tier.apply(r);
+		}
+		if (curses != null)
+		{
+			for (Curse curse : curses)
+			{
+				if (curse != null)
+				{
+					curse.apply(r);
+				}
+			}
+		}
+		return r;
+	}
+
 	// ---------- Setup (curses / loadout add restrictions) ----------
 
 	public RunRestrictions restrict(Restriction restriction)
