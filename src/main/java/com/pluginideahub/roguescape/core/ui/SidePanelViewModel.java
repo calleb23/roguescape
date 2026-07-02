@@ -331,23 +331,26 @@ public final class SidePanelViewModel
 		}
 		else
 		{
-			// The journey layout (ref/current journey info.kra): left = what the run has gained.
-			left.add(JournalSpread.Block.heading("Upgrades"));
+			// The journey layout (ref/current journey info.kra): Upgrades | Relics as two
+			// sub-columns, the curse strip pinned along the bottom of the page.
+			List<JournalSpread.Block> upgrades = new ArrayList<>();
+			upgrades.add(JournalSpread.Block.heading("Upgrades"));
 			if (upgradeRows.isEmpty())
 			{
-				left.add(JournalSpread.Block.note("Nothing gained yet.", JournalSpread.Tone.MUTED));
+				upgrades.add(JournalSpread.Block.note("Nothing gained yet.", JournalSpread.Tone.MUTED));
 			}
 			else
 			{
 				for (String row : upgradeRows)
 				{
-					left.add(JournalSpread.Block.text(row, JournalSpread.Tone.INK));
+					upgrades.add(JournalSpread.Block.text(row, JournalSpread.Tone.INK));
 				}
 			}
-			left.add(JournalSpread.Block.gap());
-			left.add(JournalSpread.Block.heading("Relics"));
-			left.add(JournalSpread.Block.pockets(relicNames, JournalSpread.Tone.GOLD));
-			left.add(JournalSpread.Block.gap());
+			List<JournalSpread.Block> relics = new ArrayList<>();
+			relics.add(JournalSpread.Block.heading("Relics"));
+			relics.add(JournalSpread.Block.pockets(relicNames, JournalSpread.Tone.GOLD));
+			left.add(JournalSpread.Block.columns(upgrades, relics));
+			left.add(JournalSpread.Block.fill());
 			left.add(JournalSpread.Block.heading("Curses"));
 			left.add(JournalSpread.Block.pockets(curseNames, JournalSpread.Tone.NEGATIVE));
 		}
@@ -375,14 +378,15 @@ public final class SidePanelViewModel
 					bossChapters.add(c);
 				}
 			}
+			// The bosses get the top of the page to themselves; the room info sits at the bottom.
 			right.add(JournalSpread.Block.heading("The Route"));
 			if (!bossChapters.isEmpty())
 			{
 				right.add(JournalSpread.Block.bossBand(bossChapters));
 			}
+			right.add(JournalSpread.Block.fill());
 			right.add(JournalSpread.Block.text("Room — " + (roomName.isEmpty() ? "(travelling)" : roomName),
 				JournalSpread.Tone.INK));
-			right.add(JournalSpread.Block.gap());
 			if (!objective.isEmpty())
 			{
 				right.add(JournalSpread.Block.text(objective,

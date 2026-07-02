@@ -48,7 +48,7 @@ public final class JournalSpread
 	/** One page element, kind-tagged, built via the static factories. */
 	public static final class Block
 	{
-		public enum Kind { HEADING, TEXT, NOTE, GAP, CHAPTERS, HOURGLASS, CHOICES, POCKETS, BOSS_BAND }
+		public enum Kind { HEADING, TEXT, NOTE, GAP, CHAPTERS, HOURGLASS, CHOICES, POCKETS, BOSS_BAND, COLUMNS, FILL }
 
 		private final Kind kind;
 		private final String text;
@@ -57,6 +57,8 @@ public final class JournalSpread
 		private final List<SidePanelViewModel.Chapter> chapters;
 		private final List<Choice> choices;
 		private final List<String> names;
+		private List<Block> colLeft = Collections.emptyList();
+		private List<Block> colRight = Collections.emptyList();
 
 		private Block(Kind kind, String text, String value, Tone tone, List<SidePanelViewModel.Chapter> chapters)
 		{
@@ -136,6 +138,23 @@ public final class JournalSpread
 			return new Block(Kind.BOSS_BAND, "", "", Tone.INK, bosses);
 		}
 
+		/** Two sub-columns side by side within one page (e.g. Upgrades | Relics). */
+		public static Block columns(List<Block> left, List<Block> right)
+		{
+			Block b = new Block(Kind.COLUMNS, "", "", Tone.INK, null);
+			b.colLeft = left == null ? Collections.emptyList()
+				: Collections.unmodifiableList(new ArrayList<>(left));
+			b.colRight = right == null ? Collections.emptyList()
+				: Collections.unmodifiableList(new ArrayList<>(right));
+			return b;
+		}
+
+		/** Flexible space — pushes everything after it toward the bottom of the page. */
+		public static Block fill()
+		{
+			return new Block(Kind.FILL, "", "", Tone.INK, null);
+		}
+
 		public Kind kind() { return kind; }
 		public String text() { return text; }
 		public String value() { return value; }
@@ -143,6 +162,8 @@ public final class JournalSpread
 		public List<SidePanelViewModel.Chapter> chapters() { return chapters; }
 		public List<Choice> choices() { return choices; }
 		public List<String> names() { return names; }
+		public List<Block> colLeft() { return colLeft; }
+		public List<Block> colRight() { return colRight; }
 	}
 
 	private final String title;

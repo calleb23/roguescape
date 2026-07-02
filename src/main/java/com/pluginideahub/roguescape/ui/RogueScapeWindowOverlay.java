@@ -49,7 +49,7 @@ public class RogueScapeWindowOverlay extends Overlay implements MouseListener
 	/** A content element inside a tab. One struct, kind-tagged, built via the static factories. */
 	public static final class Block
 	{
-		enum Kind { HEADING, TEXT, NOTE, STATBAR, ITEMGRID, BADGE, CARDS, MODE_TILES, CHAPTERS, PAGE_TITLE, COLUMNS, HOURGLASS, GAP, POCKETS, BOSS_BAND }
+		enum Kind { HEADING, TEXT, NOTE, STATBAR, ITEMGRID, BADGE, CARDS, MODE_TILES, CHAPTERS, PAGE_TITLE, COLUMNS, HOURGLASS, GAP, POCKETS, BOSS_BAND, FILL }
 
 		final Kind kind;
 		String text = "";
@@ -193,6 +193,12 @@ public class RogueScapeWindowOverlay extends Overlay implements MouseListener
 			Block b = new Block(Kind.BOSS_BAND);
 			b.chapters = bosses == null ? new ArrayList<>() : bosses;
 			return b;
+		}
+
+		/** Flexible space — pushes everything after it toward the bottom of the page/column. */
+		public static Block fill()
+		{
+			return new Block(Kind.FILL);
 		}
 	}
 
@@ -923,25 +929,75 @@ public class RogueScapeWindowOverlay extends Overlay implements MouseListener
 		int leftW = bookMode ? w / 2 - 20 : (int) (w * 0.56) - 8;
 		int rightX = bookMode ? x + w / 2 + 20 : x + leftW + 16;
 		int rightW = w - (rightX - x);
-		int ly = y;
-		for (Block child : b.left)
-		{
-			if (ly >= bottom)
-			{
-				break;
-			}
-			ly = drawBlock(g, child, x, ly, leftW, bottom);
-		}
-		int ry = y;
-		for (Block child : b.right)
-		{
-			if (ry >= bottom)
-			{
-				break;
-			}
-			ry = drawBlock(g, child, rightX, ry, rightW, bottom);
-		}
+		int ly = drawColumn(g, b.left, x, y, leftW, bottom);
+		int ry = drawColumn(g, b.right, rightX, y, rightW, bottom);
 		return Math.max(ly, ry);
+	}
+
+	/** Renders one column of blocks; a FILL block pushes the rest toward the column bottom. */
+	private int drawColumn(Graphics2D g, List<Block> blocks, int x, int y, int w, int bottom)
+	{
+		for (int i = 0; i < blocks.size(); i++)
+		{
+			Block child = blocks.get(i);
+			if (child.kind == Block.Kind.FILL)
+			{
+				int rest = estimateHeight(g, blocks, i + 1, w);
+				y = Math.max(y, bottom - rest);
+				continue;
+			}
+			if (y >= bottom)
+			{
+				break;
+			}
+			y = drawBlock(g, child, x, y, w, bottom);
+		}
+		return y;
+	}
+
+	/** Rough height of the blocks from {@code from} onward — used to bottom-anchor after a FILL. */
+	private int estimateHeight(Graphics2D g, List<Block> blocks, int from, int w)
+	{
+		int h = 0;
+		for (int i = from; i < blocks.size(); i++)
+		{
+			Block b = blocks.get(i);
+			switch (b.kind)
+			{
+				case GAP:
+					h += 8;
+					break;
+				case HEADING:
+					h += 20;
+					break;
+				case TEXT:
+				case NOTE:
+				{
+					boolean note = b.kind == Block.Kind.NOTE;
+					g.setFont(new java.awt.Font(java.awt.Font.SERIF, java.awt.Font.PLAIN, note ? 12 : 13));
+					h += wrap(b.text == null ? "" : b.text, g.getFontMetrics(), w).size() * (note ? 13 : LINE_H);
+					break;
+				}
+				case POCKETS:
+				{
+					int slots = (b.names == null ? 0 : b.names.size()) + 1;
+					int perRow = Math.max(1, (w + 8) / 42);
+					int rows = (slots + perRow - 1) / perRow;
+					h += rows * 54 + 4;
+					break;
+				}
+				case BOSS_BAND:
+					h += BOSS_CARD_H + 8;
+					break;
+				case HOURGLASS:
+					h += 40;
+					break;
+				default:
+					h += LINE_H;
+					break;
+			}
+		}
+		return h;
 	}
 
 	/** Stitched pockets in a row: a wax seal per name (name beneath), one empty pocket waiting. */
@@ -977,8 +1033,39 @@ public class RogueScapeWindowOverlay extends Overlay implements MouseListener
 		return yy + 4;
 	}
 
-	/** The boss line-up band: paper cards — felled bosses struck+stamped, the current one under
-	 *  the ribbon, later ones behind an inked padlock. */
+	/** Boss card height — tall enough for the boss render above the name. */
+	private static final int BOSS_CARD_H = 92;
+
+	/** Bundled boss renders by name (slugged); missing entries fall back to an inked initial. */
+	private static final java.util.Map<String, java.awt.image.BufferedImage> BOSS_IMAGES = new java.util.HashMap<>();
+
+	private static java.awt.image.BufferedImage bossImage(String name)
+	{
+		String slug = name == null ? "" : name.toLowerCase().replaceAll("[^a-z0-9]+", "-");
+		if (BOSS_IMAGES.containsKey(slug))
+		{
+			return BOSS_IMAGES.get(slug);
+		}
+		java.awt.image.BufferedImage img = null;
+		try
+		{
+			java.io.InputStream in = RogueScapeWindowOverlay.class.getResourceAsStream("boss/" + slug + ".png");
+			if (in != null)
+			{
+				img = javax.imageio.ImageIO.read(in);
+				in.close();
+			}
+		}
+		catch (Exception ignored)
+		{
+		}
+		BOSS_IMAGES.put(slug, img);
+		return img;
+	}
+
+	/** The boss line-up band: paper cards with the boss render (or an inked initial) above the
+	 *  name — felled bosses struck+stamped, the current one under the ribbon, later ones behind
+	 *  an inked padlock over a dimmed render. */
 	private int drawBossBand(Graphics2D g, Block b, int x, int y, int w)
 	{
 		List<com.pluginideahub.roguescape.core.ui.SidePanelViewModel.Chapter> bosses =
@@ -990,32 +1077,55 @@ public class RogueScapeWindowOverlay extends Overlay implements MouseListener
 		int gap = 8;
 		int shown = Math.min(4, bosses.size());
 		int cardW = (w - gap * (shown - 1)) / shown;
-		int cardH = 52;
-		g.setFont(new java.awt.Font(java.awt.Font.SERIF, java.awt.Font.BOLD, 12));
-		FontMetrics fm = g.getFontMetrics();
+		int cardH = BOSS_CARD_H;
+		FontMetrics fm;
 		for (int i = 0; i < shown; i++)
 		{
 			com.pluginideahub.roguescape.core.ui.SidePanelViewModel.Chapter boss = bosses.get(i);
 			int px = x + i * (cardW + gap);
 			RogueScapePaper.card(g, px, y, cardW, cardH, boss.isCurrent());
+
+			// Portrait area: the bundled boss render, or a big inked initial as the fallback.
+			int artX = px + 4, artY = y + 4, artW = cardW - 8, artH = cardH - 26;
+			java.awt.image.BufferedImage art = bossImage(boss.name());
+			if (art != null)
+			{
+				double scale = Math.min((double) artW / art.getWidth(), (double) artH / art.getHeight());
+				int dw = (int) (art.getWidth() * scale), dh = (int) (art.getHeight() * scale);
+				g.drawImage(art, artX + (artW - dw) / 2, artY + (artH - dh) / 2, dw, dh, null);
+			}
+			else
+			{
+				g.setFont(new java.awt.Font(java.awt.Font.SERIF, java.awt.Font.BOLD, 30));
+				String initial = boss.name().isEmpty() ? "?" : boss.name().substring(0, 1).toUpperCase();
+				g.setColor(new Color(0x33, 0x24, 0x14, 70));
+				g.drawString(initial, artX + (artW - g.getFontMetrics().stringWidth(initial)) / 2,
+					artY + artH / 2 + 11);
+			}
+			if (!boss.isDone() && !boss.isCurrent())
+			{
+				// Locked: dim the portrait and ink the padlock over it.
+				g.setColor(new Color(0x2B, 0x22, 0x16, 90));
+				g.fillRect(artX, artY, artW, artH);
+				drawPadlock(g, px + cardW / 2, artY + artH / 2);
+			}
+
+			// Name line.
+			g.setFont(new java.awt.Font(java.awt.Font.SERIF, java.awt.Font.BOLD, 12));
+			fm = g.getFontMetrics();
 			String name = clipTo(boss.name(), fm, cardW - 10);
 			g.setColor(boss.isDone() ? RogueScapeTheme.INK_FADED : RogueScapeTheme.INK);
 			int tx = px + (cardW - fm.stringWidth(name)) / 2;
 			g.drawString(name, tx, y + cardH - 8);
 			if (boss.isDone())
 			{
-				// Struck through + the little arrival stamp.
 				g.setColor(RogueScapeTheme.INK_FADED);
 				g.drawLine(tx - 2, y + cardH - 12, tx + fm.stringWidth(name) + 2, y + cardH - 12);
-				RogueScapePaper.clearStamp(g, px + cardW / 2, y + 18, 13, "FELLED");
+				RogueScapePaper.clearStamp(g, px + cardW / 2, y + (cardH - 22) / 2, 15, "FELLED");
 			}
 			else if (boss.isCurrent())
 			{
-				RogueScapePaper.ribbon(g, px + cardW / 2, y - 4, 12, 22);
-			}
-			else
-			{
-				drawPadlock(g, px + cardW / 2, y + 18);
+				RogueScapePaper.ribbon(g, px + 10, y - 4, 12, 22);
 			}
 		}
 		if (bosses.size() > shown)

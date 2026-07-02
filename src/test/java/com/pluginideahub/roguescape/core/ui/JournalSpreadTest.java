@@ -106,20 +106,25 @@ public class JournalSpreadTest
 	public void leftPageHoldsTheCollections()
 	{
 		JournalSpread spread = runVm().runSpread();
-		// Upgrades / Relics / Curses headings (the journey layout).
-		assertTrue(spread.left().stream().anyMatch(b ->
+		// Upgrades | Relics live in a two-column block; Curses are pinned after a FILL.
+		JournalSpread.Block cols = spread.left().stream()
+			.filter(b -> b.kind() == JournalSpread.Block.Kind.COLUMNS)
+			.findFirst().orElse(null);
+		assertNotNull("Upgrades|Relics columns present", cols);
+		assertTrue(cols.colLeft().stream().anyMatch(b ->
 			b.kind() == JournalSpread.Block.Kind.HEADING && b.text().equals("Upgrades")));
-		assertTrue(spread.left().stream().anyMatch(b ->
+		assertTrue(cols.colRight().stream().anyMatch(b ->
 			b.kind() == JournalSpread.Block.Kind.HEADING && b.text().equals("Relics")));
+		assertTrue("relic pockets in the right sub-column",
+			cols.colRight().stream().anyMatch(b -> b.kind() == JournalSpread.Block.Kind.POCKETS
+				&& b.tone() == JournalSpread.Tone.GOLD));
+		// Curses strip pinned to the page bottom after a FILL.
+		assertTrue(spread.left().stream().anyMatch(b -> b.kind() == JournalSpread.Block.Kind.FILL));
 		assertTrue(spread.left().stream().anyMatch(b ->
 			b.kind() == JournalSpread.Block.Kind.HEADING && b.text().equals("Curses")));
-		// The No Food curse-relic lands on the curse strip, not the relic pockets.
 		assertTrue("No Food shows on the curse strip",
 			spread.left().stream().anyMatch(b -> b.kind() == JournalSpread.Block.Kind.POCKETS
 				&& b.tone() == JournalSpread.Tone.NEGATIVE && b.names().contains("No Food")));
-		assertTrue("relic pockets exist (gold strip present, possibly empty)",
-			spread.left().stream().anyMatch(b -> b.kind() == JournalSpread.Block.Kind.POCKETS
-				&& b.tone() == JournalSpread.Tone.GOLD));
 	}
 
 	@Test

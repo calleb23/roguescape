@@ -75,6 +75,12 @@ public final class JournalSpreadBlocks
 				case BOSS_BAND:
 					out.add(RogueScapeWindowOverlay.Block.bossBand(b.chapters()));
 					break;
+				case COLUMNS:
+					out.add(RogueScapeWindowOverlay.Block.columns(toBlocks(b.colLeft()), toBlocks(b.colRight())));
+					break;
+				case FILL:
+					out.add(RogueScapeWindowOverlay.Block.fill());
+					break;
 				default:
 					break;
 			}
