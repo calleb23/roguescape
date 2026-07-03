@@ -284,20 +284,24 @@ public class RogueScapeRunLoopTest
 	}
 
 	@Test
-	public void typedRoomRewardDraftCanGrantChosenUnlock()
+	public void typedRoomRewardDraftOffersRelics()
 	{
+		// The UNLOCK reward type is retired (locked 2026-07-03): every non-supply chest
+		// drafts relics — the old unlock permissions are relics now.
 		RogueScapeRunLoop loop = loopWithTwoStages();
 		loop.run().setRegionRule("R1", new StageRegionRule(RoomKind.WEAPON, Collections.singleton("lumbridge"), true));
 		completeObjective(loop);
 		loop.completeCurrentStage(5_000L);
 
 		RewardDraft draft = loop.pendingRewardDraft();
-		assertEquals(ChestType.UNLOCK, draft.chestType());
-		assertTrue(draft.options().get(0).isUnlock());
+		assertEquals(ChestType.RELIC, draft.chestType());
+		assertTrue(draft.options().get(0).isRelic());
 
 		loop.chooseReward(draft.options().get(0).optionId(), 6_000L);
 
-		assertTrue(loop.run().hasUnlock(draft.options().get(0).unlock().type()));
+		final String chosenId = draft.options().get(0).relic().relicId();
+		assertTrue(loop.run().relicEngine().relics().stream()
+			.anyMatch(r -> r.relicId().equals(chosenId)));
 	}
 
 	@Test

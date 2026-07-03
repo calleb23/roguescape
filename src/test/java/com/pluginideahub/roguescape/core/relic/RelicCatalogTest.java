@@ -16,7 +16,22 @@ public class RelicCatalogTest
 	@Test
 	public void relicCatalogIsComplete()
 	{
-		assertCatalog(RelicLibrary.all(), 20);
+		// The v1 pool (locked 2026-07-03): 18 easers, permits only.
+		assertCatalog(RelicLibrary.all(), 18);
+	}
+
+	@Test
+	public void legacyPoolStaysQuarantined()
+	{
+		assertCatalog(LegacyRelics.all(), 20);
+		for (Relic legacy : LegacyRelics.all())
+		{
+			for (Relic draftable : RelicLibrary.all())
+			{
+				assertFalse("legacy relic must not be draftable: " + legacy.relicId(),
+					legacy.relicId().equals(draftable.relicId()));
+			}
+		}
 	}
 
 	@Test
@@ -28,10 +43,11 @@ public class RelicCatalogTest
 	@Test
 	public void combinedCatalogAndLookup()
 	{
-		assertEquals(40, RelicCatalog.all().size());
+		assertEquals(38, RelicCatalog.all().size());
 		assertNotNull(RelicCatalog.byId("mod-no-food"));
 		assertEquals("No Food", RelicCatalog.byId("mod-no-food").name());
-		assertNotNull(RelicCatalog.byId("gluttony"));
+		assertNotNull(RelicCatalog.byId("arcane-tome"));
+		assertNull("quarantined relics are not in the catalog", RelicCatalog.byId("gluttony"));
 		assertNull(RelicCatalog.byId("does-not-exist"));
 		assertNull(RelicCatalog.byId(null));
 	}

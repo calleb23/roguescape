@@ -82,12 +82,28 @@ public final class LoadoutCheck
 				slotsUsed++;
 			}
 
-			// Gear-tier cap applies to anything equippable (worn or brought along to wear).
-			int tier = GearTiers.tierOf(item.name(), item.equipLevelRequirement());
-			if (!restrictions.gearTierAllowed(tier))
+			// Lane caps: the item's requirement level must pass its lane's cap (equip req for
+			// weapon/armour, creation req for jewellery/supplies — one universal scale).
+			com.pluginideahub.roguescape.core.restriction.UpgradeLane lane =
+				com.pluginideahub.roguescape.core.restriction.UpgradeLane.laneOf(item.category());
+			if (lane != null)
 			{
-				violations.add(item.name() + " is above the gear-tier cap ("
-					+ tier + " > " + restrictions.gearTierCap() + ")");
+				int level = GearTiers.tierOf(item.name(), item.equipLevelRequirement());
+				if (!restrictions.laneAllowed(lane, level))
+				{
+					violations.add(item.name() + " is above the " + lane.displayName() + " cap ("
+						+ level + " > " + restrictions.laneCap(lane) + ")");
+				}
+			}
+			else if (item.equipLevelRequirement() > 0)
+			{
+				// Equippable but unmapped category: hold it to the strictest active lane cap.
+				int level = GearTiers.tierOf(item.name(), item.equipLevelRequirement());
+				if (!restrictions.gearTierAllowed(level))
+				{
+					violations.add(item.name() + " is above the gear cap ("
+						+ level + " > " + restrictions.gearTierCap() + ")");
+				}
 			}
 
 			// Forbidden consumable categories (food, potions, ammo, runes).

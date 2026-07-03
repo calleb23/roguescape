@@ -5,6 +5,7 @@ import com.pluginideahub.roguescape.core.relic.RelicEngine;
 import com.pluginideahub.roguescape.core.restriction.Curse;
 import com.pluginideahub.roguescape.core.restriction.RunRestrictions;
 import com.pluginideahub.roguescape.core.restriction.StartTier;
+import com.pluginideahub.roguescape.core.restriction.UpgradeLane;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -13,24 +14,51 @@ import org.junit.Test;
 import static org.junit.Assert.*;
 
 /**
- * Chunk 4 of the Boss Ladder MVP: the reward draft only offers easers that would actually loosen
- * the current restrictions, and is deterministic under a seed.
+ * The mixed-pool reward draft (locked 2026-07-03): one seeded shuffle over remaining lane raises
+ * + easers useful against the live restrictions; every card would actually do something; drafts
+ * shrink honestly when the pool runs short.
  */
 public class LadderRewardDrafterTest
 {
 	@Test
-	public void onlyOffersCardsThatWouldEaseSomething()
+	public void onlyOffersCardsThatWouldChangeSomething()
 	{
-		// Only Famine + a tier cap are in force.
+		// Famine + a tier cap on all four lanes are in force.
 		RunRestrictions r = RunRestrictions.starting(StartTier.LOW, EnumSet.of(Curse.FAMINE));
-		List<Relic> useful = LadderRewardDrafter.usefulEasers(r);
-		List<String> ids = useful.stream().map(Relic::relicId).collect(Collectors.toList());
+		List<LadderRewardCard> pool = LadderRewardDrafter.pool(r);
 
-		assertTrue(ids.contains("bread-of-the-wanderer")); // eases FOOD
-		assertTrue(ids.contains("armoury-key"));           // raises the tier cap
-		assertFalse(ids.contains("alchemists-mercy"));     // potions were never forbidden
-		assertFalse(ids.contains("key-to-the-vault"));     // bank was never sealed
-		assertFalse(ids.contains("deep-pockets"));         // no inventory limit in force
+		List<String> relicIds = pool.stream().filter(c -> !c.isRaise())
+			.map(c -> c.relic().relicId()).collect(Collectors.toList());
+		List<UpgradeLane> raises = pool.stream().filter(LadderRewardCard::isRaise)
+			.map(LadderRewardCard::lane).collect(Collectors.toList());
+
+		assertTrue(relicIds.contains("bread-of-the-wanderer")); // eases FOOD
+		assertFalse(relicIds.contains("alchemists-mercy"));     // potions were never forbidden
+		assertFalse(relicIds.contains("key-to-the-vault"));     // bank was never sealed
+		assertFalse(relicIds.contains("deep-pockets"));         // no inventory limit in force
+		// All four capped lanes offer their raise.
+		assertEquals(4, raises.size());
+		assertTrue(raises.containsAll(EnumSet.allOf(UpgradeLane.class)));
+	}
+
+	@Test
+	public void raisesClimbTheBandLadderAndFreeTheLane()
+	{
+		RunRestrictions r = RunRestrictions.starting(StartTier.HIGH, EnumSet.noneOf(Curse.class));
+		assertEquals(60, r.laneCap(UpgradeLane.WEAPON));
+
+		r.raiseLane(UpgradeLane.WEAPON);
+		assertEquals(70, r.laneCap(UpgradeLane.WEAPON));
+
+		r.raiseLane(UpgradeLane.WEAPON); // past the top band: the lane frees entirely
+		assertEquals(RunRestrictions.UNCAPPED, r.laneCap(UpgradeLane.WEAPON));
+
+		// The freed lane no longer offers a raise; the other three still do.
+		List<LadderRewardCard> pool = LadderRewardDrafter.pool(r);
+		List<UpgradeLane> raises = pool.stream().filter(LadderRewardCard::isRaise)
+			.map(LadderRewardCard::lane).collect(Collectors.toList());
+		assertFalse(raises.contains(UpgradeLane.WEAPON));
+		assertEquals(3, raises.size());
 	}
 
 	@Test
@@ -38,18 +66,14 @@ public class LadderRewardDrafterTest
 	{
 		RunRestrictions r = RunRestrictions.starting(StartTier.NONE,
 			EnumSet.of(Curse.FAMINE, Curse.SEALED_BANK, Curse.ANCHORED, Curse.FAITHLESS));
-		List<Relic> a = LadderRewardDrafter.draft(r, 42L, LadderRewardDrafter.DRAFT_SIZE);
-		List<Relic> b = LadderRewardDrafter.draft(r, 42L, LadderRewardDrafter.DRAFT_SIZE);
-		List<Relic> c = LadderRewardDrafter.draft(r, 43L, LadderRewardDrafter.DRAFT_SIZE);
+		List<LadderRewardCard> a = LadderRewardDrafter.draft(r, 42L, LadderRewardDrafter.DRAFT_SIZE);
+		List<LadderRewardCard> b = LadderRewardDrafter.draft(r, 42L, LadderRewardDrafter.DRAFT_SIZE);
+		List<LadderRewardCard> c = LadderRewardDrafter.draft(r, 43L, LadderRewardDrafter.DRAFT_SIZE);
 
 		assertEquals(LadderRewardDrafter.DRAFT_SIZE, a.size());
-		assertEquals(
-			a.stream().map(Relic::relicId).collect(Collectors.toList()),
-			b.stream().map(Relic::relicId).collect(Collectors.toList()));
+		assertEquals(titles(a), titles(b));
 		// A different seed is allowed to differ (and with this pool it does).
-		assertNotEquals(
-			a.stream().map(Relic::relicId).collect(Collectors.toList()),
-			c.stream().map(Relic::relicId).collect(Collectors.toList()));
+		assertNotEquals(titles(a), titles(c));
 	}
 
 	@Test
@@ -68,5 +92,21 @@ public class LadderRewardDrafterTest
 	public void fullyEasedRunDraftsNothing()
 	{
 		assertTrue(LadderRewardDrafter.draft(RunRestrictions.unrestricted(), 7L, 3).isEmpty());
+	}
+
+	@Test
+	public void oneStyleOffersOnlyTheMissingStyles()
+	{
+		RunRestrictions r = RunRestrictions.starting(null, EnumSet.of(Curse.ONE_STYLE));
+		List<String> ids = LadderRewardDrafter.usefulEasers(r).stream()
+			.map(Relic::relicId).collect(Collectors.toList());
+		assertFalse("melee is already permitted", ids.contains("way-of-the-blade"));
+		assertTrue(ids.contains("way-of-the-bow"));
+		assertTrue(ids.contains("way-of-the-wand"));
+	}
+
+	private static List<String> titles(List<LadderRewardCard> cards)
+	{
+		return cards.stream().map(LadderRewardCard::title).collect(Collectors.toList());
 	}
 }

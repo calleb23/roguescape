@@ -51,17 +51,32 @@ public class RunRestrictionsTest
 	}
 
 	@Test
-	public void gearTierCapBlocksAboveTheCapAndRelicsRaiseIt()
+	public void laneCapsBlockAboveTheCapAndRaisesClimbBands()
 	{
 		RunRestrictions r = new RunRestrictions().restrictGearTier(40);
 		assertTrue(r.gearTierAllowed(40));
 		assertFalse(r.gearTierAllowed(50));
 
-		r.raiseGearTierCap(20);
-		assertTrue(r.gearTierAllowed(60));
+		r.raiseLane(UpgradeLane.WEAPON); // 40 -> 50, weapon lane only
+		assertTrue(r.laneAllowed(UpgradeLane.WEAPON, 50));
+		assertFalse(r.laneAllowed(UpgradeLane.ARMOUR, 50));
+		assertFalse("the strictest lane governs the aggregate query", r.gearTierAllowed(50));
 
 		r.permit(Restriction.GEAR_TIER_CAP);
 		assertTrue("lifting the cap allows any tier", r.gearTierAllowed(99));
+	}
+
+	@Test
+	public void freeingEveryLaneLiftsTheCapRestriction()
+	{
+		RunRestrictions r = new RunRestrictions().restrictGearTier(70);
+		assertTrue(r.isRestricted(Restriction.GEAR_TIER_CAP));
+		for (UpgradeLane lane : UpgradeLane.values())
+		{
+			r.raiseLane(lane); // 70 -> past the top band: the lane frees
+		}
+		assertFalse(r.isRestricted(Restriction.GEAR_TIER_CAP));
+		assertEquals(RunRestrictions.UNCAPPED, r.gearTierCap());
 	}
 
 	@Test

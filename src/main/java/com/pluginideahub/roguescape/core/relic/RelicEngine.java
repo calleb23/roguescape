@@ -44,12 +44,14 @@ public final class RelicEngine
 				case EASE_RESTRICTION:
 					restrictions.permit(effect.eases());
 					break;
-				case RAISE_GEAR_TIER:
-					restrictions.raiseGearTierCap(effect.magnitude());
+				case PERMIT_COMBAT_STYLE:
+					restrictions.permitCombatStyle(effect.permitsStyle());
 					break;
 				case ADD_INVENTORY_SLOTS:
 					restrictions.addInventorySlots(effect.magnitude());
 					break;
+				// RAISE_GEAR_TIER is retired (locked 2026-07-03): tier raises are upgrade-lane
+				// rewards (RunRestrictions.raiseLane), never relic effects.
 				default:
 					break;
 			}

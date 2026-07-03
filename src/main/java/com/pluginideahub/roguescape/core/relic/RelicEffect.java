@@ -19,6 +19,7 @@ public final class RelicEffect
 	private final Set<String> itemIds;
 	private final int magnitude;
 	private final com.pluginideahub.roguescape.core.restriction.Restriction eases;
+	private com.pluginideahub.roguescape.core.restriction.CombatStyle permitsStyle;
 
 	private RelicEffect(RelicEffectKind kind, Set<BankItemCategory> categories, Set<String> itemIds, int magnitude)
 	{
@@ -42,6 +43,9 @@ public final class RelicEffect
 	public int magnitude() { return magnitude; }
 	/** The restriction this effect lifts (EASE_RESTRICTION only), else null. */
 	public com.pluginideahub.roguescape.core.restriction.Restriction eases() { return eases; }
+
+	/** The combat style this effect permits (PERMIT_COMBAT_STYLE only), else null. */
+	public com.pluginideahub.roguescape.core.restriction.CombatStyle permitsStyle() { return permitsStyle; }
 
 	public boolean matchesCategory(BankItemCategory c) { return categories.isEmpty() || categories.contains(c); }
 	public boolean matchesItemId(String id) { return itemIds.isEmpty() || (id != null && itemIds.contains(id)); }
@@ -87,11 +91,24 @@ public final class RelicEffect
 			restriction);
 	}
 
-	/** Raise the gear-tier cap by {@code by} equip levels. */
+	/**
+	 * RETIRED (locked 2026-07-03) — kept only for the quarantined legacy pool; nothing applies it.
+	 * Tier raises are upgrade-lane rewards ({@code RunRestrictions.raiseLane}).
+	 */
 	public static RelicEffect raiseGearTier(int by)
 	{
 		return new RelicEffect(RelicEffectKind.RAISE_GEAR_TIER, Collections.emptySet(), Collections.emptySet(),
 			Math.max(0, by));
+	}
+
+	/** Permit one more combat style under a COMBAT_STYLE lock. */
+	public static RelicEffect permitCombatStyle(com.pluginideahub.roguescape.core.restriction.CombatStyle style)
+	{
+		if (style == null) throw new IllegalArgumentException("style required");
+		RelicEffect e = new RelicEffect(RelicEffectKind.PERMIT_COMBAT_STYLE, Collections.emptySet(),
+			Collections.emptySet(), 0);
+		e.permitsStyle = style;
+		return e;
 	}
 
 	/** Grant {@code slots} extra inventory slots under an inventory limit. */

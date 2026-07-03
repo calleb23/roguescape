@@ -2,6 +2,7 @@ package com.pluginideahub.roguescape.core;
 
 import com.pluginideahub.roguescape.core.item.ProvenanceHint;
 import com.pluginideahub.roguescape.core.relic.ModifierLibrary;
+import com.pluginideahub.roguescape.core.relic.LegacyRelics;
 import com.pluginideahub.roguescape.core.relic.RelicLibrary;
 import com.pluginideahub.roguescape.core.reward.RelicDraftGenerator;
 import com.pluginideahub.roguescape.core.reward.RewardDraft;
@@ -58,7 +59,7 @@ public class RelicGameplayTest
 	public void gluttonyAddsFoodScoringBonus()
 	{
 		RogueScapeRun run = roomRun("Score");
-		run.chooseRelic(RelicLibrary.gluttony()); // food scores +3 each
+		run.chooseRelic(LegacyRelics.gluttony()); // food scores +3 each
 		run.applyItemDelta("Shark", 1, ProvenanceHint.OBSERVED_LOOT);
 
 		int sessionScore = run.session().runScore();

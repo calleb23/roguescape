@@ -31,7 +31,7 @@ public class LoadoutCheckTest
 		LoadoutCheck.Result result = LoadoutCheck.validate(r, Arrays.asList(
 			new LoadoutCheck.Item("Dragon dagger", 60, BankItemCategory.MELEE_WEAPON, true)));
 		assertFalse(result.passed());
-		assertTrue(result.violations().get(0).contains("gear-tier cap"));
+		assertTrue(result.violations().get(0).contains("Weapon cap"));
 	}
 
 	@Test

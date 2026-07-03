@@ -22,8 +22,13 @@ public enum RelicEffectKind
 	PERMISSION,
 	/** Lifts one restriction from the run's {@code RunRestrictions} — the canonical relic effect. */
 	EASE_RESTRICTION,
-	/** Raises the gear-tier cap by {@code magnitude} equip levels. */
+	/**
+	 * RETIRED (locked 2026-07-03): tier raises are upgrade-lane rewards, never relics. Kept only
+	 * because quarantined legacy relics reference it; nothing applies it.
+	 */
 	RAISE_GEAR_TIER,
 	/** Grants {@code magnitude} extra inventory slots under an inventory limit. */
-	ADD_INVENTORY_SLOTS
+	ADD_INVENTORY_SLOTS,
+	/** Permits one more combat style under a COMBAT_STYLE lock (One Style's easer family). */
+	PERMIT_COMBAT_STYLE
 }

@@ -75,7 +75,8 @@ public class CurseTest
 		assertEquals(RestrictionOutcome.BLOCK, r.decide(Restriction.FOOD));
 		r.permit(Restriction.FOOD);
 		assertEquals(RestrictionOutcome.ALLOW, r.decide(Restriction.FOOD));
-		r.raiseGearTierCap(19);
-		assertEquals(20, r.gearTierCap());
+		// Tier raises are upgrade-lane rewards now (locked 2026-07-03): band 1 -> 5.
+		r.raiseLane(UpgradeLane.WEAPON);
+		assertEquals(5, r.laneCap(UpgradeLane.WEAPON));
 	}
 }

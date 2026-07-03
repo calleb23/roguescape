@@ -244,7 +244,7 @@ public class ViewModelTest
 		base.addStage("R1", RunStageType.ROOM, "Lumbridge", "");
 		base.enterStage("R1");
 		RogueScapeRun run = RogueScapeRun.wrap(base);
-		run.chooseRelic(com.pluginideahub.roguescape.core.relic.RelicLibrary.gluttony());
+		run.chooseRelic(com.pluginideahub.roguescape.core.relic.LegacyRelics.gluttony());
 		base.completeRun("Done", com.pluginideahub.roguescape.core.RunCompletionReason.MANUAL_SUCCESS);
 		RogueScapeRunLoop loop = new RogueScapeRunLoop(run, 0L);
 

@@ -25,7 +25,7 @@ public class RelicEasingTest
 			RelicEffectKind kind = relic.effects().get(0).kind();
 			assertTrue(relic.name() + " must be an easing effect",
 				kind == RelicEffectKind.EASE_RESTRICTION
-					|| kind == RelicEffectKind.RAISE_GEAR_TIER
+					|| kind == RelicEffectKind.PERMIT_COMBAT_STYLE
 					|| kind == RelicEffectKind.ADD_INVENTORY_SLOTS);
 		}
 	}
@@ -41,14 +41,17 @@ public class RelicEasingTest
 	}
 
 	@Test
-	public void armouryKeyRaisesTheTierCap()
+	public void laneRaisesClimbBandsNotArithmetic()
 	{
+		// Armoury Key is retired (locked 2026-07-03): tier raises are upgrade-lane rewards.
 		RunRestrictions r = RunRestrictions.starting(StartTier.LOW, EnumSet.noneOf(Curse.class));
 		assertEquals(20, r.gearTierCap());
-		RelicEngine.applyEasing(RelicLibrary.armouryKey(), r);
-		assertEquals(30, r.gearTierCap());
-		assertTrue(r.gearTierAllowed(30));
-		assertFalse(r.gearTierAllowed(31));
+		r.raiseLane(com.pluginideahub.roguescape.core.restriction.UpgradeLane.ARMOUR);
+		assertEquals(30, r.laneCap(com.pluginideahub.roguescape.core.restriction.UpgradeLane.ARMOUR));
+		assertTrue(r.laneAllowed(com.pluginideahub.roguescape.core.restriction.UpgradeLane.ARMOUR, 30));
+		assertFalse(r.laneAllowed(com.pluginideahub.roguescape.core.restriction.UpgradeLane.ARMOUR, 31));
+		// The other lanes did not move.
+		assertEquals(20, r.laneCap(com.pluginideahub.roguescape.core.restriction.UpgradeLane.WEAPON));
 	}
 
 	@Test

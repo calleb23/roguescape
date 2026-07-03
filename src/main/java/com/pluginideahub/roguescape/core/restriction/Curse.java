@@ -30,6 +30,26 @@ public enum Curse
 		{
 			restrictions.restrictInventory(TIGHT_POCKETS_SLOTS);
 		}
+	},
+	GODLESS("Godless", "Piety, Rigour, and Augury are forbidden.", 10,
+		Restriction.PIETY, Restriction.RIGOUR, Restriction.AUGURY),
+	BOUND_BOOK("Bound Book", "Only the standard spellbook is permitted.", 10)
+	{
+		@Override
+		public void apply(RunRestrictions restrictions)
+		{
+			restrictions.restrictSpellbook(Spellbook.STANDARD);
+		}
+	},
+	ONE_STYLE("One Style", "Only one combat style may be used.", 15)
+	{
+		@Override
+		public void apply(RunRestrictions restrictions)
+		{
+			// v1: melee is the default permitted style; picking the style at setup is a
+			// Contract-UI feature (the curse stays one entry, the parameter arrives later).
+			restrictions.restrictCombatStyles(CombatStyle.MELEE);
+		}
 	};
 
 	/** The slot allowance Tight Pockets leaves open (half an inventory). Playtest data. */

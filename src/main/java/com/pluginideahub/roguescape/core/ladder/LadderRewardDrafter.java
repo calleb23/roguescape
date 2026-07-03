@@ -3,17 +3,20 @@ package com.pluginideahub.roguescape.core.ladder;
 import com.pluginideahub.roguescape.core.relic.Relic;
 import com.pluginideahub.roguescape.core.relic.RelicEffect;
 import com.pluginideahub.roguescape.core.relic.RelicLibrary;
+import com.pluginideahub.roguescape.core.restriction.GradeBands;
 import com.pluginideahub.roguescape.core.restriction.Restriction;
 import com.pluginideahub.roguescape.core.restriction.RunRestrictions;
-import com.pluginideahub.roguescape.core.reward.DeterministicRng;
+import com.pluginideahub.roguescape.core.restriction.UpgradeLane;
 import java.util.ArrayList;
 import java.util.List;
 
 /**
- * The Boss Ladder reward draft (MVP chunk 4): draft 1-of-N restriction-easers. Every card offered
- * would <em>actually do something</em> against the run's current restrictions — a chest never
- * offers "Food is permitted" when food was never forbidden. Deterministic under a seed so shared
- * seeds share drafts.
+ * The Boss Ladder reward draft (locked 2026-07-03): <b>pure mixed pool</b>. One deterministic
+ * seeded shuffle over (remaining lane raises) + (relic easers useful against the live
+ * restrictions); deal {@link #DRAFT_SIZE}, no duplicates within a draft. Every card offered
+ * would <em>actually do something</em> — a chest never offers "Food is permitted" when food was
+ * never forbidden, never offers a raise on a freed lane. When fewer useful cards exist the
+ * draft shrinks honestly (2 / 1 / empty = auto-skip); no filler.
  */
 public final class LadderRewardDrafter
 {
@@ -24,12 +27,35 @@ public final class LadderRewardDrafter
 	{
 	}
 
-	/** Draft up to {@code count} easers useful against the current restrictions. */
-	public static List<Relic> draft(RunRestrictions current, long seed, int count)
+	/** Deal up to {@code count} cards from the mixed pool, deterministic under the seed. */
+	public static List<LadderRewardCard> draft(RunRestrictions current, long seed, int count)
 	{
-		List<Relic> useful = usefulEasers(current);
-		new DeterministicRng(seed).shuffle(useful);
-		return useful.size() <= count ? useful : new ArrayList<>(useful.subList(0, Math.max(0, count)));
+		List<LadderRewardCard> pool = pool(current);
+		new com.pluginideahub.roguescape.core.reward.DeterministicRng(seed).shuffle(pool);
+		return pool.size() <= count ? pool : new ArrayList<>(pool.subList(0, Math.max(0, count)));
+	}
+
+	/** The whole mixed pool: every remaining lane raise + every useful easer. */
+	public static List<LadderRewardCard> pool(RunRestrictions current)
+	{
+		List<LadderRewardCard> out = new ArrayList<>();
+		if (current == null)
+		{
+			return out;
+		}
+		for (UpgradeLane lane : UpgradeLane.values())
+		{
+			int cap = current.laneCap(lane);
+			if (cap != RunRestrictions.UNCAPPED)
+			{
+				out.add(LadderRewardCard.raise(lane, GradeBands.next(cap)));
+			}
+		}
+		for (Relic relic : usefulEasers(current))
+		{
+			out.add(LadderRewardCard.relic(relic));
+		}
+		return out;
 	}
 
 	/** Every easer in the pool that would change something about {@code current}. */
@@ -67,9 +93,9 @@ public final class LadderRewardDrafter
 						return true;
 					}
 					break;
-				case RAISE_GEAR_TIER:
-					if (current.isRestricted(Restriction.GEAR_TIER_CAP)
-						&& current.gearTierCap() != RunRestrictions.UNCAPPED)
+				case PERMIT_COMBAT_STYLE:
+					if (current.isRestricted(Restriction.COMBAT_STYLE)
+						&& !current.combatStyleAllowed(effect.permitsStyle()))
 					{
 						return true;
 					}

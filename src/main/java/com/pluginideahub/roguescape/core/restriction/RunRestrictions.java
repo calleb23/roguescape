@@ -24,8 +24,12 @@ public final class RunRestrictions
 {
 	public static final int UNCAPPED = -1;
 
+	/** A full OSRS inventory; a limit grown back to this lifts the INVENTORY_LIMIT restriction. */
+	public static final int FULL_INVENTORY = 28;
+
 	private final EnumSet<Restriction> active = EnumSet.noneOf(Restriction.class);
-	private int gearTierCap = UNCAPPED;
+	// Per-lane caps (locked 2026-07-03): one level cap per upgrade lane, raised band by band.
+	private final java.util.EnumMap<UpgradeLane, Integer> laneCaps = new java.util.EnumMap<>(UpgradeLane.class);
 	private int inventoryLimit = UNCAPPED;
 	private Spellbook allowedSpellbook;
 	private final EnumSet<CombatStyle> allowedStyles = EnumSet.allOf(CombatStyle.class);
@@ -74,10 +78,25 @@ public final class RunRestrictions
 		return this;
 	}
 
+	/** Caps ALL four lanes at once — StartTier's one knob ("same band, all lanes"). */
 	public RunRestrictions restrictGearTier(int cap)
 	{
-		this.gearTierCap = Math.max(0, cap);
+		for (UpgradeLane lane : UpgradeLane.values())
+		{
+			laneCaps.put(lane, Math.max(0, cap));
+		}
 		active.add(Restriction.GEAR_TIER_CAP);
+		return this;
+	}
+
+	/** Caps one lane (custom setups / future asymmetric starts). */
+	public RunRestrictions restrictLane(UpgradeLane lane, int cap)
+	{
+		if (lane != null)
+		{
+			laneCaps.put(lane, Math.max(0, cap));
+			active.add(Restriction.GEAR_TIER_CAP);
+		}
 		return this;
 	}
 
@@ -117,7 +136,7 @@ public final class RunRestrictions
 		if (restriction != null)
 		{
 			active.remove(restriction);
-			if (restriction == Restriction.GEAR_TIER_CAP) gearTierCap = UNCAPPED;
+			if (restriction == Restriction.GEAR_TIER_CAP) laneCaps.clear();
 			if (restriction == Restriction.INVENTORY_LIMIT) inventoryLimit = UNCAPPED;
 			if (restriction == Restriction.SPELLBOOK) allowedSpellbook = null;
 			if (restriction == Restriction.COMBAT_STYLE) allowedStyles.addAll(EnumSet.allOf(CombatStyle.class));
@@ -125,22 +144,42 @@ public final class RunRestrictions
 		return this;
 	}
 
-	/** Raise the gear-tier cap (relic). No effect if the cap isn't in force. */
-	public RunRestrictions raiseGearTierCap(int by)
+	/**
+	 * Raise one lane to its next band (the upgrade-lane reward). Raising past the top band frees
+	 * the lane; once every lane is free the GEAR_TIER_CAP restriction lifts entirely.
+	 */
+	public RunRestrictions raiseLane(UpgradeLane lane)
 	{
-		if (active.contains(Restriction.GEAR_TIER_CAP) && gearTierCap != UNCAPPED)
+		Integer cap = lane == null ? null : laneCaps.get(lane);
+		if (cap != null)
 		{
-			gearTierCap += Math.max(0, by);
+			int next = GradeBands.next(cap);
+			if (next == UNCAPPED)
+			{
+				laneCaps.remove(lane);
+			}
+			else
+			{
+				laneCaps.put(lane, next);
+			}
+			if (laneCaps.isEmpty())
+			{
+				active.remove(Restriction.GEAR_TIER_CAP);
+			}
 		}
 		return this;
 	}
 
-	/** Grant more inventory slots (relic). No effect if no limit is in force. */
+	/** Grant more inventory slots (relic); reaching the full inventory lifts the limit entirely. */
 	public RunRestrictions addInventorySlots(int slots)
 	{
 		if (active.contains(Restriction.INVENTORY_LIMIT) && inventoryLimit != UNCAPPED)
 		{
 			inventoryLimit += Math.max(0, slots);
+			if (inventoryLimit >= FULL_INVENTORY)
+			{
+				permit(Restriction.INVENTORY_LIMIT);
+			}
 		}
 		return this;
 	}
@@ -188,14 +227,49 @@ public final class RunRestrictions
 			: RestrictionOutcome.FAIL;
 	}
 
-	public int gearTierCap() { return gearTierCap; }
+	/** The cap on one lane, or {@link #UNCAPPED} when that lane is free. */
+	public int laneCap(UpgradeLane lane)
+	{
+		Integer cap = lane == null ? null : laneCaps.get(lane);
+		return cap == null ? UNCAPPED : cap;
+	}
+
+	/** The loosest still-active lane cap — a one-number summary for display, {@link #UNCAPPED} when all free. */
+	public int gearTierCap()
+	{
+		int max = UNCAPPED;
+		for (Integer cap : laneCaps.values())
+		{
+			if (cap != null && cap > max)
+			{
+				max = cap;
+			}
+		}
+		return max;
+	}
+
 	public int inventoryLimit() { return inventoryLimit; }
 	public Spellbook allowedSpellbook() { return allowedSpellbook; }
 	public Set<CombatStyle> allowedStyles() { return Collections.unmodifiableSet(EnumSet.copyOf(allowedStyles)); }
 
+	/** Whether a requirement level passes one lane's cap. */
+	public boolean laneAllowed(UpgradeLane lane, int level)
+	{
+		int cap = laneCap(lane);
+		return cap == UNCAPPED || level <= cap;
+	}
+
+	/** Legacy single-cap query: the level must pass EVERY active lane (used where the lane is unknown). */
 	public boolean gearTierAllowed(int tier)
 	{
-		return gearTierCap == UNCAPPED || tier <= gearTierCap;
+		for (UpgradeLane lane : UpgradeLane.values())
+		{
+			if (!laneAllowed(lane, tier))
+			{
+				return false;
+			}
+		}
+		return true;
 	}
 
 	public boolean inventorySizeAllowed(int slotsUsed)

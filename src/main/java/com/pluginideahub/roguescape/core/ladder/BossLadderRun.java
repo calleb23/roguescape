@@ -79,10 +79,23 @@ public final class BossLadderRun
 		advance();
 	}
 
+	/** Claim a drafted card — a lane raise (upgrade) or a relic (permit) — and climb on. */
+	public void chooseReward(LadderRewardCard card)
+	{
+		if (card != null && card.isRaise())
+		{
+			requirePhase(LadderPhase.REWARD, "chooseReward");
+			restrictions.raiseLane(card.lane());
+			advance();
+			return;
+		}
+		chooseReward(card == null ? null : card.relic());
+	}
+
 	/** Decline the reward and climb on. */
 	public void skipReward()
 	{
-		chooseReward(null);
+		chooseReward((Relic) null);
 	}
 
 	/** A restriction was broken, the player died, or the run was abandoned — the run ends. */

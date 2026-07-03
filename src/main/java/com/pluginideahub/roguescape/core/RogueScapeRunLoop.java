@@ -5,7 +5,6 @@ import com.pluginideahub.roguescape.core.reward.RelicDraftGenerator;
 import com.pluginideahub.roguescape.core.reward.RewardDraft;
 import com.pluginideahub.roguescape.core.reward.RewardOption;
 import com.pluginideahub.roguescape.core.reward.SupplyDraftGenerator;
-import com.pluginideahub.roguescape.core.reward.UnlockDraftGenerator;
 import com.pluginideahub.roguescape.core.region.RoomKind;
 import com.pluginideahub.roguescape.core.region.StageRegionRule;
 import com.pluginideahub.roguescape.core.unlock.RunUnlockGenerator;
@@ -227,17 +226,15 @@ public final class RogueScapeRunLoop
 			? StageRegionRule.UNRESTRICTED
 			: run.regionPolicy().ruleFor(completedStage.id());
 		RoomKind kind = rule.roomKind();
-		if (rule == StageRegionRule.UNRESTRICTED || kind == RoomKind.BOSS)
-		{
-			pendingRewardDraft = RelicDraftGenerator.relicDraft(draftId, stageId, seed, 3);
-		}
-		else if (kind == RoomKind.SUPPLY)
+		if (kind == RoomKind.SUPPLY && rule != StageRegionRule.UNRESTRICTED)
 		{
 			pendingRewardDraft = SupplyDraftGenerator.supplyDraft(draftId, stageId, seed);
 		}
 		else
 		{
-			pendingRewardDraft = UnlockDraftGenerator.unlockDraft(draftId, completedStage, seed);
+			// The UNLOCK reward type is retired (locked 2026-07-03) — those permissions are
+			// relics now, so every non-supply chest drafts from the relic pool.
+			pendingRewardDraft = RelicDraftGenerator.relicDraft(draftId, stageId, seed, 3);
 		}
 		run.addRewardDraft(pendingRewardDraft);
 		return pendingRewardDraft;

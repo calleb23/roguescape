@@ -9,6 +9,7 @@ import com.pluginideahub.roguescape.core.RunStageType;
 import com.pluginideahub.roguescape.core.RunState;
 import com.pluginideahub.roguescape.core.item.ProvenanceHint;
 import com.pluginideahub.roguescape.core.relic.RelicEngine;
+import com.pluginideahub.roguescape.core.relic.LegacyRelics;
 import com.pluginideahub.roguescape.core.relic.RelicLibrary;
 import org.junit.Test;
 
@@ -32,7 +33,7 @@ public class RecapAndHistoryTest
 		run.session().clearStage("R1");
 		run.session().completeRun("Done", RunCompletionReason.GOAL_COMPLETE);
 
-		RelicEngine engine = new RelicEngine().addRelic(RelicLibrary.fourFoodLimit());
+		RelicEngine engine = new RelicEngine().addRelic(LegacyRelics.fourFoodLimit());
 		RunRecap recap = RunRecap.snapshot(run, engine, 12_345L);
 		assertEquals(RunState.COMPLETE, recap.state());
 		assertEquals(1, recap.itemsCollected());
