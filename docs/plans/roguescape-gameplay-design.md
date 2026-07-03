@@ -10,6 +10,41 @@ sculpt out of the live scene (clear an area, rebuild it with cache models) is **
 one term, never "room", so the two can't be confused. Code: `RogueScapeLobbySculptor`,
 `DEV_LOBBY_*` actions.
 
+## Grill-session decisions (locked 2026-07-03) — the content catalog (curses / relics / upgrades / drafts)
+
+All v1 — everything below becomes custom/curated later; structure is what's locked, numbers stay
+playtest data.
+
+- **One universal level scale for all four upgrade lanes.** A lane cap is a LEVEL: Weapon and
+  Armour grade by *equip* requirement; **Jewellery and Supplies grade by the level required to
+  CREATE them** (crafting / herblore / cooking). Ungradeable items (no requirement known) are
+  allowed under any cap, same as GearTiers.UNKNOWN_TIER today.
+- **Fixed bands, not arithmetic.** A lane raise moves the cap to the next band of
+  **1 → 5 → 10 → 20 → 30 → 40 → 50 → 60 → 70** (bronze → steel → black → mithril → adamant →
+  rune → granite → dragon → beyond). Every step is nameable ("Armour rises to rune-grade").
+  Flat +N raises (old Armoury Key arithmetic) are dead.
+- **StartTier sets the SAME starting band for all four lanes** (None=1, Low=20, Medium=40,
+  High=60). One knob on the Contract; asymmetric starts are Custom-mode territory later.
+- **Relic pool = full coverage, permits only.** Law: *every restriction in the vocabulary has
+  exactly one relic that eases it.* Adds to the pool: a Trade easer, one relic per high prayer
+  (Piety / Rigour / Augury), a spellbook relic, a combat-style relic (permits one more style).
+  **Armoury Key retires** — tier raises are upgrade-lane rewards, never relics. Deep Pockets
+  stays (slots are a relic).
+- **Legacy scoring relics are QUARANTINED, not deleted** (Cursed Blades, Hoarder, etc. — the
+  old Scavenger scoring pool): moved out of the drafting library into a legacy holding class
+  nothing drafts from; the good ideas get reborn as curses when mid-run curse accumulation
+  lands.
+- **Curse list = 12.** The nine existing (Famine, Dry Throat, Sealed Bank, Anchored, Faithless,
+  Bare-fisted, Quiverless, Runeless, Tight Pockets) plus the style family:
+  **Bound Book** (spellbook locked to Standard), **One Style** (one combat style of your
+  choice), **Godless** (Piety/Rigour/Augury forbidden). Property: every curse can be eased by
+  something in the relic pool. Score values for the new three = playtest placeholders.
+- **Boss Ladder chest = PURE MIXED POOL.** One deterministic seeded shuffle over (remaining
+  lane raises) + (easers useful against live restrictions); deal 3, no duplicates in a draft.
+  When fewer than 3 useful cards exist the draft shrinks (2 / 1 / auto-skip) — no filler.
+- **The old UNLOCK reward type is retired** (was already locked 2026-07-02); UnlockDraftGenerator
+  goes with it — those become relics.
+
 ## Grill-session decisions (locked 2026-07-02) — collections taxonomy & the journey spread
 
 The three things a run accumulates, split by **domain** (not mechanics):
