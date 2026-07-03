@@ -10,6 +10,45 @@ sculpt out of the live scene (clear an area, rebuild it with cache models) is **
 one term, never "room", so the two can't be confused. Code: `RogueScapeLobbySculptor`,
 `DEV_LOBBY_*` actions.
 
+## Grill-session decisions (locked 2026-07-03, session 2) — the mode × mechanic matrix
+
+| Mechanic | Boss Ladder | Dungeon Crawl | Custom |
+|---|---|---|---|
+| Upgrade lanes + bands + StartTier | yes — the climb IS the mode | **none** — power is found, rooms+RNG gate it | BL chassis: yes (per-lane start bands); DC chassis: no |
+| Standard shackles | none (StartTier is the knob) | **the DC shackle set** (below) | chassis default, then free edit |
+| Curses | all 12 choosable | the 8 non-redundant choosable | any restriction, not just curse bundles |
+| Relics | mixed into chests with raises | the whole chest (useful easers only) | per chassis |
+| Supplies | an upgrade lane | found only; supply rooms → supply drafts | per chassis |
+| Mid-run curses | — | **v2** (deferred; core supports it) | v2+ |
+| Scoring | pluggable scoreboards over the recap | same | same |
+
+- **DC standard shackle set** (every DC run starts with): Bank + GE + Trade sealed, Prayer
+  locked, Piety/Rigour/Augury locked, spellbook bound to Standard, potions locked. **Food stays
+  free.** Nine live restrictions = every chest has real choices all run; the rise-of-power arc
+  is the mode.
+- **Curse offering rule (generic, all modes):** a curse is offered at the Contract only if it
+  would restrict something not already restricted — no free score, no dead picks. (In DC this
+  hides Sealed Bank, Faithless, Godless, Bound Book.)
+- **Curse beats prep (BL):** the PREP allowance only opens what you didn't curse away. Sealed
+  Bank in BL = gear from your carried kit all ladder; the economy relics (Key to the Vault,
+  Merchant's Seal, Trader's Mark) become real BL drafts. Implementation: BossLadderRun must
+  know which restrictions are curse-imposed so the allowance skips exactly those.
+- **Mid-run curse accumulation is v2.** The shackle set already keeps DC drafts alive for a
+  full v1 run; event/cursed rooms wait for room-type content. Nothing rots — curses apply to a
+  live RunRestrictions today.
+- **Scoring = pluggable scoreboards.** The recap records raw facts (completion, duration,
+  curses, drafts, seed); score types are views over recaps: points, fastest time, first-to-beat
+  on a shared seed (races). v1 recap shows points + time; races ride the seeded routes later.
+- **Custom mode = chassis + free shackles + route.** Pick a chassis (DC rules or BL rules),
+  then edit everything it exposes: any of the 18 restrictions on/off, per-lane start bands (BL
+  chassis), custom route/rooms (incl. lobby-linked rooms later). Shareable as a seed string.
+  RunRestrictions is the editor's data model. Scripting sandbox = the v3 dream.
+- **Grinds mode and CA mode live inside Custom** — route GENERATORS, not new rule sets: the
+  player DECLARES a goal (a grind like "93→99 Smithing", or a Combat Achievement target) and
+  the plugin builds the route from that declaration; the player can tweak the generated route
+  in the Custom editor before starting. Route generators are pluggable sources feeding the one
+  route model.
+
 ## Grill-session decisions (locked 2026-07-03) — the content catalog (curses / relics / upgrades / drafts)
 
 All v1 — everything below becomes custom/curated later; structure is what's locked, numbers stay
