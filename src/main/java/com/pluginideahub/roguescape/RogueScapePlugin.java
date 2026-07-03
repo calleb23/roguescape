@@ -184,7 +184,7 @@ public class RogueScapePlugin extends Plugin
 	RogueScapeWindowOverlay window;
 	RogueScapeCustomBuilderWidgetWindow customBuilderWidgetWindow;
 	private RogueScapeWidgetWindow widgetWindow;
-	private RogueScapeRoomSculptor roomSculptor;
+	private RogueScapeLobbySculptor lobbySculptor;
 	private boolean sculptorReapplyQueued;
 	private int clogDumpCountdown = -1;
 	private RogueScapeRewardOverlay rewardOverlay;
@@ -240,8 +240,8 @@ public class RogueScapePlugin extends Plugin
 		clientThread.invoke(() -> com.pluginideahub.roguescape.ui.RogueScapeWidgetSkin.register(client));
 		widgetWindow = new RogueScapeWidgetWindow(client, clientThread, config::experimentalJournalTab, windowContent::windowTabs);
 		mouseManager.registerMouseListener(widgetWindow);
-		// SPIKE: room sculptor — clear an area and build it back with cache models (DEV TOOLS).
-		roomSculptor = new RogueScapeRoomSculptor(client, clientThread);
+		// SPIKE: lobby sculptor — clear an area and build the lobby back with cache models (DEV TOOLS).
+		lobbySculptor = new RogueScapeLobbySculptor(client, clientThread);
 		rewardOverlay = new RogueScapeRewardOverlay(
 			windowContent::rewardView,
 			icons,
@@ -339,10 +339,10 @@ public class RogueScapePlugin extends Plugin
 			widgetWindow.shutDown();
 			widgetWindow = null;
 		}
-		if (roomSculptor != null)
+		if (lobbySculptor != null)
 		{
-			roomSculptor.shutDown();
-			roomSculptor = null;
+			lobbySculptor.shutDown();
+			lobbySculptor = null;
 		}
 		// Unconditional: the skin registers before widgetWindow is assigned, so its removal
 		// must not depend on the window having been constructed. Removing absent keys is a no-op.
@@ -456,10 +456,10 @@ public class RogueScapePlugin extends Plugin
 		{
 			widgetWindow.onTick();
 		}
-		if (sculptorReapplyQueued && roomSculptor != null)
+		if (sculptorReapplyQueued && lobbySculptor != null)
 		{
 			sculptorReapplyQueued = false;
-			roomSculptor.reapply();
+			lobbySculptor.reapply();
 		}
 		if (customBuilderWidgetWindow != null)
 		{
@@ -525,7 +525,7 @@ public class RogueScapePlugin extends Plugin
 	public void onGameStateChanged(GameStateChanged event)
 	{
 		if (event != null && event.getGameState() == GameState.LOGGED_IN
-			&& roomSculptor != null && roomSculptor.hasEdits())
+			&& lobbySculptor != null && lobbySculptor.hasEdits())
 		{
 			// The scene was just rebuilt from map data, wiping sculptor edits — re-apply on the
 			// next tick (the scene is fully populated by then).
@@ -1160,28 +1160,28 @@ public class RogueScapePlugin extends Plugin
 					clientThread.invokeLater(this::logJournalDump);
 				}
 				break;
-			case DEV_SCULPT_CLEAR:
-				if (roomSculptor != null)
+			case DEV_LOBBY_CLEAR:
+				if (lobbySculptor != null)
 				{
-					roomSculptor.clearAreaAroundPlayer(3);
+					lobbySculptor.clearAreaAroundPlayer(3);
 				}
 				break;
-			case DEV_SCULPT_BLANK_FLOORS:
-				if (roomSculptor != null)
+			case DEV_LOBBY_BLANK_FLOORS:
+				if (lobbySculptor != null)
 				{
-					roomSculptor.blankFloorsAroundPlayer(3);
+					lobbySculptor.blankFloorsAroundPlayer(3);
 				}
 				break;
-			case DEV_SCULPT_PLACE_MODEL:
-				if (roomSculptor != null)
+			case DEV_LOBBY_PLACE_MODEL:
+				if (lobbySculptor != null)
 				{
-					roomSculptor.placeModelAtPlayer(config.sculptModelId(), config.sculptOrientation());
+					lobbySculptor.placeModelAtPlayer(config.sculptModelId(), config.sculptOrientation());
 				}
 				break;
-			case DEV_SCULPT_RESTORE:
-				if (roomSculptor != null)
+			case DEV_LOBBY_RESTORE:
+				if (lobbySculptor != null)
 				{
-					roomSculptor.restoreAll();
+					lobbySculptor.restoreAll();
 				}
 				break;
 			case START_RUN:

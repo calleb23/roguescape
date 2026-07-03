@@ -18,7 +18,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * SPIKE — sculpting a real room out of the live scene: clear everything in an area (objects,
+ * SPIKE — sculpting the LOBBY: a custom-built space carved out of the live scene in physical
+ * space. (Terminology: routes have <i>rooms</i>; the sculpted place is the <i>lobby</i> — they
+ * are different things.) Clear everything in an area (objects,
  * walls, decorations, floor render), then build back with cache models placed as
  * {@link RuneLiteObject}s (the client-side fake-object mechanism — walls, doors and furniture
  * are all "just models", and the GPU plugin renders these dynamically, so no renderer hook is
@@ -32,9 +34,9 @@ import org.slf4j.LoggerFactory;
  * scene load, so tile removals made post-load may not disappear until the next reload. If so,
  * the fix is to trigger one reload after editing ({@link #requestSceneReload()}).
  */
-final class RogueScapeRoomSculptor
+final class RogueScapeLobbySculptor
 {
-	private static final Logger log = LoggerFactory.getLogger(RogueScapeRoomSculptor.class);
+	private static final Logger log = LoggerFactory.getLogger(RogueScapeLobbySculptor.class);
 
 	/** One planned model placement, in world coordinates so it survives scene reloads. */
 	private static final class Placement
@@ -60,7 +62,7 @@ final class RogueScapeRoomSculptor
 	private final Set<WorldPoint> blankedFloors = new LinkedHashSet<>();
 	private final List<Placement> placements = new ArrayList<>();
 
-	RogueScapeRoomSculptor(Client client, ClientThread clientThread)
+	RogueScapeLobbySculptor(Client client, ClientThread clientThread)
 	{
 		this.client = client;
 		this.clientThread = clientThread;
@@ -93,7 +95,7 @@ final class RogueScapeRoomSculptor
 				}
 			}
 			applyClears();
-			log.info("[RogueScape sculptor] cleared r={} around {} ({} new tiles, plan={})",
+			log.info("[RogueScape lobby] cleared r={} around {} ({} new tiles, plan={})",
 				radius, centre, added, clearedTiles.size());
 		});
 	}
@@ -116,7 +118,7 @@ final class RogueScapeRoomSculptor
 				}
 			}
 			applyFloorBlanks();
-			log.info("[RogueScape sculptor] blanked floors r={} around {}", radius, centre);
+			log.info("[RogueScape lobby] blanked floors r={} around {}", radius, centre);
 		});
 	}
 
@@ -125,7 +127,7 @@ final class RogueScapeRoomSculptor
 	{
 		if (modelId <= 0)
 		{
-			log.info("[RogueScape sculptor] no model id set — set one in the RogueScape config");
+			log.info("[RogueScape lobby] no model id set — set one in the RogueScape config");
 			return;
 		}
 		clientThread.invoke(() ->
@@ -138,7 +140,7 @@ final class RogueScapeRoomSculptor
 			Placement p = new Placement(centre, modelId, orientation);
 			placements.add(p);
 			spawn(p);
-			log.info("[RogueScape sculptor] placed model {} o={} at {}", modelId, orientation, centre);
+			log.info("[RogueScape lobby] placed model {} o={} at {}", modelId, orientation, centre);
 		});
 	}
 
@@ -155,7 +157,7 @@ final class RogueScapeRoomSculptor
 			}
 			placements.clear();
 			requestSceneReload();
-			log.info("[RogueScape sculptor] restored — plan dropped, scene reload requested");
+			log.info("[RogueScape lobby] restored — plan dropped, scene reload requested");
 		});
 	}
 
@@ -175,7 +177,7 @@ final class RogueScapeRoomSculptor
 				despawn(p);
 				spawn(p);
 			}
-			log.info("[RogueScape sculptor] re-applied plan: {} cleared, {} blanked, {} placed",
+			log.info("[RogueScape lobby] re-applied plan: {} cleared, {} blanked, {} placed",
 				clearedTiles.size(), blankedFloors.size(), placements.size());
 		});
 	}
@@ -243,7 +245,7 @@ final class RogueScapeRoomSculptor
 		Model model = client.loadModel(p.modelId);
 		if (model == null)
 		{
-			log.info("[RogueScape sculptor] model {} not in cache", p.modelId);
+			log.info("[RogueScape lobby] model {} not in cache", p.modelId);
 			return;
 		}
 		RuneLiteObject rlo = client.createRuneLiteObject();

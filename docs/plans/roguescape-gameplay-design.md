@@ -3,6 +3,13 @@
 Planning only; no code. Balance **values are deferred to playtest** — this doc locks the *structure*
 and the *levers*, not the numbers.
 
+## Decision (locked 2026-07-03) — terminology: rooms vs the LOBBY
+
+Routes have **rooms** (the figurative stages of a run). The custom-built physical space we
+sculpt out of the live scene (clear an area, rebuild it with cache models) is **the lobby** —
+one term, never "room", so the two can't be confused. Code: `RogueScapeLobbySculptor`,
+`DEV_LOBBY_*` actions.
+
 ## Grill-session decisions (locked 2026-07-02) — collections taxonomy & the journey spread
 
 The three things a run accumulates, split by **domain** (not mechanics):

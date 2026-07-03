@@ -30,11 +30,11 @@ public enum PanelAction
 	/** Developer-only: log the live in-game side journal widget tree. */
 	DEV_LOG_JOURNAL,
 	/** Developer-only sculptor: clear everything (objects, walls, floor) around the player. */
-	DEV_SCULPT_CLEAR,
+	DEV_LOBBY_CLEAR,
 	/** Developer-only sculptor: blank only the floor render around the player. */
-	DEV_SCULPT_BLANK_FLOORS,
+	DEV_LOBBY_BLANK_FLOORS,
 	/** Developer-only sculptor: place the configured cache model at the player's tile. */
-	DEV_SCULPT_PLACE_MODEL,
+	DEV_LOBBY_PLACE_MODEL,
 	/** Developer-only sculptor: drop the edit plan and reload the scene (undo everything). */
-	DEV_SCULPT_RESTORE
+	DEV_LOBBY_RESTORE
 }
