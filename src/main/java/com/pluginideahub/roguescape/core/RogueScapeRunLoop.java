@@ -185,9 +185,13 @@ public final class RogueScapeRunLoop
 			if (baseRewardsEnabled)
 			{
 				baseRewardResolved = false;
-				offerBaseRewardIfNeeded(stage);
-				transition(RunPhase.BASE_REWARD, nowMillis);
-				return;
+				if (offerBaseRewardIfNeeded(stage) != null)
+				{
+					transition(RunPhase.BASE_REWARD, nowMillis);
+					return;
+				}
+				// Nothing useful to draft — skip the reward phase honestly (no filler).
+				baseRewardResolved = true;
 			}
 			run.session().completeRun("Route complete", RunCompletionReason.GOAL_COMPLETE);
 			transition(RunPhase.RUN_COMPLETE, nowMillis);
@@ -197,9 +201,13 @@ public final class RogueScapeRunLoop
 		if (baseRewardsEnabled)
 		{
 			baseRewardResolved = false;
-			offerBaseRewardIfNeeded(stage);
-			transition(RunPhase.BASE_REWARD, nowMillis);
-			return;
+			if (offerBaseRewardIfNeeded(stage) != null)
+			{
+				transition(RunPhase.BASE_REWARD, nowMillis);
+				return;
+			}
+			// Nothing useful to draft — skip the reward phase honestly (no filler).
+			baseRewardResolved = true;
 		}
 
 		RunStage next = nextUnclearedStage();
@@ -233,8 +241,10 @@ public final class RogueScapeRunLoop
 		else
 		{
 			// The UNLOCK reward type is retired (locked 2026-07-03) — those permissions are
-			// relics now, so every non-supply chest drafts from the relic pool.
-			pendingRewardDraft = RelicDraftGenerator.relicDraft(draftId, stageId, seed, 3);
+			// relics now, so every non-supply chest drafts easers useful against the run's
+			// live restrictions. Null = nothing useful remains; the reward phase is skipped.
+			pendingRewardDraft = RelicDraftGenerator.usefulRelicDraft(draftId, stageId, seed, 3,
+				run.currentRestrictions());
 		}
 		run.addRewardDraft(pendingRewardDraft);
 		return pendingRewardDraft;

@@ -158,6 +158,12 @@ public final class RogueScapeRun
 		{
 			curse.apply(r);
 		}
+		// Earned relics ease what the setup imposed — applied LAST so a drafted permit actually
+		// permits (this state is rebuilt per call, so easing must be re-applied here every time).
+		for (Relic relic : relicEngine.relics())
+		{
+			com.pluginideahub.roguescape.core.relic.RelicEngine.applyEasing(relic, r);
+		}
 		return r;
 	}
 

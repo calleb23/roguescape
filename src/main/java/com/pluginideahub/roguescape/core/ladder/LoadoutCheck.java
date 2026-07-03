@@ -16,7 +16,13 @@ import java.util.List;
  */
 public final class LoadoutCheck
 {
-	/** One item as the adapter sees it: a name, an equip requirement if known, a category. */
+	/**
+	 * One item as the adapter sees it: a name, a requirement level if known, a category.
+	 * The requirement level is the item's LANE requirement on the universal scale (locked
+	 * 2026-07-03): equip level for weapon/armour, CREATION level (crafting/herblore/cooking)
+	 * for jewellery/supplies — the adapter supplies whichever fits the category. Zero means
+	 * unknown, which passes any cap.
+	 */
 	public static final class Item
 	{
 		private final String name;
@@ -102,7 +108,7 @@ public final class LoadoutCheck
 				if (!restrictions.gearTierAllowed(level))
 				{
 					violations.add(item.name() + " is above the gear cap ("
-						+ level + " > " + restrictions.gearTierCap() + ")");
+						+ level + " > " + restrictions.strictestLaneCap() + ")");
 				}
 			}
 

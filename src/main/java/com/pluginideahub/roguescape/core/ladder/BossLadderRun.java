@@ -31,6 +31,7 @@ public final class BossLadderRun
 	private final List<String> bosses;
 	private final RunRestrictions restrictions;
 	private final List<Relic> earnedRelics = new ArrayList<>();
+	private final List<LadderRewardCard> earnedUpgrades = new ArrayList<>();
 	private int bossIndex;
 	private LadderPhase phase = LadderPhase.PREP;
 	private String failReason = "";
@@ -86,6 +87,7 @@ public final class BossLadderRun
 		{
 			requirePhase(LadderPhase.REWARD, "chooseReward");
 			restrictions.raiseLane(card.lane());
+			earnedUpgrades.add(card);
 			advance();
 			return;
 		}
@@ -171,6 +173,7 @@ public final class BossLadderRun
 	public boolean isOver() { return phase == LadderPhase.COMPLETE || phase == LadderPhase.FAILED; }
 	public String failReason() { return failReason; }
 	public List<Relic> earnedRelics() { return Collections.unmodifiableList(earnedRelics); }
+	public List<LadderRewardCard> earnedUpgrades() { return Collections.unmodifiableList(earnedUpgrades); }
 
 	/** Bosses already felled (the reward for the current one may still be pending). */
 	public int bossesDefeated()

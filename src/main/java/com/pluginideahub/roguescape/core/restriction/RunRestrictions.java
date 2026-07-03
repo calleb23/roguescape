@@ -13,7 +13,7 @@ import java.util.Set;
  *
  * <p>A run is set up with some restrictions active (loadout + curses). As the player earns relics,
  * those relics <em>ease</em> restrictions: {@link #permit} removes one, and the parameterised easers
- * ({@link #raiseGearTierCap}, {@link #addInventorySlots}, {@link #setAllowedSpellbook},
+ * ({@link #raiseLane}, {@link #addInventorySlots}, {@link #setAllowedSpellbook},
  * {@link #permitCombatStyle}) loosen the capped ones. The "build" is simply the shape of what has
  * been un-shackled.
  *
@@ -71,6 +71,12 @@ public final class RunRestrictions
 
 	public RunRestrictions restrict(Restriction restriction)
 	{
+		if (restriction == Restriction.GEAR_TIER_CAP && laneCaps.isEmpty())
+		{
+			// The flag without caps would be a stuck state nothing can ease — give the caps a
+			// concrete value (the lowest band) so raises exist.
+			return restrictGearTier(GradeBands.BANDS[0]);
+		}
 		if (restriction != null)
 		{
 			active.add(restriction);
@@ -123,6 +129,12 @@ public final class RunRestrictions
 			{
 				if (s != null) allowedStyles.add(s);
 			}
+		}
+		if (allowedStyles.containsAll(EnumSet.allOf(CombatStyle.class)))
+		{
+			// Every style allowed = no lock; setting the flag would be a stuck state nothing
+			// in the pool could ever clear.
+			return this;
 		}
 		active.add(Restriction.COMBAT_STYLE);
 		return this;
@@ -246,6 +258,20 @@ public final class RunRestrictions
 			}
 		}
 		return max;
+	}
+
+	/** The tightest still-active lane cap — the one an unmapped item is held to, {@link #UNCAPPED} when all free. */
+	public int strictestLaneCap()
+	{
+		int min = UNCAPPED;
+		for (Integer cap : laneCaps.values())
+		{
+			if (cap != null && (min == UNCAPPED || cap < min))
+			{
+				min = cap;
+			}
+		}
+		return min;
 	}
 
 	public int inventoryLimit() { return inventoryLimit; }
