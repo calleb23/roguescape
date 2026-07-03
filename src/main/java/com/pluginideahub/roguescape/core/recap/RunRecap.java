@@ -23,6 +23,8 @@ public final class RunRecap
 {
 	private final String goal;
 	private final String seed;
+	private final String mode;
+	private final List<String> curseRows;
 	private final RunState state;
 	private final String completionNote;
 	private final int score;
@@ -37,6 +39,8 @@ public final class RunRecap
 	{
 		this.goal = b.goal;
 		this.seed = b.seed;
+		this.mode = b.mode;
+		this.curseRows = Collections.unmodifiableList(new ArrayList<>(b.curseRows));
 		this.state = b.state;
 		this.completionNote = b.completionNote;
 		this.score = b.score;
@@ -50,6 +54,10 @@ public final class RunRecap
 
 	public String goal() { return goal; }
 	public String seed() { return seed; }
+	/** The run's mode name (RunMode) — a scoreboard fact; empty for pre-mode recaps. */
+	public String mode() { return mode; }
+	/** The chosen curses ("FAMINE | Famine | 10") — a scoreboard fact for points systems. */
+	public List<String> curseRows() { return curseRows; }
 	public RunState state() { return state; }
 	public String completionNote() { return completionNote; }
 	public int score() { return score; }
@@ -66,6 +74,7 @@ public final class RunRecap
 		Builder b = new Builder()
 			.goal(s.goal())
 			.seed(s.seed())
+			.mode(s.mode() == null ? "" : s.mode().name())
 			.state(s.runState())
 			.completionNote(extractCompletionNote(s))
 			.score(s.runScore())
@@ -79,6 +88,11 @@ public final class RunRecap
 		for (ItemDelta d : run.collectedItems())
 		{
 			b.itemRow(d.itemName() + " x" + d.quantity());
+		}
+		// The chosen curses are raw scoreboard facts: points systems price them, races display them.
+		for (com.pluginideahub.roguescape.core.restriction.Curse curse : run.curses())
+		{
+			b.curseRow(curse.name() + " | " + curse.displayName() + " | " + curse.scoreBonus());
 		}
 		if (engine != null)
 		{
@@ -118,6 +132,8 @@ public final class RunRecap
 	{
 		private String goal = "";
 		private String seed = "";
+		private String mode = "";
+		private final List<String> curseRows = new ArrayList<>();
 		private RunState state = RunState.ACTIVE;
 		private String completionNote = "";
 		private int score;
@@ -130,6 +146,8 @@ public final class RunRecap
 
 		public Builder goal(String v) { this.goal = v == null ? "" : v; return this; }
 		public Builder seed(String v) { this.seed = v == null ? "" : v; return this; }
+		public Builder mode(String v) { this.mode = v == null ? "" : v; return this; }
+		public Builder curseRow(String s) { curseRows.add(s); return this; }
 		public Builder state(RunState v) { this.state = v == null ? RunState.ACTIVE : v; return this; }
 		public Builder completionNote(String v) { this.completionNote = v == null ? "" : v; return this; }
 		public Builder score(int v) { this.score = v; return this; }

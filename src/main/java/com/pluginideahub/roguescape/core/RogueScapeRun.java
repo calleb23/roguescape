@@ -120,26 +120,10 @@ public final class RogueScapeRun
 	 */
 	public com.pluginideahub.roguescape.core.restriction.RunRestrictions currentRestrictions()
 	{
+		// The Dungeon Crawl standard shackle set (locked 2026-07-03) is the baseline every
+		// run-loop run starts under — nine restrictions, food free.
 		com.pluginideahub.roguescape.core.restriction.RunRestrictions r =
-			new com.pluginideahub.roguescape.core.restriction.RunRestrictions();
-		if (!bankUnlocked())
-		{
-			r.restrict(com.pluginideahub.roguescape.core.restriction.Restriction.BANK);
-		}
-		if (!tradeUnlocked())
-		{
-			r.restrict(com.pluginideahub.roguescape.core.restriction.Restriction.TRADE);
-		}
-		// The Grand Exchange stays sealed for the whole run (no unlock exists for it).
-		r.restrict(com.pluginideahub.roguescape.core.restriction.Restriction.GRAND_EXCHANGE);
-		if (!prayerUnlocked())
-		{
-			r.restrict(com.pluginideahub.roguescape.core.restriction.Restriction.PRAYER);
-		}
-		if (!potionUnlocked())
-		{
-			r.restrict(com.pluginideahub.roguescape.core.restriction.Restriction.POTIONS);
-		}
+			com.pluginideahub.roguescape.core.restriction.ModeShackles.dungeonCrawl();
 		if (currentStageRule().restrictsRegion())
 		{
 			r.restrict(com.pluginideahub.roguescape.core.restriction.Restriction.LEAVE_REGION);
@@ -158,8 +142,24 @@ public final class RogueScapeRun
 		{
 			curse.apply(r);
 		}
-		// Earned relics ease what the setup imposed — applied LAST so a drafted permit actually
-		// permits (this state is rebuilt per call, so easing must be re-applied here every time).
+		// EASING, applied last so a permit actually permits (this state is rebuilt per call).
+		// Legacy stage-clear unlock flags ease like relics until Scavenger's rework retires them.
+		if (bankUnlocked())
+		{
+			r.permit(com.pluginideahub.roguescape.core.restriction.Restriction.BANK);
+		}
+		if (tradeUnlocked())
+		{
+			r.permit(com.pluginideahub.roguescape.core.restriction.Restriction.TRADE);
+		}
+		if (prayerUnlocked())
+		{
+			r.permit(com.pluginideahub.roguescape.core.restriction.Restriction.PRAYER);
+		}
+		if (potionUnlocked())
+		{
+			r.permit(com.pluginideahub.roguescape.core.restriction.Restriction.POTIONS);
+		}
 		for (Relic relic : relicEngine.relics())
 		{
 			com.pluginideahub.roguescape.core.relic.RelicEngine.applyEasing(relic, r);

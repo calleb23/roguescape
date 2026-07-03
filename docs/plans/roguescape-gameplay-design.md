@@ -16,7 +16,7 @@ one term, never "room", so the two can't be confused. Code: `RogueScapeLobbyScul
 |---|---|---|---|
 | Upgrade lanes + bands + StartTier | yes — the climb IS the mode | **none** — power is found, rooms+RNG gate it | BL chassis: yes (per-lane start bands); DC chassis: no |
 | Standard shackles | none (StartTier is the knob) | **the DC shackle set** (below) | chassis default, then free edit |
-| Curses | all 12 choosable | the 8 non-redundant choosable | any restriction, not just curse bundles |
+| Curses | all 12 choosable | the 7 non-redundant choosable | any restriction, not just curse bundles |
 | Relics | mixed into chests with raises | the whole chest (useful easers only) | per chassis |
 | Supplies | an upgrade lane | found only; supply rooms → supply drafts | per chassis |
 | Mid-run curses | — | **v2** (deferred; core supports it) | v2+ |
@@ -28,7 +28,9 @@ one term, never "room", so the two can't be confused. Code: `RogueScapeLobbyScul
   is the mode.
 - **Curse offering rule (generic, all modes):** a curse is offered at the Contract only if it
   would restrict something not already restricted — no free score, no dead picks. (In DC this
-  hides Sealed Bank, Faithless, Godless, Bound Book.)
+  hides FIVE: Sealed Bank, Faithless, Godless, Bound Book, and Dry Throat — potions are in the
+  shackle set, which the original four-item enumeration missed; the rule is the law, not the
+  list.)
 - **Curse beats prep (BL):** the PREP allowance only opens what you didn't curse away. Sealed
   Bank in BL = gear from your carried kit all ladder; the economy relics (Key to the Vault,
   Merchant's Seal, Trader's Mark) become real BL drafts. Implementation: BossLadderRun must

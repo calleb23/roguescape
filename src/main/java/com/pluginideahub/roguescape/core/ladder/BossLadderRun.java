@@ -32,11 +32,21 @@ public final class BossLadderRun
 	private final RunRestrictions restrictions;
 	private final List<Relic> earnedRelics = new ArrayList<>();
 	private final List<LadderRewardCard> earnedUpgrades = new ArrayList<>();
+	// Restrictions imposed by chosen CURSES — the prep allowance never opens these
+	// ("curse beats prep", locked 2026-07-03 session 2).
+	private final java.util.EnumSet<Restriction> curseImposed = java.util.EnumSet.noneOf(Restriction.class);
 	private int bossIndex;
 	private LadderPhase phase = LadderPhase.PREP;
 	private String failReason = "";
 
 	public BossLadderRun(List<String> bosses, RunRestrictions restrictions)
+	{
+		this(bosses, restrictions, null);
+	}
+
+	/** @param curses the chosen setup curses — their restrictions stay sealed even in PREP. */
+	public BossLadderRun(List<String> bosses, RunRestrictions restrictions,
+		java.util.Collection<com.pluginideahub.roguescape.core.restriction.Curse> curses)
 	{
 		if (bosses == null || bosses.isEmpty())
 		{
@@ -44,6 +54,16 @@ public final class BossLadderRun
 		}
 		this.bosses = Collections.unmodifiableList(new ArrayList<>(bosses));
 		this.restrictions = restrictions == null ? RunRestrictions.unrestricted() : restrictions;
+		if (curses != null)
+		{
+			for (com.pluginideahub.roguescape.core.restriction.Curse curse : curses)
+			{
+				if (curse != null)
+				{
+					curseImposed.addAll(curse.restrictions());
+				}
+			}
+		}
 	}
 
 	// ---------- Transitions ----------
@@ -136,12 +156,13 @@ public final class BossLadderRun
 
 	/**
 	 * The rule verdict for an attempted action right now. In PREP the economy locks (bank, GE,
-	 * trade) are temporarily allowed — gearing up is the point of prep; everything else, and
-	 * every phase after the gate, defers to the run's restrictions.
+	 * trade) are temporarily allowed — gearing up is the point of prep — but a lock a CURSE
+	 * imposed stays sealed: the allowance only opens what you didn't curse away. Everything
+	 * else, and every phase after the gate, defers to the run's restrictions.
 	 */
 	public RestrictionOutcome decide(Restriction attempted)
 	{
-		if (phase == LadderPhase.PREP && isPrepAllowance(attempted))
+		if (phase == LadderPhase.PREP && isPrepAllowance(attempted) && !curseImposed.contains(attempted))
 		{
 			return RestrictionOutcome.ALLOW;
 		}
@@ -152,6 +173,7 @@ public final class BossLadderRun
 	public boolean prepAllowanceActive(Restriction attempted)
 	{
 		return phase == LadderPhase.PREP && isPrepAllowance(attempted)
+			&& !curseImposed.contains(attempted)
 			&& restrictions.isRestricted(attempted);
 	}
 

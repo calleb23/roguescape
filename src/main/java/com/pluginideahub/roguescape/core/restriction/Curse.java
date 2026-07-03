@@ -40,6 +40,12 @@ public enum Curse
 		{
 			restrictions.restrictSpellbook(Spellbook.STANDARD);
 		}
+
+		@Override
+		public boolean wouldAddSomething(RunRestrictions baseline)
+		{
+			return baseline == null || !baseline.isRestricted(Restriction.SPELLBOOK);
+		}
 	},
 	ONE_STYLE("One Style", "Only one combat style may be used.", 15)
 	{
@@ -49,6 +55,12 @@ public enum Curse
 			// v1: melee is the default permitted style; picking the style at setup is a
 			// Contract-UI feature (the curse stays one entry, the parameter arrives later).
 			restrictions.restrictCombatStyles(CombatStyle.MELEE);
+		}
+
+		@Override
+		public boolean wouldAddSomething(RunRestrictions baseline)
+		{
+			return baseline == null || !baseline.isRestricted(Restriction.COMBAT_STYLE);
 		}
 	};
 
@@ -97,5 +109,46 @@ public enum Curse
 		{
 			restrictions.restrict(r);
 		}
+	}
+
+	/**
+	 * The offering rule (locked 2026-07-03, session 2): a curse is offered at the Contract only
+	 * if it would restrict something the mode's baseline doesn't already — no free score, no
+	 * dead picks. Parameterised curses override.
+	 */
+	public boolean wouldAddSomething(RunRestrictions baseline)
+	{
+		if (baseline == null)
+		{
+			return true;
+		}
+		if (adds.isEmpty())
+		{
+			// TIGHT_POCKETS: useful unless the baseline is already at (or under) its allowance.
+			return baseline.inventoryLimit() == RunRestrictions.UNCAPPED
+				|| baseline.inventoryLimit() > TIGHT_POCKETS_SLOTS;
+		}
+		for (Restriction r : adds)
+		{
+			if (!baseline.isRestricted(r))
+			{
+				return true;
+			}
+		}
+		return false;
+	}
+
+	/** The curses worth offering against a mode baseline, in enum order. */
+	public static java.util.List<Curse> offerable(RunRestrictions baseline)
+	{
+		java.util.List<Curse> out = new java.util.ArrayList<>();
+		for (Curse curse : values())
+		{
+			if (curse.wouldAddSomething(baseline))
+			{
+				out.add(curse);
+			}
+		}
+		return out;
 	}
 }
