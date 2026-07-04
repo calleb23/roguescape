@@ -100,6 +100,7 @@ import net.runelite.client.eventbus.Subscribe;
 import net.runelite.client.events.OverlayMenuClicked;
 import net.runelite.client.game.ItemManager;
 import net.runelite.client.game.SpriteManager;
+import net.runelite.client.input.KeyManager;
 import net.runelite.client.input.MouseManager;
 import net.runelite.client.plugins.Plugin;
 import net.runelite.client.plugins.PluginDescriptor;
@@ -155,6 +156,9 @@ public class RogueScapePlugin extends Plugin
 
 	@Inject
 	private MouseManager mouseManager;
+
+	@Inject
+	private KeyManager keyManager;
 
 	@Inject
 	private ItemManager itemManager;
@@ -240,6 +244,7 @@ public class RogueScapePlugin extends Plugin
 		clientThread.invoke(() -> com.pluginideahub.roguescape.ui.RogueScapeWidgetSkin.register(client));
 		widgetWindow = new RogueScapeWidgetWindow(client, clientThread, config::experimentalJournalTab, windowContent::windowTabs);
 		mouseManager.registerMouseListener(widgetWindow);
+		keyManager.registerKeyListener(widgetWindow);
 		// SPIKE: lobby sculptor — clear an area and build the lobby back with cache models (DEV TOOLS).
 		lobbySculptor = new RogueScapeLobbySculptor(client, clientThread);
 		rewardOverlay = new RogueScapeRewardOverlay(
@@ -336,6 +341,7 @@ public class RogueScapePlugin extends Plugin
 		if (widgetWindow != null)
 		{
 			mouseManager.unregisterMouseListener(widgetWindow);
+			keyManager.unregisterKeyListener(widgetWindow);
 			widgetWindow.shutDown();
 			widgetWindow = null;
 		}
@@ -1535,9 +1541,14 @@ public class RogueScapePlugin extends Plugin
 		return "No bank access\nNo trading / GE\nStay in room regions\nStarter kit only\nRewards after rooms\nDeath = fail";
 	}
 
-	/** Toggles the custom in-game RogueScape pop-out window. */
+	/** Toggles the in-game RogueScape window — the widget book when the flag is on, else the painted one. */
 	private void toggleWindow()
 	{
+		if (config.experimentalJournalTab() && widgetWindow != null)
+		{
+			widgetWindow.toggle();
+			return;
+		}
 		if (window != null)
 		{
 			window.toggle();

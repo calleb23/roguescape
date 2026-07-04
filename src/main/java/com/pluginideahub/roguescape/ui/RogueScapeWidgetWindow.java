@@ -4,6 +4,7 @@ import com.pluginideahub.roguescape.ui.RogueScapeWindowOverlay.Block;
 import com.pluginideahub.roguescape.ui.RogueScapeWindowOverlay.Tab;
 import java.awt.Color;
 import java.awt.Rectangle;
+import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
 import java.util.ArrayList;
 import java.util.List;
@@ -18,6 +19,7 @@ import net.runelite.api.widgets.WidgetPositionMode;
 import net.runelite.api.widgets.WidgetTextAlignment;
 import net.runelite.api.widgets.WidgetType;
 import net.runelite.client.callback.ClientThread;
+import net.runelite.client.input.KeyListener;
 import net.runelite.client.input.MouseListener;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -28,21 +30,21 @@ import org.slf4j.LoggerFactory;
  * journal spread (a single generated background sprite from {@link RogueScapeWidgetSkin}), lays
  * a row of clickable top tabs under the masthead, and renders each tab's content
  * ({@link Block}s: headings, text, stat bars, native item-icon grids, badges, reward cards) as
- * child widgets in ink-on-paper colors. Title-bar click-drag and a native close button are
- * wired through the registered {@link MouseListener} / widget ops.
+ * child widgets in ink-on-paper colors. Title-bar click-drag, a native close button, and
+ * Esc-to-close are wired through the registered {@link MouseListener} / {@link KeyListener}.
  *
  * <p>Dynamically-created widgets are wiped whenever the client rebuilds the interface, so the
  * window is rebuilt tick-driven via {@link #onTick()} (same approach as the journal injection).
  * All widget mutation runs on the client thread; mouse events (which fire on AWT) marshal across.
  */
-public final class RogueScapeWidgetWindow implements MouseListener
+public final class RogueScapeWidgetWindow implements MouseListener, KeyListener
 {
 	private static final int W = RogueScapeWidgetSkin.BOOK_W;
 	private static final int H = RogueScapeWidgetSkin.BOOK_H;
-	private static final int TITLE_H = 44; // masthead / drag region height (fits the large quill title)
-	private static final int TAB_TOP = 14; // tab strip shares the masthead, right of the title
+	private static final int TITLE_H = 34; // masthead / drag region height (fits the large quill title)
+	private static final int TAB_TOP = 8; // tab strip shares the masthead, right of the title
 	private static final int TAB_H = 20;
-	private static final int TAB_LEFT = 320; // tabs start right of the title's reach
+	private static final int TAB_LEFT = 250; // tabs start right of the title's reach
 	private static final int SPINE_GUTTER = 24; // half-width of the centre spine kept clear of content
 
 	// Content region (relative to the window origin).
@@ -78,10 +80,12 @@ public final class RogueScapeWidgetWindow implements MouseListener
 	private final Supplier<List<Tab>> tabsSupplier;
 	private String diag = "";
 
-	// Shows as soon as the experimental flag allows it — the config toggle IS the switch.
-	private boolean wantOpen = true;
-	private int winX = 40;
-	private int winY = 40;
+	// Closed until summoned (journal tab / toggle) — native windows never open themselves.
+	private boolean wantOpen;
+	// Centred over the game viewport on first build; the player's drag position sticks after.
+	private boolean placed;
+	private int winX;
+	private int winY;
 	private int selectedTab;
 
 	private Widget parent;
@@ -113,12 +117,14 @@ public final class RogueScapeWidgetWindow implements MouseListener
 
 	public void toggle()
 	{
-		wantOpen = !wantOpen;
+		setOpen(!wantOpen);
 	}
 
 	public void setOpen(boolean open)
 	{
 		wantOpen = open;
+		// Snap open/closed immediately instead of waiting for the next game tick.
+		clientThread.invoke(this::onTick);
 	}
 
 	/** Tick-safe: build/show the window when open, hide it when closed, rebuild if the client wiped it. */
@@ -157,6 +163,7 @@ public final class RogueScapeWidgetWindow implements MouseListener
 			else
 			{
 				root.setHidden(false);
+				clampIntoParent();
 			}
 		}
 		catch (RuntimeException ex)
@@ -217,6 +224,50 @@ public final class RogueScapeWidgetWindow implements MouseListener
 			|| contains(host.getNestedChildren(), root);
 	}
 
+	/**
+	 * First-open placement: centred over the 3D viewport (like the game's own windows), not the
+	 * whole canvas — in fixed mode the canvas includes the sidebar and chatbox.
+	 */
+	private void centreOverViewport(Widget host)
+	{
+		int vw = client.getViewportWidth();
+		int vh = client.getViewportHeight();
+		if (vw <= 0 || vh <= 0)
+		{
+			return; // not laid out yet — try again next build
+		}
+		Point hostLoc = host.getCanvasLocation();
+		int hostX = hostLoc == null ? 0 : hostLoc.getX();
+		int hostY = hostLoc == null ? 0 : hostLoc.getY();
+		winX = client.getViewportXOffset() - hostX + Math.max(0, (vw - W) / 2);
+		winY = client.getViewportYOffset() - hostY + Math.max(0, (vh - H) / 2);
+		placed = true;
+	}
+
+	/** Keeps the whole window (masthead + close button) reachable when the client shrinks. */
+	private void clampIntoParent()
+	{
+		if (root == null || parent == null)
+		{
+			return;
+		}
+		int cx = clamp(winX, 0, Math.max(0, parent.getWidth() - W));
+		int cy = clamp(winY, 0, Math.max(0, parent.getHeight() - H));
+		if (cx != winX || cy != winY)
+		{
+			winX = cx;
+			winY = cy;
+			root.setOriginalX(winX);
+			root.setOriginalY(winY);
+			root.revalidate();
+		}
+	}
+
+	private static int clamp(int v, int lo, int hi)
+	{
+		return Math.max(lo, Math.min(hi, v));
+	}
+
 	private void build(Widget host)
 	{
 		// Hide any previous root before we drop the reference, so a re-build never leaves a stale
@@ -237,6 +288,13 @@ public final class RogueScapeWidgetWindow implements MouseListener
 		contentLayer = null;
 		tabStripLayer = null;
 
+		if (!placed)
+		{
+			centreOverViewport(host);
+		}
+		winX = clamp(winX, 0, Math.max(0, host.getWidth() - W));
+		winY = clamp(winY, 0, Math.max(0, host.getHeight() - H));
+
 		root = host.createChild(-1, WidgetType.LAYER);
 		root.setOriginalX(winX);
 		root.setOriginalY(winY);
@@ -252,13 +310,14 @@ public final class RogueScapeWidgetWindow implements MouseListener
 		sprite(root, RogueScapeWidgetSkin.SPRITE_BOOK_BG, 0, 0, W, H, false);
 
 		// Masthead: ribbon bookmark + serif title in ink.
-		sprite(root, RogueScapeWidgetSkin.SPRITE_RIBBON, 16, 0, 16, 34, false);
+		sprite(root, RogueScapeWidgetSkin.SPRITE_RIBBON, 14, 0, 16, 34, false);
 		Widget titleText = root.createChild(-1, WidgetType.TEXT);
 		titleText.setText("RogueScape");
 		titleText.setTextColor(COL_PRIMARY);
 		titleText.setFontId(FontID.QUILL_CAPS_LARGE);
 		titleText.setTextShadowed(false);
-		fill(titleText, 40, 6, 270, 40);
+		titleText.setYTextAlignment(WidgetTextAlignment.CENTER);
+		fill(titleText, 36, 2, 210, 30);
 
 		// Close button (the game's own close sprite). Clicks are handled by the MouseListener so
 		// they're consumed before the game world sees them (no walk-through).
@@ -824,7 +883,7 @@ public final class RogueScapeWidgetWindow implements MouseListener
 
 			// Narrow tiles (curse strip) drop to the small font and get a second title line to
 			// wrap into, so labels never bleed into the neighbouring tile.
-			boolean narrow = tileW < 80;
+			boolean narrow = tileW < 92;
 			Widget title = text(contentLayer, tx + 4, ty + (narrow ? 6 : 14), tileW - 8,
 				RogueScapeWindowOverlay.ascii(tile.title), COL_PRIMARY,
 				narrow ? FontID.PLAIN_11 : FontID.BOLD_12, false);
@@ -1037,8 +1096,8 @@ public final class RogueScapeWidgetWindow implements MouseListener
 				Point pp = parent.getCanvasLocation();
 				if (pp != null)
 				{
-					winX = Math.max(0, e.getX() - grabDx - pp.getX());
-					winY = Math.max(0, e.getY() - grabDy - pp.getY());
+					winX = clamp(e.getX() - grabDx - pp.getX(), 0, Math.max(0, parent.getWidth() - W));
+					winY = clamp(e.getY() - grabDy - pp.getY(), 0, Math.max(0, parent.getHeight() - H));
 					clientThread.invoke(() ->
 					{
 						if (root != null)
@@ -1106,5 +1165,29 @@ public final class RogueScapeWidgetWindow implements MouseListener
 			e.consume();
 		}
 		return e;
+	}
+
+	// ------------------------------------------------------------ keyboard
+
+	/** Esc closes the window, matching the game's own interfaces. */
+	@Override
+	public void keyPressed(KeyEvent e)
+	{
+		if (e.getKeyCode() == KeyEvent.VK_ESCAPE && wantOpen && root != null
+			&& enabled != null && enabled.getAsBoolean())
+		{
+			setOpen(false);
+			e.consume();
+		}
+	}
+
+	@Override
+	public void keyTyped(KeyEvent e)
+	{
+	}
+
+	@Override
+	public void keyReleased(KeyEvent e)
+	{
 	}
 }

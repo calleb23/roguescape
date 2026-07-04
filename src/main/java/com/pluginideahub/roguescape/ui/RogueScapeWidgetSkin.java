@@ -31,11 +31,14 @@ public final class RogueScapeWidgetSkin
 	public static final int SPRITE_SEAL_GOLD = -21874;
 	public static final int SPRITE_RIBBON = -21875;
 
-	/** Book spread size — matches the painted book window (680x430). */
-	public static final int BOOK_W = 680;
-	public static final int BOOK_H = 430;
+	/**
+	 * Book spread size — native window scale (the game's own windows, e.g. the Collection Log,
+	 * are ~488x300) so the spread fits every client mode, including fixed's 512x334 viewport.
+	 */
+	public static final int BOOK_W = 488;
+	public static final int BOOK_H = 300;
 	/** Where the two-page chrome starts/stops vertically (below the masthead, above the margin). */
-	public static final int PAGE_TOP = 58;
+	public static final int PAGE_TOP = 38;
 	public static final int PAGE_BOTTOM = BOOK_H - 14;
 
 	private static final int SEAL_SIZE = 26;
